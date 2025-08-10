@@ -1,0 +1,15 @@
+## Interface: 1100055
+## Title: Action Bar Sync
+## Notes: Pick which action bars to keep in sync 
+## Author: mrbryo
+## Version: 0.0.1
+## RequiredDeps:
+## X-Curse-Project-ID: 1141659
+## X-Curse-Project-Name: Action Bar Sync
+## SavedVariables: ActionBarSyncDB
+## SavedVariablesPerCharacter:
+## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
+## OptionalDeps: Ace3
+
+ActionBarSync.lua
+StandardFunctions.lua
