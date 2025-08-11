@@ -35,3 +35,27 @@ function StdFuncs:deepCopy(orig)
     end
     return copy
 end
+
+-- NOT WORKING!!!
+-- deep table copy but only missing keys and values
+-- function StdFuncs:deepCopyMissing(sourcetbl, targettbl)
+--     -- create copy of target table
+--     local copy = self:deepCopy(targettbl)
+
+--     print(("Record Count of Target Tbl: %d"):format(#targettbl))
+--     print(("Record Count of Source Tbl: %d"):format(#sourcetbl))
+--     print(("Record Count of Copy: %d"):format(#copy))
+
+--     -- compare and add missing data
+--     for key, value in pairs(sourcetbl) do
+--         if not copy[key] then
+--             print(("'%s' key missing..."):format(key))
+--             if type(value) == "table" then
+--                 copy[key] = self:deepCopyMissing(value, {})
+--             else
+--                 copy[key] = value
+--             end
+--         end
+--     end
+--     return copy
+-- end

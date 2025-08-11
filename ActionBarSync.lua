@@ -12,17 +12,43 @@ _G.ABSync = ABSync
 ABSync.optionLocName = "AddonBarSync"
 ABSync.isLive = false
 
+-- lookup values for action button lookup
+ABSync.actionTypeLookup = {
+    ["spell"] = "Spell",
+    ["item"] = "Item",
+    ["macro"] = "Macro",
+    ["summonpet"] = "Pet",
+    ["summonmount"] = "Mount"
+}
+
+-- translate blizzard Action Bar settings names to LUA Code Names
+ABSync.blizzardTranslate = {
+    ["MultiBarBottomLeft"] = "Action Bar 2",
+    ["MultiBarBottomRight"] = "Action Bar 3",
+    ["MultiBarRight"] = "Action Bar 4",
+    ["MultiBarLeft"] = "Action Bar 5",
+    ["MultiBar5"] = "Action Bar 6",
+    ["MultiBar6"] = "Action Bar 7",
+    ["MultiBar7"] = "Action Bar 8",
+}
+
 -- Initialize Event
 -- ABSync.mainFrame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent)
 function ABSync:OnInitialize()
+    -- debug
+    if self.isLive == false then self:Print("Initializing...") end
+
+    -- Instantiate Standard Functions
+    local StdFuncs = ABSync:GetModule("StandardFunctions")
+
     -- default db data
     local dbDefaults = {
         profile = {
             actionBars = {},
-            actionBars = {},
             checkOnLogon = false,
             barData = {},
-            barOwner = {}
+            barOwner = {},
+            barsToSync = {},
         },
         char = {
             backup = {},
@@ -30,10 +56,16 @@ function ABSync:OnInitialize()
             syncErrors = {},
             lastSyncErrorDttm = "",
             lastScan = "Never",
+            actionLookup = {
+                type = "spell",
+                id = "",
+                name = ""
+            }
         }
     }
     -- initialize the db
     self.db = LibStub("AceDB-3.0"):New("ActionBarSyncDB", dbDefaults)
+
     -- Instantiate Option Table
     self.ActionBarSyncOptions = {
         name = "Action Bar Sync",
@@ -201,6 +233,69 @@ function ABSync:OnInitialize()
                         width = "full",
                     }
                 }
+            },
+            actionlookup = {
+                name = "Action ID Lookup",
+                desc = "This section allows you to look up actions by ID.",
+                type = "group",
+                order = 5,
+                args = {
+                    intro = {
+                        name = "This section allows you to look up actions by type and ID or Name.",
+                        type = "description",
+                        order = 0,
+                        width = "full",
+                    },
+                    objectname = {
+                        name = "Action Name",
+                        desc = "Enter the exact name of the action you want to look up.",
+                        type = "input",
+                        width = "full",
+                        order = 1,
+                        get = function(info)
+                            return ABSync:GetLastActionName()
+                        end,
+                        set = function(info, value)
+                            ABSync:SetLastActionName(value)
+                        end
+                    },
+                    actionID = {
+                        name = "Action ID",
+                        desc = "The ID of the item you want to look up.",
+                        type = "input",
+                        order = 2,
+                        get = function(info)
+                            return ABSync:GetLastActionID()
+                        end,
+                        set = function(info, value)
+                            ABSync:SetLastActionID(value)
+                        end
+                    },
+                    actionType = {
+                        name = "Action Type",
+                        desc = "The type of the action you want to look up.",
+                        type = "select",
+                        order = 3,
+                        values = function()
+                            return ABSync:GetActionTypeValues()
+                        end,
+                        get = function(info)
+                            return ABSync:GetLastActionType()
+                        end,
+                        set = function(info, value)
+                            ABSync:SetLastActionType(value)
+                        end
+                    },
+                    lookupButton = {
+                        name = "Lookup",
+                        desc = "Click to look up the action.",
+                        type = "execute",
+                        order = 4,
+                        func = function()
+                            ABSync:LookupAction()
+                        end
+                    }
+                }
             }
         }
     }
@@ -236,6 +331,215 @@ function ABSync:OnInitialize()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetLastActionName
+    Purpose:    Get the last action name for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionName()
+    if not self.db.char.actionLookup.name then
+        self.db.char.actionLookup = {}
+        self.db.char.actionLookup.name = ""
+    end
+    return self.db.char.actionLookup.name
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLastActionName
+    Purpose:    Set the last action name for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionName(value)
+    if not self.db.char.actionLookup then
+        self.db.char.actionLookup = {}
+    end
+    self.db.char.actionLookup.name = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastActionID
+    Purpose:    Get the last action ID for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionID()
+    if not self.db.char.actionLookup.id then
+        self.db.char.actionLookup.id = ""
+    end
+    return self.db.char.actionLookup.id
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLastActionID
+    Purpose:    Set the last action ID for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionID(value)
+    if not self.db.char.actionLookup then
+        self.db.char.actionLookup = {}
+    end
+    self.db.char.actionLookup.id = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetActionTypeValues
+    Purpose:    Get the action type values.
+-----------------------------------------------------------------------------]]
+function ABSync:GetActionTypeValues()
+    return ABSync.actionTypeLookup
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastActionType
+    Purpose:    Get the last action type for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionType()
+    if not self.db.char.actionLookup then
+        self.db.char.actionLookup = {}
+    end
+    if not self.db.char.actionLookup.type then
+        self.db.char.actionLookup.type = "spell"
+    end
+    return self.db.char.actionLookup.type or ""
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLastActionType
+    Purpose:    Set the last action type for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionType(value)
+    if not self.db.char.actionLookup then
+        self.db.char.actionLookup = {}
+    end
+    self.db.char.actionLookup.type = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   LookupAction
+    Purpose:    Look up the action based on the last entered action type and ID.
+-----------------------------------------------------------------------------]]
+function ABSync:LookupAction()
+    -- dialog to show results
+    StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"] = {
+        text = "",
+        button1 = "OK",
+        timeout = 0,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+
+    -- get the action type
+    local actionType = self:GetLastActionType()
+    
+    -- get the action ID
+    local actionID = self:GetLastActionID()
+
+    -- debug
+    if self.isLive == false then self:Print(("Looking up Action - Type: %s - ID: %s"):format(actionType, actionID)) end
+
+    -- check for valid action type
+    if not self.actionTypeLookup[actionType] then
+        self:Print("")
+        StaticPopupDialogs["ACTIONBARSYNC_INVALID_ACTION_TYPE"] = {
+            text = "Invalid Action Type. Please enter/select a valid action type.",
+            button1 = "OK",
+            timeout = 15,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+        StaticPopup_Show("ACTIONBARSYNC_INVALID_ACTION_TYPE")
+        return
+    end
+
+    -- instantiate variable to store final message
+    local dialogMessage = ""
+
+    -- perform lookup based on type
+    if actionType == "spell" then
+        -- get spell info
+        local spellData = C_Spell.GetSpellInfo(actionID)
+        local spellName = spellData and spellData.name or "Unknown"
+
+        -- assign to field
+        self:SetLastActionName(spellName)
+
+        -- determine if player has the spell, if not report error
+        local hasSpell = C_Spell.IsCurrentSpell(actionID) and "Yes" or "No"
+
+        -- generate message
+        dialogMessage = ("Spell Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, spellName, hasSpell)
+    elseif actionType == "item" then
+        local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(actionID)
+        -- self:Print(("Item Name for ID '%s': %s"):format(actionID, itemName or "Unknown/Nil"))
+
+        -- does player have the item
+        local itemCount = C_Item.GetItemCount(actionID)
+
+        -- assign results
+        self:SetLastActionName(itemName)
+
+        -- generate message
+        local hasItem = (itemCount > 0) and "Yes" or "No"
+        dialogMessage = ("Item Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, itemName, hasItem)
+    elseif actionType == "macro" then
+        -- get macro information: name, iconTexture, body, isLocal
+        local macroName, macroIcon, macroBody = GetMacroInfo(actionID)
+
+        -- does player have this macro?
+        local hasMacro = macroName and "Yes" or "No"
+
+        -- fix macroName for output
+        macroName = macroName or "Unknown"
+
+        -- assign to field
+        self:SetLastActionName(macroName)
+
+        -- generate message
+        dialogMessage = ("Macro Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, macroName, hasMacro)
+    elseif actionType == "summonpet" then
+        -- get pet information
+        local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(actionID)
+
+        -- check if has pet
+        local hasPet = name and "Yes" or "No"
+
+        -- assign to field
+        self:SetLastActionName(name)        
+
+        -- generate message
+        dialogMessage = ("Pet Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, name, hasPet)
+    elseif actionType == "summonmount" then
+        -- get the mount spell name; see function details for why we get its spell name
+        local mountSpellName = self:GetMountinfo(actionID)
+
+        -- has mount
+        local hasMount = mountSpellName and "Yes" or "No"
+
+        -- assign to field
+        self:SetLastActionName(mountSpellName)  
+
+        -- generate message
+        dialogMessage = ("Mount Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, mountSpellName, hasMount)
+    end
+
+    -- show results in dialog
+    -- local actionTypeLabel = self.actionTypeLookup[actionType] or "Unknown"
+    StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"].text = dialogMessage
+    StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
+end
+
+function ABSync:GetMountinfo(actionID)
+    --[[ -- Getting Proper Mount Info --
+        --------------------------------
+        1) in order to get the correct action bar button for a mount you have to get the spellID from GetMountInfoByID
+        2) use the spellID to get the spell information from GetSpellInfo
+        3) pass the spell name into PickupSpell, just like actionType "spell" and then place this spell into the button
+        ---
+        Note: I could just use the mount name into the PickupSpell function but to be accurate I should get the spell name from GetSpellInfo
+    ----------------------------------]]
+    local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(actionID)
+    local spellData = C_Spell.GetSpellInfo(spellID)
+    local spellName = spellData and spellData.name or nil
+
+    -- finally return the spell name
+    return spellName
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetErrorText
     Purpose:    Return a string to populate an option description to show users the last sync errors.
 -----------------------------------------------------------------------------]]
@@ -243,23 +547,30 @@ function ABSync:GetErrorText()
     -- instantiate variable to all all error messages
     local text = ""
 
+    -- debug
+    -- self:Print("here1")
+
     -- check variable exists
     if not self.db.char.syncErrors then
+        -- self:Print("here2")
         return "No Errors Found"
     end
 
     -- check variable exists
     if not self.db.char.lastSyncErrorDttm then
+        -- self:Print("here2")
         return "No Errors Found"
     end
 
     -- check for any sync errors
     if #self.db.char.syncErrors == 0 then
+        -- self:Print("here3")
         return "No Errors Found"
     end
 
     -- loop over error data
     for _, errorRcd in ipairs(self.db.char.syncErrors) do
+        -- self:Print("here loop")
         -- check key matches last sync dttm
         if errorRcd.key == self.db.char.lastSyncErrorDttm then            
             -- loop over each error message and concat to variable
@@ -273,6 +584,11 @@ function ABSync:GetErrorText()
             end
         end
     end
+
+    -- debug
+    -- self:Print("here4")
+
+    -- finally return the text
     return text
 end
 
@@ -688,7 +1004,12 @@ function ABSync:UpdateActionBars(backupdttm)
                 end
             elseif diffData.actionType == "item" then
                 local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(diffData.id)
-                -- self:Print(("Item Name for ID '%s': %s"):format(diffData.id, itemName or "Unknown/Nil"))
+
+                -- need a string as itemName or error occurs if the item actually doesn't exist
+                local checkItemName = itemName or "Unknown/Nil"
+
+                -- debug
+                self:Print(("Item Name for ID '%s': %s"):format(diffData.id, checkItemName))
 
                 -- does player have the item
                 local itemCount = C_Item.GetItemCount(diffData.id)
@@ -718,7 +1039,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) User does not have item '%s' with ID '%s' in their bags."):format(diffData.name, itemName, diffData.id)
+                        descr = ("(%s) User does not have item '%s' with ID '%s' in their bags."):format(diffData.name, checkItemName, diffData.id)
                     })
                 end
             elseif diffData.actionType == "macro" then
@@ -733,7 +1054,7 @@ function ABSync:UpdateActionBars(backupdttm)
                     PlaceAction(tonumber(diffData.buttonID))
                     ClearCursor()
 
-                -- if macro name is not found then record error
+                -- if macro name is not found then record error and remove whatever is in the bar
                 else
                     -- if macro name not found then log error
                     table.insert(errors, {
@@ -743,6 +1064,10 @@ function ABSync:UpdateActionBars(backupdttm)
                         name = diffData.name,
                         descr = ("(%s) Macro with ID %s not found."):format(diffData.name, diffData.id)
                     })
+
+                    -- remove if not found
+                    PickupAction(tonumber(diffData.buttonID))
+                    ClearCursor()
                 end
             elseif diffData.actionType == "summonpet" then
                 -- get pet information
@@ -766,21 +1091,12 @@ function ABSync:UpdateActionBars(backupdttm)
                     })
                 end
             elseif diffData.actionType == "summonmount" then
-                --[[ -- Getting Proper Mount Info --
-                    --------------------------------
-                    1) in order to get the correct action bar button for a mount you have to get the spellID from GetMountInfoByID
-                    2) use the spellID to get the spell information from GetSpellInfo
-                    3) pass the spell name into PickupSpell, just like actionType "spell" and then place this spell into the button
-                    ---
-                    Note: I could just use the mount name into the PickupSpell function but to be accurate I should get the spell name from GetSpellInfo
-                ----------------------------------]]
-                local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(diffData.id)
-                local spellData = C_Spell.GetSpellInfo(spellID)
-                local spellName = spellData and spellData.name or nil
+                -- get the mount spell name; see function details for why we get its spell name
+                local spellName = self:GetMountinfo(diffData.id)
                 -- if self.isLive == false then self:Print(("Mount Name for ID '%s': %s (Mount ID: %s)(Spell ID: %s)(Spell Name: %s)"):format(diffData.id, name or "Unknown/Nil", mountID, tostring(spellID), spellName or "Unknown/Nil")) end
 
                 -- if mount name is found proceed
-                if name then
+                if spellName then
                     -- setting an action bar button with Pickup from MountJournal doesn't work!
                     -- C_MountJournal.Pickup(tonumber(mountID))
                     C_Spell.PickupSpell(spellName)
@@ -799,7 +1115,8 @@ function ABSync:UpdateActionBars(backupdttm)
 
             -- notfound means the button was empty
             elseif diffData.actionType == "notfound" then
-                ClearAction(tonumber(diffData.buttonID))
+                PickupAction(tonumber(diffData.buttonID))
+                ClearCursor()
             end
         end
 
@@ -810,10 +1127,10 @@ function ABSync:UpdateActionBars(backupdttm)
         end
 
         -- if more than 9 then remove the oldest 1
-        -- next retrieves the key of the first entry in the backup table and then sets it to nil which removes it
+        -- since we use table.insert it always adds records to the end of the table and the oldest is at the top so keep deleting until we get to 9 records
+        -- because we will insert one after this step
         while syncErrorCount > 9 do
-            local oldestSyncError = next(self.db.char.syncErrors)
-            self.db.char.syncErrors[oldestSyncError] = nil
+            table.remove(self.db.char.syncErrors, 1)
             syncErrorCount = syncErrorCount - 1
         end
 
