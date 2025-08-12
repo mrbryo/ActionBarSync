@@ -508,16 +508,16 @@ function ABSync:LookupAction()
         dialogMessage = ("Pet Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, name, hasPet)
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
-        local mountSpellName = self:GetMountinfo(actionID)
+        local mountInfo = self:GetMountinfo(actionID, true)
 
         -- has mount
-        local hasMount = mountSpellName and "Yes" or "No"
+        local hasMount = mountInfo.name and "Yes" or "No"
 
         -- assign to field
-        self:SetLastActionName(mountSpellName)  
+        self:SetLastActionName(mountInfo.name)
 
         -- generate message
-        dialogMessage = ("Mount Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, mountSpellName, hasMount)
+        dialogMessage = ("Mount Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, mountInfo.name, hasMount)
     end
 
     -- show results in dialog
@@ -526,7 +526,18 @@ function ABSync:LookupAction()
     StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
 end
 
-function ABSync:GetMountinfo(actionID)
+function ABSync:GetMountinfo(actionID, showDialog)
+    -- defaults
+    showDialog = showDialog or false
+
+    -- dialog to show all mount data
+    StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"] = {
+        text = "",
+        button1 = "OK",
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
     --[[ -- Getting Proper Mount Info --
         --------------------------------
         1) in order to get the correct action bar button for a mount you have to get the spellID from GetMountInfoByID
@@ -536,11 +547,32 @@ function ABSync:GetMountinfo(actionID)
         Note: I could just use the mount name into the PickupSpell function but to be accurate I should get the spell name from GetSpellInfo
     ----------------------------------]]
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(actionID)
-    local spellData = C_Spell.GetSpellInfo(spellID)
-    local spellName = spellData and spellData.name or nil
+    local mountInfo = C_MountJournal.GetMountAllCreatureDisplayInfoByID(mountID)
+
+    -- instantiate a variable for the mount display id
+    local mountDisplayID = ""
+
+    -- loop over mount data and get display ID
+    for _, mountData in ipairs(mountInfo) do
+        for key, value in pairs(mountData) do
+            if key == "creatureDisplayID" then
+                mountDisplayID = value
+            end
+        end
+    end
+    -- local spellData = C_Spell.GetSpellInfo(spellID)
+    -- local spellName = spellData and spellData.name or nil
+    self:Print(("Mount Name: %s - ID: %s - Display ID: %s"):format(name, mountID, tostring(mountDisplayID)))
+
+
+    -- update dialog text with mount information
+    -- if showDialog == true then
+    --     StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"].text = ("Mount Information\nAction ID: %s\nMount ID: %s\nName: %s\nSpell ID: %s\nSpell Name: %s"):format(actionID, mountID, name, spellID, spellName)
+    --     StaticPopup_Show("ACTIONBARSYNC_MOUNT_INFO")
+    -- end
 
     -- finally return the spell name
-    return spellName
+    return {name = name, mountID = mountID, displayID = mountDisplayID}
 end
 
 --[[---------------------------------------------------------------------------
@@ -938,6 +970,10 @@ function ABSync:TriggerBackup(note)
     return backupdttm
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   UpdateActionBars
+    Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
+-----------------------------------------------------------------------------]]
 function ABSync:UpdateActionBars(backupdttm)
     -- store differences
     local differences = {}
@@ -1117,14 +1153,17 @@ function ABSync:UpdateActionBars(backupdttm)
                 end
             elseif diffData.actionType == "summonmount" then
                 -- get the mount spell name; see function details for why we get its spell name
-                local spellName = self:GetMountinfo(diffData.id)
+                -- local spellName = self:GetMountinfo(diffData.id)
                 -- if self.isLive == false then self:Print(("Mount Name for ID '%s': %s (Mount ID: %s)(Spell ID: %s)(Spell Name: %s)"):format(diffData.id, name or "Unknown/Nil", mountID, tostring(spellID), spellName or "Unknown/Nil")) end
 
+                local mountInfo = self:GetMountinfo(diffData.id)
+
                 -- if mount name is found proceed
-                if spellName then
+                if mountInfo.name then
                     -- setting an action bar button with Pickup from MountJournal doesn't work!
                     -- C_MountJournal.Pickup(tonumber(mountID))
-                    C_Spell.PickupSpell(spellName)
+                    -- C_Spell.PickupSpell(spellName)
+                    C_MountJournal.Pickup(tonumber(mountInfo.displayID))
                     PlaceAction(tonumber(diffData.buttonID))
                     ClearCursor()
                 else
