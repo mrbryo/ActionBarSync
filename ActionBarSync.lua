@@ -30,10 +30,13 @@ ABSync.blizzardTranslate = {
     ["MultiBar5"] = "Action Bar 6",
     ["MultiBar6"] = "Action Bar 7",
     ["MultiBar7"] = "Action Bar 8",
+    ["Action"] = "Action Bar 1"
 }
 
--- Initialize Event
--- ABSync.mainFrame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent)
+--[[---------------------------------------------------------------------------
+    Function:   ABSync:OnInitialize
+    Purpose:    Initialize the addon and set up default values.
+-----------------------------------------------------------------------------]]
 function ABSync:OnInitialize()
     -- debug
     if self.isLive == false then self:Print("Initializing...") end
@@ -94,7 +97,7 @@ function ABSync:OnInitialize()
                         order = 20
                     },
                     step1 = {
-                        name = "Go to Profiles and be sure you are using the profile you want to use.",
+                        name = "Go to Profiles and be sure you are using the correct profile.",
                         type = "description",
                         order = 21,
                     },
@@ -211,13 +214,13 @@ function ABSync:OnInitialize()
                     }
                 }
             },
-            barOwners = {
-                name = "Bar Owners",
-                desc = "This section shows the owners of the action bars for the current profile.",
-                type = "group",
-                order = 3,
-                args = {}
-            },
+            -- barOwners = {
+            --     name = "Bar Owners",
+            --     desc = "This section shows the owners of the action bars for the current profile.",
+            --     type = "group",
+            --     order = 3,
+            --     args = {}
+            -- },
             lastSyncErrors = {
                 name = "Last Sync Errors",
                 desc = "This section shows any errors that occurred during the last sync.",
@@ -300,22 +303,23 @@ function ABSync:OnInitialize()
         }
     }
     -- populate the barOwners
-    for index, barName in ipairs(ABSync:GetActionBarNames()) do
-        -- self:Print(("Adding Owner to Options - Bar Name: %s"):format(barName))
-        -- create a new item for each action bar
-        local newItem = {
-            name = barName,
-            type = "input",
-            order = index,
-            disabled = true,
-            get = function(info)
-                return ABSync.db.profile.barOwner[barName] or "Unknown"
-            end,
-            set = nil
-        }
-        -- add it to the barOwnersList
-        self.ActionBarSyncOptions.args.barOwners.args[barName] = newItem
-    end
+    -- for index, barName in ipairs(ABSync:GetActionBarNames()) do
+    --     -- self:Print(("Adding Owner to Options - Bar Name: %s"):format(barName))
+
+    --     -- create a new item for each action bar
+    --     local newItem = {
+    --         name = barName,
+    --         type = "input",
+    --         order = index,
+    --         disabled = true,
+    --         get = function(info)
+    --             return ABSync.db.profile.barOwner[barName] or "Unknown"
+    --         end,
+    --         set = nil
+    --     }
+    --     -- add it to the barOwnersList
+    --     self.ActionBarSyncOptions.args.barOwners.args[barName] = newItem
+    -- end
     -- get the ace db options for profile management
     self.ActionBarSyncOptions.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     -- register the options
@@ -599,7 +603,10 @@ end
 function ABSync:GetActionBarNames()
     -- check to make sure a data fetch has happened, if not return No Scan Completed
     local barNames = {}
-    if not self.db.profile.actionBars then
+    if not self.db.profile.actionBars or #self.db.profile.actionBars == 0 then
+        -- debug
+        -- self:Print("No action bars found")
+        -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
         table.insert(barNames, "No Scan Completed")
         return barNames
     end
@@ -640,19 +647,25 @@ end
 function ABSync:GetBarsToSync(key)
     -- check that actionBars variable exists
     if not self.db.profile.actionBars then
+        -- self:Print("Here1")
         self.db.profile.actionBars = {}
     end
     -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
     local barName = "Unknown"
     if self.db.profile.actionBars[key] then
         barName = self.db.profile.actionBars[key]
+        -- debug
+        -- self:Print(("(%s) Key is Bar: %s"):format("GetBarsToSync", barName))
     end
     -- check for barsToSync
     if not self.db.profile.barsToSync then
+        -- self:Print("Here3")
         self.db.profile.barsToSync = {}
     end
     -- check for the barName in barsToSync
-    return self.db.profile.barsToSync[barName] or false
+    local returnVal = self.db.profile.barsToSync[barName] or false
+    -- self:Print(("(%s) Bar '%s' set to Sync: %s"):format("GetBarsToSync", barName, returnVal and "Yes" or "No"))
+    return returnVal
 end
 
 --[[---------------------------------------------------------------------------
@@ -672,13 +685,25 @@ function ABSync:SetBarToSync(key, value)
     -- set the bars to sync
     local barName = self.db.profile.actionBars[key]
 
+    -- debug
+    -- self:Print(("(%s) Set Bar '%s' to Sync: %s"):format("SetBarToSync", barName, value and "Yes" or "No"))
+
     -- only the bar owner can uncheck an action bar, prevent other users
     local playerID = self:GetPlayerNameFormatted()
+
+    -- make sure barOwner exists
+    if not self.db.profile.barOwner then
+        self.db.profile.barOwner = {}
+    end
+
+    -- get the bar owner or set to Unknown if not found
     local barOwner = self.db.profile.barOwner[barName] or "Unknown"
+
+    -- if the player and the bar owner do not match or the bar owner is not unknown then let user know they can't uncheck this bar from syncing
     if playerID ~= barOwner and barOwner ~= "Unknown" then
         -- show popup
         StaticPopupDialogs["ACTIONBARSYNC_NOT_BAR_OWNER"] = {
-            text = "To uncheck an action bar you must be on the same character who checked it. Please view the 'Bar Owners' tab in this addon's settings.",
+            text = ("This bar (%s) is owned by '%s'; please switch to this character to uncheck it."):format(barName, barOwner),
             button1 = "OK",
             timeout = 15,
             hideOnEscape = true,
@@ -715,18 +740,13 @@ function ABSync:SetBarToSync(key, value)
         self.db.profile.barsToSync = {}
     end
 
-    -- instantiate barOwner if it doesn't exist
-    if not self.db.profile.barOwner then
-        self.db.profile.barOwner = {}
-    end
-
     -- set the bar to sync values: true or false based on the value passed into this function
     self.db.profile.barsToSync[barName] = value
     
     -- if the value is true, add the bar data to the barData table
     if value == true then
         -- set the bar owner
-        self.db.profile.barOwner[barName] = self:GetPlayerNameFormatted()
+        self.db.profile.barOwner[barName] = playerID
 
         -- based on value add or remove the bar data
         for buttonID, buttonData in pairs(self.db.profile.currentBarData[barName]) do
@@ -760,7 +780,7 @@ function ABSync:SetBarToSync(key, value)
     end
 
     -- let the user know the value is changed only when developing though
-    if self.isLive == false then self:Print("Set Bar '" .. tostring(barName) .. "' to sync? " .. (value and "Yes" or "No") .. " - Done!") end
+    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
 end
 
 --[[---------------------------------------------------------------------------
@@ -939,6 +959,8 @@ function ABSync:UpdateActionBars(backupdttm)
                             actionType = buttonData.actionType,
                             id = buttonData.id,
                             name = buttonData.name,
+                            barName = barName,
+                            position = string.match(buttonData.name, "(%d+)$") or "Unknown"
                         })
                         break
                     end
@@ -964,6 +986,9 @@ function ABSync:UpdateActionBars(backupdttm)
 
         -- loop over differences an apply changes
         for _, diffData in ipairs(differences) do
+            -- create readable button name
+            local buttonName = ("%s-Button-%d"):format(diffData.barName, diffData.position)
+
             -- get the name of the id based on action type
             if diffData.actionType == "spell" then
                 -- get spell info
@@ -980,7 +1005,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Player does not have spell '%s' with ID '%s'."):format(diffData.name, spellName, diffData.id)
+                        descr = ("(%s) Player does not have spell '%s' with ID '%s'."):format(buttonName, spellName, diffData.id)
                     })
                 -- proceed if player has the spell
                 else
@@ -998,7 +1023,7 @@ function ABSync:UpdateActionBars(backupdttm)
                             actionType = diffData.actionType,
                             id = diffData.id,
                             name = diffData.name,
-                            descr = ("(%s) Spell with ID %s for button %s not found."):format(diffData.name, diffData.id, diffData.buttonID)
+                            descr = ("(%s) Spell with ID %s for button %s not found."):format(buttonName, diffData.id, diffData.buttonID)
                         })
                     end
                 end
@@ -1028,7 +1053,7 @@ function ABSync:UpdateActionBars(backupdttm)
                             actionType = diffData.actionType,
                             id = diffData.id,
                             name = diffData.name,
-                            descr = ("(%s) Item with ID %s for button %s not found."):format(diffData.name, diffData.id, diffData.buttonID)
+                            descr = ("(%s) Item with ID %s for button %s not found."):format(buttonName, diffData.id, diffData.buttonID)
                         })
                     end
 
@@ -1039,7 +1064,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) User does not have item '%s' with ID '%s' in their bags."):format(diffData.name, checkItemName, diffData.id)
+                        descr = ("(%s) User does not have item '%s' with ID '%s' in their bags."):format(buttonName, checkItemName, diffData.id)
                     })
                 end
             elseif diffData.actionType == "macro" then
@@ -1062,7 +1087,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Macro with ID %s not found."):format(diffData.name, diffData.id)
+                        descr = ("(%s) Macro with ID %s not found."):format(buttonName, diffData.id)
                     })
 
                     -- remove if not found
@@ -1087,7 +1112,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Pet with ID %s not found."):format(diffData.name, diffData.id)
+                        descr = ("(%s) Pet with ID %s not found."):format(buttonName, diffData.id)
                     })
                 end
             elseif diffData.actionType == "summonmount" then
@@ -1109,7 +1134,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Mount with ID %s for button %s not found."):format(spellName, diffData.id, diffData.buttonID)
+                        descr = ("(%s) Mount with ID %s not found."):format(buttonName, diffData.id)
                     })
                 end
 
@@ -1186,6 +1211,9 @@ function ABSync:GetActionBarData()
             -- make up a name for each bar using the button names by removing the button number
             local barName = string.gsub(btnName, "Button%d+$", "")
 
+            -- translate barName into the blizzard visible name in settings for the bars
+            local barName = ABSync.blizzardTranslate[barName] or "Unknown"
+
             -- get action ID and type information
             local actionID = btnData:GetPagedID()
 
@@ -1261,6 +1289,42 @@ function ABSync:GetActionBarData()
     self.db.char.lastScan = date("%Y-%m-%d %H:%M:%S")
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
+    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+        local playerID = self:GetPlayerNameFormatted()
+        local barOwner = self.db.profile.barOwner[barName] or "Unknown"
+        if playerID == barOwner then
+            -- get the bar index
+            local barIndex = nil
+            for index, name in ipairs(self.db.profile.actionBars) do
+                if name == barName then
+                    barIndex = index
+                    break
+                end
+            end
+            -- trigger the profile sync
+            self:SetBarToSync(barIndex, syncOn)
+        end
+    end
+
+    -- sync actionBars to barsToSync
+    for _, barName in ipairs(self.db.profile.actionBars) do
+        -- instantiate barsToSync if it doesn't exist
+        if not self.db.profile.barsToSync then
+            self.db.profile.barsToSync = {}
+        end
+
+        -- if the barName is not in barsToSync then add it with default value of false
+        if not self.db.profile.barsToSync[barName] then
+            self.db.profile.barsToSync[barName] = false
+        end
+
+        -- if the bar is not in barOwner then add it with default value of "Unknown"
+        if not self.db.profile.barOwner[barName] then
+            self.db.profile.barOwner[barName] = "Unknown"
+        end
+    end
+
+    -- if the current character is the barOwner then update the barData to sync
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
         local playerID = self:GetPlayerNameFormatted()
         local barOwner = self.db.profile.barOwner[barName] or "Unknown"
