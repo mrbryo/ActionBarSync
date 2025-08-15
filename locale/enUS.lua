@@ -38,7 +38,7 @@ L["cancel"] = "Cancel"
 L["enabled"] = "Enabled"
 L["disabled"] = "Disabled"
 
--- Options
+-- function OnInitialize
 L["actionbarsynctitle"] = "Action Bar Sync"
 L["syncsettings"] = "Sync Settings"
 L["syncsettingsdesc"] = "See directions and current sync settings."
