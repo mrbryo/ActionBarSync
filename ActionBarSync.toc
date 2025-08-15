@@ -11,5 +11,11 @@
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
 ## OptionalDeps: Ace3
 
+## Language Files
+locale\enUS.lua
+
+## Main
 ActionBarSync.lua
+
+## Libraries
 StandardFunctions.lua

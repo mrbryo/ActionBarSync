@@ -6,31 +6,35 @@
 -----------------------------------------------------------------------------]]
 
 -- Instantiate variable to hold functionality!
-local ABSync = LibStub("AceAddon-3.0"):NewAddon("Action Bar Sync", "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0") -- "AceConfig-3.0"
+local ABSync = LibStub("AceAddon-3.0"):NewAddon("Action Bar Sync", "AceHook-3.0", "AceConsole-3.0", "AceEvent-3.0") -- "AceConfig-3.0"
 _G.ABSync = ABSync
 
-ABSync.optionLocName = "AddonBarSync"
+ABSync.optionLocName = "ActionBarSync"
 ABSync.isLive = false
+
+-- enable localization
+ABSync.localeSilent = false
+local L = LibStub("AceLocale-3.0"):GetLocale(ABSync.optionLocName, ABSync.localeSilent)
 
 -- lookup values for action button lookup
 ABSync.actionTypeLookup = {
-    ["spell"] = "Spell",
-    ["item"] = "Item",
-    ["macro"] = "Macro",
-    ["summonpet"] = "Pet",
-    ["summonmount"] = "Mount"
+    ["spell"] = L["spell"],
+    ["item"] = L["item"],
+    ["macro"] = L["macro"],
+    ["summonpet"] = L["summonpet"],
+    ["summonmount"] = L["summonmount"]
 }
 
 -- translate blizzard Action Bar settings names to LUA Code Names
 ABSync.blizzardTranslate = {
-    ["MultiBarBottomLeft"] = "Action Bar 2",
-    ["MultiBarBottomRight"] = "Action Bar 3",
-    ["MultiBarRight"] = "Action Bar 4",
-    ["MultiBarLeft"] = "Action Bar 5",
-    ["MultiBar5"] = "Action Bar 6",
-    ["MultiBar6"] = "Action Bar 7",
-    ["MultiBar7"] = "Action Bar 8",
-    ["Action"] = "Action Bar 1"
+    ["MultiBarBottomLeft"] = L["actionbar2"],
+    ["MultiBarBottomRight"] = L["actionbar3"],
+    ["MultiBarRight"] = L["actionbar4"],
+    ["MultiBarLeft"] = L["actionbar5"],
+    ["MultiBar5"] = L["actionbar6"],
+    ["MultiBar6"] = L["actionbar7"],
+    ["MultiBar7"] = L["actionbar8"],
+    ["Action"] = L["actionbar1"]
 }
 
 --[[---------------------------------------------------------------------------
@@ -38,8 +42,9 @@ ABSync.blizzardTranslate = {
     Purpose:    Initialize the addon and set up default values.
 -----------------------------------------------------------------------------]]
 function ABSync:OnInitialize()
-    -- debug
-    if self.isLive == false then self:Print("Initializing...") end
+    --@debug@
+    if self.isLive == false then self:Print(L["initializing"]) end
+    --@end-debug@
 
     -- Instantiate Standard Functions
     local StdFuncs = ABSync:GetModule("StandardFunctions")
@@ -58,9 +63,9 @@ function ABSync:OnInitialize()
             lastSynced = "",
             syncErrors = {},
             lastSyncErrorDttm = "",
-            lastScan = "Never",
+            lastScan = L["never"],
             actionLookup = {
-                type = "spell",
+                type = "spell",         -- language independent
                 id = "",
                 name = ""
             }
@@ -71,48 +76,48 @@ function ABSync:OnInitialize()
 
     -- Instantiate Option Table
     self.ActionBarSyncOptions = {
-        name = "Action Bar Sync",
+        name = L["actionbarsynctitle"],
         handler = ABSync,
         type = "group",
         args = {
             syncsettings = {
-                name = "Sync Settings",
-                desc = "See directions and current sync settings.",
+                name = L["syncsettings"],
+                desc = L["syncsettingsdesc"],
                 type = "group",
                 order = 1,
                 args = {
                     hdr1 = {
-                        name = "Introduction",
+                        name = L["introduction"],
                         type = "header",
                         order = 10
                     },
                     intro = {
-                        name = "This addon allows you to sync selected action bars across characters.",
+                        name = L["introname"],
                         type = "description",
                         order = 11
                     },
                     step1hdr = {
-                        name = "Step 1",
+                        name = L["step1hdr"],
                         type = "header",
                         order = 20
                     },
                     step1 = {
-                        name = "Go to Profiles and be sure you are using the correct profile.",
+                        name = L["step1desc"],
                         type = "description",
                         order = 21,
                     },
                     step2hdr = {
-                        name = "Step 2",
+                        name = L["step2hdr"],
                         type = "header",
                         order = 30
                     },
                     step2 = {
-                        name = "Click the Scan button. This will capture your current action bars and buttons.",
+                        name = L["step2desc"],
                         type = "description",
                         order = 31,
                     },
                     scan = {
-                        name = "Scan",
+                        name = L["scan"],
                         type = "execute",
                         order = 32,
                         func = function()
@@ -120,27 +125,27 @@ function ABSync:OnInitialize()
                         end
                     },
                     lastscan = {
-                        name = "Last Scan on this Character",
-                        desc = "Last time an action bar scan was completed.",
+                        name = L["lastscanname"],
+                        desc = L["lastscandescr"],
                         type = "input",
                         order = 33,
                         disabled = true,
                         get = function(info)
-                            return ABSync.db.char.lastScan or "Never"
+                            return ABSync.db.char.lastScan or L["never"]
                         end,
                     },
                     step3hdr = {
-                        name = "Step 3",
+                        name = L["step3hdr"],
                         type = "header",
                         order = 40
                     },
                     step3 = {
-                        name = "Indicate which action bars to sync.",
+                        name = L["step3desc"],
                         type = "description",
                         order = 41,
                     },
                     bars2sync = {
-                        name = "Bars to Sync",
+                        name = L["bars2sync"],
                         values = function(info, value)
                             return ABSync:GetActionBarNames()
                         end,
@@ -154,17 +159,17 @@ function ABSync:OnInitialize()
                         end
                     },
                     finalhdr = {
-                        name = "Final Step",
+                        name = L["finalhdr"],
                         type = "header",
                         order = 110
                     },
                     finaldescr = {
-                        name = "Finally, review and update the settings below.",
+                        name = L["finaldescr"],
                         type = "description",
                         order = 111,
                     },
                     finalstep = {
-                        name = "Check bars after logging into a character.",
+                        name = L["finalstep"],
                         width = "full",
                         type = "toggle",
                         order = 112,
@@ -182,20 +187,20 @@ function ABSync:OnInitialize()
                 }
             },
             sync = {
-                name = "Sync!",
-                desc = "Trigger a sync and/or restore from a backup.",
+                name = L["synctitle"],
+                desc = L["synctitledesc"],
                 type = "group",
                 order = 2,
                 args = {
                     triggerhdr = {
-                        name = "Perform a Sync",
+                        name = L["triggerhdr"],
                         type = "header",
                         order = 1
                     },
                     lastupdated = {
-                        name = "Last Synced on this Character",
+                        name = L["lastupdatedname"],
                         width = "full",
-                        desc = "The last time the action bars were synced on this character.",
+                        desc = L["lastupdateddesc"],
                         type = "input",
                         order = 2,
                         get = function(info)
@@ -204,8 +209,8 @@ function ABSync:OnInitialize()
                         disabled = true
                     },
                     trigger = {
-                        name = "Start!",
-                        desc = "Sync your action bars with the current profile.",
+                        name = L["triggername"],
+                        desc = L["triggerdesc"],
                         type = "execute",
                         order = 3,
                         func = function()
@@ -214,16 +219,9 @@ function ABSync:OnInitialize()
                     }
                 }
             },
-            -- barOwners = {
-            --     name = "Bar Owners",
-            --     desc = "This section shows the owners of the action bars for the current profile.",
-            --     type = "group",
-            --     order = 3,
-            --     args = {}
-            -- },
             lastSyncErrors = {
-                name = "Last Sync Errors",
-                desc = "This section shows any errors that occurred during the last sync.",
+                name = L["lastsyncerrorsname"],
+                desc = L["lastsyncerrorsdesc"],
                 type = "group",
                 order = 4,
                 args = {
@@ -238,20 +236,20 @@ function ABSync:OnInitialize()
                 }
             },
             actionlookup = {
-                name = "Action ID Lookup",
-                desc = "This section allows you to look up actions by ID.",
+                name = L["actionlookupname"],
+                desc = L["actionlookupdesc"],
                 type = "group",
                 order = 5,
                 args = {
                     intro = {
-                        name = "This section allows you to look up actions by type and ID or Name.",
+                        name = L["actionlookupintro"],
                         type = "description",
                         order = 0,
                         width = "full",
                     },
                     objectname = {
-                        name = "Action Name",
-                        desc = "Enter the exact name of the action you want to look up.",
+                        name = L["objectname"],
+                        desc = L["objectnamedesc"],
                         type = "input",
                         width = "full",
                         order = 1,
@@ -263,8 +261,8 @@ function ABSync:OnInitialize()
                         end
                     },
                     actionID = {
-                        name = "Action ID",
-                        desc = "The ID of the item you want to look up.",
+                        name = L["actionidname"],
+                        desc = L["actioniddesc"],
                         type = "input",
                         order = 2,
                         get = function(info)
@@ -275,8 +273,8 @@ function ABSync:OnInitialize()
                         end
                     },
                     actionType = {
-                        name = "Action Type",
-                        desc = "The type of the action you want to look up.",
+                        name = L["actiontypename"],
+                        desc = L["actiontypedesc"],
                         type = "select",
                         order = 3,
                         values = function()
@@ -290,8 +288,8 @@ function ABSync:OnInitialize()
                         end
                     },
                     lookupButton = {
-                        name = "Lookup",
-                        desc = "Click to look up the action.",
+                        name = L["lookupbuttonname"],
+                        desc = L["lookupbuttondesc"],
                         type = "execute",
                         order = 4,
                         func = function()
@@ -302,36 +300,25 @@ function ABSync:OnInitialize()
             }
         }
     }
-    -- populate the barOwners
-    -- for index, barName in ipairs(ABSync:GetActionBarNames()) do
-    --     -- self:Print(("Adding Owner to Options - Bar Name: %s"):format(barName))
-
-    --     -- create a new item for each action bar
-    --     local newItem = {
-    --         name = barName,
-    --         type = "input",
-    --         order = index,
-    --         disabled = true,
-    --         get = function(info)
-    --             return ABSync.db.profile.barOwner[barName] or "Unknown"
-    --         end,
-    --         set = nil
-    --     }
-    --     -- add it to the barOwnersList
-    --     self.ActionBarSyncOptions.args.barOwners.args[barName] = newItem
-    -- end
+   
     -- get the ace db options for profile management
     self.ActionBarSyncOptions.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+    
     -- register the options
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ABSync.optionLocName, self.ActionBarSyncOptions)
+    
     -- create a title for the addon option section
-    local optionsTitle = "Addon Bar Sync"
+    local optionsTitle = L["actionbarsynctitle"]
+    
     -- add the options to the ui
     self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ABSync.optionLocName, optionsTitle, nil)
+    
     -- register some slash commands
-    self:RegisterChatCommand("abs", "SlashCommand")
-    -- leave at end of function
-    if self.isLive == false then self:Print("Initialized") end
+    -- self:RegisterChatCommand("abs", "SlashCommand")
+    
+    --@debug@ leave at end of function
+    if self.isLive == false then self:Print(L["initialized"]) end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -389,7 +376,7 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   GetLastActionType
-    Purpose:    Get the last action type for the current character.
+    Purpose:    Get the last action type for the current character. Defaults to "spell" if never set.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionType()
     if not self.db.char.actionLookup then
@@ -420,7 +407,7 @@ function ABSync:LookupAction()
     -- dialog to show results
     StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"] = {
         text = "",
-        button1 = "OK",
+        button1 = L["ok"],
         timeout = 0,
         hideOnEscape = true,
         preferredIndex = 3,
@@ -432,15 +419,16 @@ function ABSync:LookupAction()
     -- get the action ID
     local actionID = self:GetLastActionID()
 
-    -- debug
-    if self.isLive == false then self:Print(("Looking up Action - Type: %s - ID: %s"):format(actionType, actionID)) end
+    --@debug@
+    -- "Looking up Action - Type: %s - ID: %s"
+    if self.isLive == false then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
+    --@end-debug@
 
     -- check for valid action type
     if not self.actionTypeLookup[actionType] then
-        self:Print("")
         StaticPopupDialogs["ACTIONBARSYNC_INVALID_ACTION_TYPE"] = {
-            text = "Invalid Action Type. Please enter/select a valid action type.",
-            button1 = "OK",
+            text = L["invalidactiontype"],
+            button1 = L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -456,19 +444,19 @@ function ABSync:LookupAction()
     if actionType == "spell" then
         -- get spell info
         local spellData = C_Spell.GetSpellInfo(actionID)
-        local spellName = spellData and spellData.name or "Unknown"
+        local spellName = spellData and spellData.name or L["unknown"]
 
         -- assign to field
         self:SetLastActionName(spellName)
 
         -- determine if player has the spell, if not report error
-        local hasSpell = C_Spell.IsCurrentSpell(actionID) and "Yes" or "No"
+        local hasSpell = C_Spell.IsCurrentSpell(actionID) and L["yes"] or L["no"]
 
         -- generate message
-        dialogMessage = ("Spell Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, spellName, hasSpell)
+        dialogMessage = (L["spelllookupresult"]):format(actionID, spellName, hasSpell)
     elseif actionType == "item" then
+        -- get item info
         local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(actionID)
-        -- self:Print(("Item Name for ID '%s': %s"):format(actionID, itemName or "Unknown/Nil"))
 
         -- does player have the item
         local itemCount = C_Item.GetItemCount(actionID)
@@ -477,38 +465,38 @@ function ABSync:LookupAction()
         self:SetLastActionName(itemName)
 
         -- generate message
-        local hasItem = (itemCount > 0) and "Yes" or "No"
-        dialogMessage = ("Item Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, itemName, hasItem)
+        local hasItem = (itemCount > 0) and L["yes"] or L["no"]
+        dialogMessage = (L["itemlookupresult"]):format(actionID, itemName, hasItem)
     elseif actionType == "macro" then
         -- get macro information: name, iconTexture, body, isLocal
         local macroName, macroIcon, macroBody = GetMacroInfo(actionID)
 
         -- does player have this macro?
-        local hasMacro = macroName and "Yes" or "No"
+        local hasMacro = macroName and L["yes"] or L["no"]
 
         -- fix macroName for output
-        macroName = macroName or "Unknown"
+        macroName = macroName or L["unknown"]
 
         -- assign to field
         self:SetLastActionName(macroName)
 
         -- generate message
-        dialogMessage = ("Macro Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, macroName, hasMacro)
+        dialogMessage = (L["macrolookupresult"]):format(actionID, macroName, hasMacro)
     elseif actionType == "summonpet" then
         -- get pet information
         local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(actionID)
 
         -- check if has pet
-        local hasPet = name and "Yes" or "No"
+        local hasPet = name and L["yes"] or L["no"]
 
         -- assign to field
         self:SetLastActionName(name)        
 
         -- generate message
-        dialogMessage = ("Pet Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, name, hasPet)
+        dialogMessage = (L["petlookupresult"]):format(actionID, name, hasPet)
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
-        local mountInfo = self:GetMountinfo(actionID, true)
+        local mountInfo = self:GetMountinfo(actionID)
 
         -- has mount
         local hasMount = mountInfo.name and "Yes" or "No"
@@ -517,16 +505,19 @@ function ABSync:LookupAction()
         self:SetLastActionName(mountInfo.name)
 
         -- generate message
-        dialogMessage = ("Mount Lookup Result\nID: %s\nName: %s\nHas: %s"):format(actionID, mountInfo.name, hasMount)
+        dialogMessage = (L["mountlookupresult"]):format(actionID, mountInfo.name, hasMount)
     end
 
     -- show results in dialog
-    -- local actionTypeLabel = self.actionTypeLookup[actionType] or "Unknown"
     StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"].text = dialogMessage
     StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
 end
 
-function ABSync:GetMountinfo(actionID, showDialog)
+--[[---------------------------------------------------------------------------
+    Function:   GetMountinfo
+    Purpose:    Retrieve mount information based on the action ID.
+-----------------------------------------------------------------------------]]
+function ABSync:GetMountinfo(actionID)
     -- defaults
     showDialog = showDialog or false
 
@@ -538,15 +529,11 @@ function ABSync:GetMountinfo(actionID, showDialog)
         whileDead = true,
         hideOnEscape = true,
     }
-    --[[ -- Getting Proper Mount Info --
-        --------------------------------
-        1) in order to get the correct action bar button for a mount you have to get the spellID from GetMountInfoByID
-        2) use the spellID to get the spell information from GetSpellInfo
-        3) pass the spell name into PickupSpell, just like actionType "spell" and then place this spell into the button
-        ---
-        Note: I could just use the mount name into the PickupSpell function but to be accurate I should get the spell name from GetSpellInfo
-    ----------------------------------]]
+    
+    -- first call to get mount information based on the action bar action id
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(actionID)
+
+    -- then get additional details on the mount
     local mountInfo = C_MountJournal.GetMountAllCreatureDisplayInfoByID(mountID)
 
     -- instantiate a variable for the mount display id
@@ -560,16 +547,10 @@ function ABSync:GetMountinfo(actionID, showDialog)
             end
         end
     end
-    -- local spellData = C_Spell.GetSpellInfo(spellID)
-    -- local spellName = spellData and spellData.name or nil
-    self:Print(("Mount Name: %s - ID: %s - Display ID: %s"):format(name, mountID, tostring(mountDisplayID)))
 
-
-    -- update dialog text with mount information
-    -- if showDialog == true then
-    --     StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"].text = ("Mount Information\nAction ID: %s\nMount ID: %s\nName: %s\nSpell ID: %s\nSpell Name: %s"):format(actionID, mountID, name, spellID, spellName)
-    --     StaticPopup_Show("ACTIONBARSYNC_MOUNT_INFO")
-    -- end
+    --@debug@
+    if self.isLive == false then self:Print((L["getmountinfolookup"]):format(name, mountID, tostring(mountDisplayID))) end
+    --@end-debug@
 
     -- finally return the spell name
     return {name = name, mountID = mountID, displayID = mountDisplayID}
@@ -583,30 +564,23 @@ function ABSync:GetErrorText()
     -- instantiate variable to all all error messages
     local text = ""
 
-    -- debug
-    -- self:Print("here1")
-
     -- check variable exists
     if not self.db.char.syncErrors then
-        -- self:Print("here2")
-        return "No Errors Found"
+        return L["noerrorsfound"]
     end
 
     -- check variable exists
     if not self.db.char.lastSyncErrorDttm then
-        -- self:Print("here2")
-        return "No Errors Found"
+        return L["noerrorsfound"]
     end
 
     -- check for any sync errors
     if #self.db.char.syncErrors == 0 then
-        -- self:Print("here3")
-        return "No Errors Found"
+        return L["noerrorsfound"]
     end
 
     -- loop over error data
     for _, errorRcd in ipairs(self.db.char.syncErrors) do
-        -- self:Print("here loop")
         -- check key matches last sync dttm
         if errorRcd.key == self.db.char.lastSyncErrorDttm then            
             -- loop over each error message and concat to variable
@@ -620,9 +594,6 @@ function ABSync:GetErrorText()
             end
         end
     end
-
-    -- debug
-    -- self:Print("here4")
 
     -- finally return the text
     return text
@@ -639,7 +610,7 @@ function ABSync:GetActionBarNames()
         -- debug
         -- self:Print("No action bars found")
         -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
-        table.insert(barNames, "No Scan Completed")
+        table.insert(barNames, L["noscancompleted"])
         return barNames
     end
 
@@ -657,16 +628,13 @@ function ABSync:GetLastSyncedOnChar()
 
     -- check for nil or blank
     if not self.db.char.lastSynced or self.db.char.lastSynced == "" or self.db.char.lastSynced == nil then
-        response = "Never"
+        response = L["never"]
 
     -- return the last synced time
     else
         -- if last synced time exists then return the formatted date
         response = self.db.char.lastSynced
     end
-
-    -- test
-    -- self:Print(("Last Synced On Character: %s"):format(response))
 
     -- finally return data
     return response
@@ -679,24 +647,21 @@ end
 function ABSync:GetBarsToSync(key)
     -- check that actionBars variable exists
     if not self.db.profile.actionBars then
-        -- self:Print("Here1")
         self.db.profile.actionBars = {}
     end
     -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
-    local barName = "Unknown"
+    local barName = L["unknown"]
     if self.db.profile.actionBars[key] then
         barName = self.db.profile.actionBars[key]
-        -- debug
-        -- self:Print(("(%s) Key is Bar: %s"):format("GetBarsToSync", barName))
     end
     -- check for barsToSync
     if not self.db.profile.barsToSync then
-        -- self:Print("Here3")
         self.db.profile.barsToSync = {}
     end
     -- check for the barName in barsToSync
     local returnVal = self.db.profile.barsToSync[barName] or false
-    -- self:Print(("(%s) Bar '%s' set to Sync: %s"):format("GetBarsToSync", barName, returnVal and "Yes" or "No"))
+
+    -- finally return a value
     return returnVal
 end
 
@@ -717,9 +682,6 @@ function ABSync:SetBarToSync(key, value)
     -- set the bars to sync
     local barName = self.db.profile.actionBars[key]
 
-    -- debug
-    -- self:Print(("(%s) Set Bar '%s' to Sync: %s"):format("SetBarToSync", barName, value and "Yes" or "No"))
-
     -- only the bar owner can uncheck an action bar, prevent other users
     local playerID = self:GetPlayerNameFormatted()
 
@@ -735,7 +697,7 @@ function ABSync:SetBarToSync(key, value)
     if playerID ~= barOwner and barOwner ~= "Unknown" then
         -- show popup
         StaticPopupDialogs["ACTIONBARSYNC_NOT_BAR_OWNER"] = {
-            text = ("This bar (%s) is owned by '%s'; please switch to this character to uncheck it."):format(barName, barOwner),
+            text = (L["actionbarsync_not_bar_owner_text"]):format(barName, barOwner),
             button1 = "OK",
             timeout = 15,
             hideOnEscape = true,
@@ -754,8 +716,8 @@ function ABSync:SetBarToSync(key, value)
     -- if currentBarData is emtpy then let user know they must trigger a sync first
     if currentBarDataCount == 0 then
         StaticPopupDialogs["ACTIONBARSYNC_NO_SCAN"] = {
-            text = "In order to keep the save data at a minimum current bar settings are not retained. You must click the Scan button before you can change sync settings.",
-            button1 = "OK",
+            text = L["actionbarsync_no_scan_text"],
+            button1 = L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -764,9 +726,10 @@ function ABSync:SetBarToSync(key, value)
         return
     end
 
-    -- debugging
+    --@debug@
     -- if self.isLive == false then self:Print("Set Bar '" .. tostring(barName) .. "' to sync? " .. (value and "Yes" or "No") .. " - Starting...") end
-    
+    --@end-debug@
+
     -- instantiate barsToSync if it doesn't exist
     if not self.db.profile.barsToSync then
         self.db.profile.barsToSync = {}
@@ -782,10 +745,6 @@ function ABSync:SetBarToSync(key, value)
 
         -- based on value add or remove the bar data
         for buttonID, buttonData in pairs(self.db.profile.currentBarData[barName]) do
-            -- debug
-            -- if self.isLive == false then
-            --     self:Print(("Processing Button - Bar: %s - Name: %s - ID: %s"):format(barName, buttonData.name, buttonID))
-            -- end
             -- make sure barData exists
             if not self.db.profile.barData then
                 self.db.profile.barData = {}
@@ -811,8 +770,9 @@ function ABSync:SetBarToSync(key, value)
         self.db.profile.barOwner[barName] = nil
     end
 
-    -- let the user know the value is changed only when developing though
-    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
+    --@debug@ let the user know the value is changed only when developing though
+    if self.isLive == false then self:Print((L["setbartosync_final_notification"]):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -827,9 +787,9 @@ end
 function ABSync:BeginSync()
     -- add dialog to ask for backup reason
     StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NOTE"] = {
-        text = "Enter a note for this backup:",
-        button1 = "OK",
-        button2 = "Cancel",
+        text = L["actionbarsync_backup_note_text"],
+        button1 = L["ok"],
+        button2 = L["cancel"],
         hasEditBox = true,
         maxLetters = 64,
         OnAccept = function(self)
@@ -844,7 +804,7 @@ function ABSync:BeginSync()
             StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
         end,
         OnShow = function(self)
-            self.EditBox:SetText("Because...")
+            self.EditBox:SetText(L["beginsyncdefaultbackupreason"])
             self.EditBox:SetFocus()
         end,
         timeout = 0,
@@ -855,8 +815,8 @@ function ABSync:BeginSync()
 
     -- add dialog to let user know sync was cancelled
     StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
-        text = "Action Bar Sync has been cancelled.",
-        button1 = "OK",
+        text = L["actionbarsync_sync_cancelled_text"],
+        button1 = L["ok"],
         timeout = 15,
         hideOnEscape = true,
         preferredIndex = 3,
@@ -864,8 +824,8 @@ function ABSync:BeginSync()
 
     -- add dialog to let user know they must select bars to sync first
     StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
-        text = "You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some.",
-        button1 = "OK",
+        text = L["actionbarsync_no_syncbars_text"],
+        button1 = L["ok"],
         timeout = 15,
         whileDead = true,
         hideOnEscape = true,
@@ -924,8 +884,9 @@ function ABSync:TriggerBackup(note)
     local syncDataFound = false
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
         if syncOn == true then
-            -- debug
-            if self.isLive == false then self:Print(("Backing Up Action Bar '%s'..."):format(barName)) end
+            --@debug@
+            if self.isLive == false then self:Print((L["triggerbackup_notify"]):format(barName)) end
+            --@end-debug@
 
             -- make sync data found
             syncDataFound = true
@@ -942,7 +903,7 @@ function ABSync:TriggerBackup(note)
 
     -- add error if no sync data found
     if syncDataFound == false then
-        table.insert(errors, "No sync data found for backup.")
+        table.insert(errors, L["triggerbackup_no_sync_data_found"])
     end
 
     -- count number of backups
@@ -962,17 +923,20 @@ function ABSync:TriggerBackup(note)
     -- add backup to db
     local backupEntry = {
         dttm = backupdttm,
-        note = note or "No note provided!",
+        note = note or L["triggerbackup_no_note_provided"],
         error = errors,
         data = backupData,
     }
     table.insert(self.db.char.backup, backupEntry)
+
+    -- finally return a value
     return backupdttm
 end
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateActionBars
     Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
+    Todo:       Streamline this fuction to use LookUp action to remove duplicated code.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateActionBars(backupdttm)
     -- store differences
@@ -996,7 +960,7 @@ function ABSync:UpdateActionBars(backupdttm)
                             id = buttonData.id,
                             name = buttonData.name,
                             barName = barName,
-                            position = string.match(buttonData.name, "(%d+)$") or "Unknown"
+                            position = string.match(buttonData.name, "(%d+)$") or L["unknown"],
                         })
                         break
                     end
@@ -1009,8 +973,8 @@ function ABSync:UpdateActionBars(backupdttm)
     if differencesFound == false then
         -- show popup telling user no differences found
         StaticPopupDialogs["ACTIONBARSYNC_NO_DIFFS_FOUND"] = {
-            text = "For the action bars flagged for syncing, no differences were found.",
-            button1 = "OK",
+            text = L["actionbarsync_no_diffs_found_text"],
+            button1 = L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -1023,13 +987,13 @@ function ABSync:UpdateActionBars(backupdttm)
         -- loop over differences an apply changes
         for _, diffData in ipairs(differences) do
             -- create readable button name
-            local buttonName = ("%s-Button-%d"):format(diffData.barName, diffData.position)
+            local buttonName = (L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
 
             -- get the name of the id based on action type
             if diffData.actionType == "spell" then
                 -- get spell info
                 local spellData = C_Spell.GetSpellInfo(diffData.id)
-                local spellName = spellData and spellData.name or "Unknown"
+                local spellName = spellData and spellData.name or L["unknown"]
 
                 -- determine if player has the spell, if not report error
                 local hasSpell = C_Spell.IsCurrentSpell(diffData.id) or false
@@ -1041,12 +1005,11 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Player does not have spell '%s' with ID '%s'."):format(buttonName, spellName, diffData.id)
+                        descr = (L["updateactionbars_player_doesnot_have_spell"]):format(buttonName, spellName, diffData.id)
                     })
+
                 -- proceed if player has the spell
-                else
-                    -- self:Print(("Spell Name for ID '%s': %s"):format(diffData.id, spellName))
-                    
+                else                    
                     if spellName then
                         -- set the action bar button to the spell
                         C_Spell.PickupSpell(spellName)
@@ -1059,7 +1022,7 @@ function ABSync:UpdateActionBars(backupdttm)
                             actionType = diffData.actionType,
                             id = diffData.id,
                             name = diffData.name,
-                            descr = ("(%s) Spell with ID %s for button %s not found."):format(buttonName, diffData.id, diffData.buttonID)
+                            descr = (L["updateactionbars_spell_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
                         })
                     end
                 end
@@ -1067,10 +1030,11 @@ function ABSync:UpdateActionBars(backupdttm)
                 local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(diffData.id)
 
                 -- need a string as itemName or error occurs if the item actually doesn't exist
-                local checkItemName = itemName or "Unknown/Nil"
+                local checkItemName = itemName or L["unknown"]
 
-                -- debug
-                self:Print(("Item Name for ID '%s': %s"):format(diffData.id, checkItemName))
+                --@debug@
+                if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(diffData.id, checkItemName)) end
+                --@end-debug@
 
                 -- does player have the item
                 local itemCount = C_Item.GetItemCount(diffData.id)
@@ -1089,7 +1053,7 @@ function ABSync:UpdateActionBars(backupdttm)
                             actionType = diffData.actionType,
                             id = diffData.id,
                             name = diffData.name,
-                            descr = ("(%s) Item with ID %s for button %s not found."):format(buttonName, diffData.id, diffData.buttonID)
+                            descr = (L["updateactionbars_item_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
                         })
                     end
 
@@ -1100,13 +1064,12 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) User does not have item '%s' with ID '%s' in their bags."):format(buttonName, checkItemName, diffData.id)
+                        descr = (L["updateactionbars_user_doesnot_have_item"]):format(buttonName, checkItemName, diffData.id)
                     })
                 end
             elseif diffData.actionType == "macro" then
                 -- get macro information: name, iconTexture, body, isLocal
                 local macroName = GetMacroInfo(diffData.id)
-                -- self:Print(("Macro Name for ID '%s': %s"):format(diffData.id, macroName))
 
                 -- if macro name is found proceed
                 if macroName then
@@ -1123,7 +1086,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Macro with ID %s not found."):format(buttonName, diffData.id)
+                        descr = (L["updateactionbars_macro_not_found"]):format(buttonName, diffData.id)
                     })
 
                     -- remove if not found
@@ -1133,7 +1096,6 @@ function ABSync:UpdateActionBars(backupdttm)
             elseif diffData.actionType == "summonpet" then
                 -- get pet information
                 local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(diffData.id)
-                -- self:Print(("Pet Name for ID '%s': %s"):format(diffData.id, name or "Unknown/Nil"))
 
                 -- if pet name is found proceed
                 if name then
@@ -1148,21 +1110,16 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Pet with ID %s not found."):format(buttonName, diffData.id)
+                        descr = (L["updateactionbars_pet_not_found"]):format(buttonName, diffData.id)
                     })
                 end
             elseif diffData.actionType == "summonmount" then
                 -- get the mount spell name; see function details for why we get its spell name
-                -- local spellName = self:GetMountinfo(diffData.id)
-                -- if self.isLive == false then self:Print(("Mount Name for ID '%s': %s (Mount ID: %s)(Spell ID: %s)(Spell Name: %s)"):format(diffData.id, name or "Unknown/Nil", mountID, tostring(spellID), spellName or "Unknown/Nil")) end
-
                 local mountInfo = self:GetMountinfo(diffData.id)
 
                 -- if mount name is found proceed
                 if mountInfo.name then
                     -- setting an action bar button with Pickup from MountJournal doesn't work!
-                    -- C_MountJournal.Pickup(tonumber(mountID))
-                    -- C_Spell.PickupSpell(spellName)
                     C_MountJournal.Pickup(tonumber(mountInfo.displayID))
                     PlaceAction(tonumber(diffData.buttonID))
                     ClearCursor()
@@ -1173,7 +1130,7 @@ function ABSync:UpdateActionBars(backupdttm)
                         actionType = diffData.actionType,
                         id = diffData.id,
                         name = diffData.name,
-                        descr = ("(%s) Mount with ID %s not found."):format(buttonName, diffData.id)
+                        descr = (L["updateactionbars_mount_not_found"]):format(buttonName, diffData.id)
                     })
                 end
 
@@ -1200,8 +1157,9 @@ function ABSync:UpdateActionBars(backupdttm)
 
         -- store errors
         if #errors > 0 then
-            -- debug
-            if self.isLive == false then self:Print(("Action Bar Sync encountered errors during a sync; key: '%s':"):format(backupdttm)) end
+            --@debug@
+            if self.isLive == false then self:Print((L["actionbarsync_sync_errors_found"]):format(backupdttm)) end
+            --@end-debug@
 
             -- make sure syncErrors exists
             if not self.db.char.syncErrors then
@@ -1246,12 +1204,13 @@ function ABSync:GetActionBarData()
     -- get action bar details
     for btnName, btnData in pairs(_G) do
         -- filter out by proper naming of the action bars done by blizzard
+        -- need to know if this changes based on language!
         if string.find(btnName, "^ActionButton%d+$") or string.find(btnName, "^MultiBarBottomLeftButton%d+$") or string.find(btnName, "^MultiBarBottomRightButton%d+$") or string.find(btnName, "^MultiBarLeftButton%d+$") or string.find(btnName, "^MultiBarRightButton%d+$") or string.find(btnName, "^MultiBar%d+Button%d+$") then
             -- make up a name for each bar using the button names by removing the button number
-            local barName = string.gsub(btnName, "Button%d+$", "")
+            local barName = string.gsub(btnName, L["getactionbardata_button_name_template"], "")
 
             -- translate barName into the blizzard visible name in settings for the bars
-            local barName = ABSync.blizzardTranslate[barName] or "Unknown"
+            local barName = ABSync.blizzardTranslate[barName] or L["unknown"]
 
             -- get action ID and type information
             local actionID = btnData:GetPagedID()
@@ -1259,7 +1218,8 @@ function ABSync:GetActionBarData()
             -- get action type and ID information
             local actionType, id, subType = GetActionInfo(actionID)
 
-            -- debug if no action info returned
+            --@debug@
+            -- debug when if no action info returned
             -- if self.isLive == false and (not actionType or not id or not subType) then
             --     local missingValues = {}
             --     if not actionType then table.insert(missingValues, "Action Type") end
@@ -1267,14 +1227,15 @@ function ABSync:GetActionBarData()
             --     if not subType then table.insert(missingValues, "Sub Type") end
             --     self:Print(("Action Bar Button '%s' is missing the following: %s"):format(btnName, table.concat(missingValues, ", ")))
             -- end
+            --@end-debug@
 
             -- build the info table
             local info = {
                 -- actionID = actionID or "notfound",
                 name = btnName,
-                actionType = actionType or "notfound",
-                id = id or "notfound",
-                subType = subType or "notfound"
+                actionType = actionType or L["notfound"],
+                id = id or L["notfound"],
+                subType = subType or L["notfound"]
             }
 
             -- check if barName is already in actionBars
@@ -1289,9 +1250,6 @@ function ABSync:GetActionBarData()
             -- add the bar name to the actionBars table if it doesn't exist
             if barNameInserted == false then
                 table.insert(self.db.profile.actionBars, barName)
-                -- if self.isLive == false then
-                --     self:Print(("Bar Added to actionBars: %s"):format(barName))
-                -- end
             end
 
             -- check if barName is already in currentBarData
@@ -1306,16 +1264,10 @@ function ABSync:GetActionBarData()
             -- add the bar name to the currentBarData table if it doesn't exist
             if barNameInserted == false then
                 self.db.profile.currentBarData[barName] = {}
-                -- if self.isLive == false then
-                --     self:Print(("Bar Added to currentBarData: %s"):format(barName))
-                -- end
             end
 
             -- insert the info table into the current action bar data
             self.db.profile.currentBarData[barName][tostring(actionID)] = info
-            -- if self.isLive == false then
-            --     self:Print(("Added Button - Bar: %s - Name: %s - ID: %s"):format(barName, btnName, actionID))
-            -- end
         end
     end
 
@@ -1330,7 +1282,7 @@ function ABSync:GetActionBarData()
     -- sync the updated data into the sync settings only when the same character is triggering the update
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
         local playerID = self:GetPlayerNameFormatted()
-        local barOwner = self.db.profile.barOwner[barName] or "Unknown"
+        local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
         if playerID == barOwner then
             -- get the bar index
             local barIndex = nil
@@ -1359,14 +1311,14 @@ function ABSync:GetActionBarData()
 
         -- if the bar is not in barOwner then add it with default value of "Unknown"
         if not self.db.profile.barOwner[barName] then
-            self.db.profile.barOwner[barName] = "Unknown"
+            self.db.profile.barOwner[barName] = L["unknown"]
         end
     end
 
     -- if the current character is the barOwner then update the barData to sync
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
         local playerID = self:GetPlayerNameFormatted()
-        local barOwner = self.db.profile.barOwner[barName] or "Unknown"
+        local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
         if playerID == barOwner then
             -- get the bar index
             local barIndex = nil
@@ -1385,40 +1337,49 @@ function ABSync:GetActionBarData()
     LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
 
     -- let user know its done
-    if self.isLive == false then self:Print("Fetch Current Action Bar Button Data - Done") end
+    if self.isLive == false then self:Print(L["getactionbardata_final_notification"]) end
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   SlashCommand
+    Purpose:    Respond to all slash commands.
+-----------------------------------------------------------------------------]]
 function ABSync:SlashCommand(msg)
-    if msg:lower() == "options" then
-        self:Print("Opening Options...")
-        LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
-    else
-        -- self:Print("Get Action Bar Data!")
-        ABSync:ActionBarData()
-        -- self:Print("Action Bar Sync - Slash Command does nothing currently!")
-    end
+    self:Print(L["slashcommand_none_setup_yet"])
+    -- if msg:lower() == "options" then
+    --     self:Print("Opening Options...")
+    --     LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+    -- else
+    --     -- self:Print("Get Action Bar Data!")
+    --     ABSync:ActionBarData()
+    --     -- self:Print("Action Bar Sync - Slash Command does nothing currently!")
+    -- end
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   RegisterEvents
+    Purpose:    Register all events for the addon.
+-----------------------------------------------------------------------------]]
 function ABSync:RegisterEvents()
-    if ABSync.isLive == false then self:Print("Registering Events...") end
+    if ABSync.isLive == false then self:Print(L["registerevents_starting"]) end
 	-- Hook to Action Bar On Load Calls
 	-- self:Hook("ActionBarController_OnLoad", true)
 	-- Hook to Action Bar On Event Calls
 	-- self:Hook("ActionBarController_OnEvent", true)
     -- Register Events
     self:RegisterEvent("ADDON_LOADED", function()
-        if ABSync.isLive == false then self:Print("Event - ADDON_LOADED") end
+        if ABSync.isLive == false then self:Print(L["registerevents_addon_loaded"]) end
     end)
 
     self:RegisterEvent("PLAYER_LOGIN", function()
-        if ABSync.isLive == false then self:Print("Event - PLAYER_LOGIN") end
+        if ABSync.isLive == false then self:Print(L["registerevents_player_login"]) end
 
         -- trigger the collection of action bar button data
         ABSync:ActionBarData()
     end)
 
     self:RegisterEvent("PLAYER_LOGOUT", function()
-        if ABSync.isLive == false then self:Print("Event - PLAYER_LOGOUT") end
+        if ABSync.isLive == false then self:Print(L["registerevents_player_logout"]) end
 
         -- clear currentBarData and actionBars when the code is live
         if ABSync.isLive == true then
@@ -1427,7 +1388,7 @@ function ABSync:RegisterEvents()
     end)
 
     self:RegisterEvent("VARIABLES_LOADED", function()
-        if ABSync.isLive == false then self:Print("Event - VARIABLES_LOADED") end
+        if ABSync.isLive == false then self:Print(L["registerevents_variables_loaded"]) end
     end)
 
 	-- self:RegisterEvent("ACTIONBAR_UPDATE_STATE", function()
@@ -1439,20 +1400,18 @@ end
 function ABSync:OnEnable()
     -- Check the DB
     if not self.db then
-        self:Print("Database Not Found? Strange...please reload the UI. If error returns restart the game.")
+        self:Print(L["onenable_db_not_found"])
     end
-
 
     -- Register Events
     self:RegisterEvents()
 
     -- leave at end of function
-    self:Print("Enabled")
+    self:Print(L["enabled"])
 end
 
 -- Trigger code when addon is disabled.
 function ABSync:OnDisable()
     -- TODO: Unregister Events?
-    self:Print("Disabled")
+    self:Print(L["disabled"])
 end
-
