@@ -215,22 +215,22 @@ function ABSync:OnInitialize()
                     }
                 }
             },
-            lastSyncErrors = {
-                name = L["lastsyncerrorsname"],
-                desc = L["lastsyncerrorsdesc"],
-                type = "group",
-                order = 4,
-                args = {
-                    errors = {
-                        name = function()
-                           return ABSync:GetErrorText()
-                        end,
-                        type = "description",
-                        order = 20,
-                        width = "full",
-                    }
-                }
-            },
+            -- lastSyncErrors = {
+            --     name = L["lastsyncerrorsname"],
+            --     desc = L["lastsyncerrorsdesc"],
+            --     type = "group",
+            --     order = 4,
+            --     args = {
+            --         errors = {
+            --             name = function(info)
+            --                return ABSync:GetErrorText(info)
+            --             end,
+            --             type = "description",
+            --             order = 20,
+            --             width = "full",
+            --         }
+            --     }
+            -- },
             actionlookup = {
                 name = L["actionlookupname"],
                 desc = L["actionlookupdesc"],
@@ -550,49 +550,6 @@ function ABSync:GetMountinfo(actionID)
 
     -- finally return the spell name
     return {name = name, mountID = mountID, displayID = mountDisplayID}
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetErrorText
-    Purpose:    Return a string to populate an option description to show users the last sync errors.
------------------------------------------------------------------------------]]
-function ABSync:GetErrorText()
-    -- instantiate variable to all all error messages
-    local text = ""
-
-    -- check variable exists
-    if not self.db.char.syncErrors then
-        return L["noerrorsfound"]
-    end
-
-    -- check variable exists
-    if not self.db.char.lastSyncErrorDttm then
-        return L["noerrorsfound"]
-    end
-
-    -- check for any sync errors
-    if #self.db.char.syncErrors == 0 then
-        return L["noerrorsfound"]
-    end
-
-    -- loop over error data
-    for _, errorRcd in ipairs(self.db.char.syncErrors) do
-        -- check key matches last sync dttm
-        if errorRcd.key == self.db.char.lastSyncErrorDttm then            
-            -- loop over each error message and concat to variable
-            for _, errorData in ipairs(errorRcd.errors) do
-                -- add return character for each loop if text is not blank
-                if text ~= "" then
-                    text = text .. "\n"
-                end
-                -- concatenate the next error description
-                text = text .. "- " .. errorData.descr
-            end
-        end
-    end
-
-    -- finally return the text
-    return text
 end
 
 --[[---------------------------------------------------------------------------
@@ -979,12 +936,20 @@ function ABSync:UpdateActionBars(backupdttm)
     else
         -- track any errors
         local errors = {}
-        local errorstmp = {}
 
         -- loop over differences an apply changes
         for _, diffData in ipairs(differences) do
             -- create readable button name
             local buttonName = (L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
+
+            -- instantiate standard error fields
+            local err = {
+                barName = diffData.barName,
+                barPos = diffData.position,
+                buttonID = diffData.buttonID,
+                actionType = diffData.actionType,
+                id = diffData.id,
+            }
 
             -- get the name of the id based on action type
             if diffData.actionType == "spell" then
@@ -997,21 +962,16 @@ function ABSync:UpdateActionBars(backupdttm)
 
                 -- report error if player does not have the spell
                 if hasSpell == false then
-                    table.insert(errors, {
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        id = diffData.id,
-                        name = diffData.name,
-                        descr = (L["updateactionbars_player_doesnot_have_spell"]):format(buttonName, spellName, diffData.id)
-                    })
-                    table.insert(errorstmp, {
-                        barName = diffData.barName,
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        name = spellName,
-                        id = diffData.id,
-                        msg = "Unavailable"
-                    })
+                    -- table.insert(errors, {
+                    --     buttonID = diffData.buttonID,
+                    --     actionType = diffData.actionType,
+                    --     id = diffData.id,
+                    --     name = diffData.name,
+                    --     descr = (L["updateactionbars_player_doesnot_have_spell"]):format(buttonName, spellName, diffData.id)
+                    -- })
+                    err["name"] = spellName
+                    err["msg"] = "Unavailable"
+                    table.insert(errors, err)
 
                 -- proceed if player has the spell
                 else                    
@@ -1022,21 +982,16 @@ function ABSync:UpdateActionBars(backupdttm)
                         ClearCursor()
                     else
                         -- if spell name not found then log error
-                        table.insert(errors, {
-                            buttonID = diffData.buttonID,
-                            actionType = diffData.actionType,
-                            id = diffData.id,
-                            name = diffData.name,
-                            descr = (L["updateactionbars_spell_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
-                        })
-                        table.insert(errorstmp, {
-                            barName = diffData.barName,
-                            buttonID = diffData.buttonID,
-                            actionType = diffData.actionType,
-                            name = diffData.name,
-                            id = diffData.id,
-                            msg = "Not Found"
-                        })
+                        -- table.insert(errors, {
+                        --     buttonID = diffData.buttonID,
+                        --     actionType = diffData.actionType,
+                        --     id = diffData.id,
+                        --     name = diffData.name,
+                        --     descr = (L["updateactionbars_spell_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
+                        -- })
+                        err["name"] = diffData.name
+                        err["msg"] = L["notfound"]
+                        table.insert(errors, err)
                     end
                 end
             elseif diffData.actionType == "item" then
@@ -1063,40 +1018,30 @@ function ABSync:UpdateActionBars(backupdttm)
                         ClearCursor()
                     else
                         -- if item name not found then log error
-                        table.insert(errors, {
-                            buttonID = diffData.buttonID,
-                            actionType = diffData.actionType,
-                            id = diffData.id,
-                            name = diffData.name,
-                            descr = (L["updateactionbars_item_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
-                        })
-                        table.insert(errorstmp, {
-                            barName = diffData.barName,
-                            buttonID = diffData.buttonID,
-                            actionType = diffData.actionType,
-                            name = diffData.name,
-                            id = diffData.id,
-                            msg = "Not Found"
-                        })
+                        -- table.insert(errors, {
+                        --     buttonID = diffData.buttonID,
+                        --     actionType = diffData.actionType,
+                        --     id = diffData.id,
+                        --     name = diffData.name,
+                        --     descr = (L["updateactionbars_item_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
+                        -- })
+                        err["name"] = checkItemName
+                        err["msg"] = L["notfound"]
+                        table.insert(errors, err)
                     end
 
                 -- if player doesn't have item then log as error
                 else
-                    table.insert(errors, {
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        id = diffData.id,
-                        name = diffData.name,
-                        descr = (L["updateactionbars_user_doesnot_have_item"]):format(buttonName, checkItemName, diffData.id)
-                    })
-                    table.insert(errorstmp, {
-                        barName = diffData.barName,
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        name = diffData.name,
-                        id = diffData.id,
-                        msg = "Not in Bags"
-                    })
+                    -- table.insert(errors, {
+                    --     buttonID = diffData.buttonID,
+                    --     actionType = diffData.actionType,
+                    --     id = diffData.id,
+                    --     name = diffData.name,
+                    --     descr = (L["updateactionbars_user_doesnot_have_item"]):format(buttonName, checkItemName, diffData.id)
+                    -- })
+                    err["name"] = checkItemName
+                    err["msg"] = L["notinbags"]
+                    table.insert(errors, err)
                 end
             elseif diffData.actionType == "macro" then
                 -- get macro information: name, iconTexture, body, isLocal
@@ -1112,21 +1057,16 @@ function ABSync:UpdateActionBars(backupdttm)
                 -- if macro name is not found then record error and remove whatever is in the bar
                 else
                     -- if macro name not found then log error
-                    table.insert(errors, {
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        id = diffData.id,
-                        name = diffData.name,
-                        descr = (L["updateactionbars_macro_not_found"]):format(buttonName, diffData.id)
-                    })
-                    table.insert(errorstmp, {
-                        barName = diffData.barName,
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        name = diffData.name,
-                        id = diffData.id,
-                        msg = "Not Found"
-                    })
+                    -- table.insert(errors, {
+                    --     buttonID = diffData.buttonID,
+                    --     actionType = diffData.actionType,
+                    --     id = diffData.id,
+                    --     name = diffData.name,
+                    --     descr = (L["updateactionbars_macro_not_found"]):format(buttonName, diffData.id)
+                    -- })
+                    err["name"] = L["unknown"]
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
 
                     -- remove if not found
                     PickupAction(tonumber(diffData.buttonID))
@@ -1144,21 +1084,16 @@ function ABSync:UpdateActionBars(backupdttm)
                     ClearCursor()
                 else
                     -- if pet name not found then log error
-                    table.insert(errors, {
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        id = diffData.id,
-                        name = diffData.name,
-                        descr = (L["updateactionbars_pet_not_found"]):format(buttonName, diffData.id)
-                    })
-                    table.insert(errorstmp, {
-                        barName = diffData.barName,
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        name = diffData.name,
-                        id = diffData.id,
-                        msg = "Not Found"
-                    })
+                    -- table.insert(errors, {
+                    --     buttonID = diffData.buttonID,
+                    --     actionType = diffData.actionType,
+                    --     id = diffData.id,
+                    --     name = diffData.name,
+                    --     descr = (L["updateactionbars_pet_not_found"]):format(buttonName, diffData.id)
+                    -- })
+                    err["name"] = L["unknown"]
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
                 end
             elseif diffData.actionType == "summonmount" then
                 -- get the mount spell name; see function details for why we get its spell name
@@ -1171,21 +1106,16 @@ function ABSync:UpdateActionBars(backupdttm)
                     ClearCursor()
                 else
                     -- if mount name not found then log error
-                    table.insert(errors, {
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        id = diffData.id,
-                        name = diffData.name,
-                        descr = (L["updateactionbars_mount_not_found"]):format(buttonName, diffData.id)
-                    })
-                    table.insert(errorstmp, {
-                        barName = diffData.barName,
-                        buttonID = diffData.buttonID,
-                        actionType = diffData.actionType,
-                        name = diffData.name,
-                        id = diffData.id,
-                        msg = "Not Found"
-                    })
+                    -- table.insert(errors, {
+                    --     buttonID = diffData.buttonID,
+                    --     actionType = diffData.actionType,
+                    --     id = diffData.id,
+                    --     name = diffData.name,
+                    --     descr = (L["updateactionbars_mount_not_found"]):format(buttonName, diffData.id)
+                    -- })
+                    err["name"] = L["unknown"]
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
                 end
 
             -- notfound means the button was empty
@@ -1219,18 +1149,11 @@ function ABSync:UpdateActionBars(backupdttm)
             if not self.db.char.syncErrors then
                 self.db.char.syncErrors = {}
             end
-            if not self.db.char.syncErrorsTmp then
-                self.db.char.syncErrorsTmp = {}
-            end
             
             -- write to db
             table.insert(self.db.char.syncErrors, {
                 key = backupdttm,
                 errors = errors
-            })
-            table.insert(self.db.char.syncErrorsTmp, {
-                key = backupdttm,
-                errors = errorstmp
             })
 
             -- make sure lastSyncErrorDttm exists
@@ -1465,7 +1388,10 @@ function ABSync:RegisterEvents()
 	-- end)
 end
 
--- Trigger code when addon is enabled.
+--[[---------------------------------------------------------------------------
+    Function:   OnEnable
+    Purpose:    Trigger functionality when addon is enabled.
+-----------------------------------------------------------------------------]]
 function ABSync:OnEnable()
     -- Check the DB
     if not self.db then
@@ -1485,15 +1411,17 @@ function ABSync:OnDisable()
     self:Print(L["disabled"])
 end
 
-
+--[[---------------------------------------------------------------------------
+    Function:   ShowErrorLog
+    Purpose:    Open custom UI to show last sync errors to user.
+-----------------------------------------------------------------------------]]
 function ABSync:ShowErrorLog()
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
     
     -- columns
-    local columns = {"Bar Name", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
-    local columnLoop = {"barName", "buttonID", "actionType", "name", "id", "msg"}
-    local columnSize = {50, 50, 50, 100, 100, 200}
+    local columns = {"Bar Name", "Bar Pos", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
+    local columnLoop = {"barName", "barPos", "buttonID", "actionType", "name", "id", "msg"}
 
     -- Get screen size
     local screenWidth = UIParent:GetWidth()
@@ -1534,7 +1462,7 @@ function ABSync:ShowErrorLog()
     scroll:AddChild(header)
 
     -- loop over sync errors
-    for _, errorRcd in ipairs(self.db.char.syncErrorsTmp) do
+    for _, errorRcd in ipairs(self.db.char.syncErrors) do
         -- continue to next row if key doesn't match
         if errorRcd.key == self.db.char.lastSyncErrorDttm then
             -- loop over the rows
