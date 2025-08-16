@@ -11,8 +11,20 @@
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
 ## OptionalDeps: Ace3
 
+## Initialize Addon
+initialize.lua
+
 ## Language Files
 locale\enUS.lua
+locale\deDE.lua
+locale\esES.lua
+locale\frFR.lua
+locale\itIT.lua
+locale\koKR.lua
+locale\ptBR.lua
+locale\ruRU.lua
+locale\zhCN.lua
+locale\zhTW.lua
 
 ## Main
 ActionBarSync.lua

@@ -5,12 +5,8 @@
 	Description: 	Main program for ActionBarSync addon.
 -----------------------------------------------------------------------------]]
 
--- Instantiate variable to hold functionality!
-local ABSync = LibStub("AceAddon-3.0"):NewAddon("Action Bar Sync", "AceHook-3.0", "AceConsole-3.0", "AceEvent-3.0") -- "AceConfig-3.0"
-_G.ABSync = ABSync
-
-ABSync.optionLocName = "ActionBarSync"
-ABSync.isLive = false
+-- initial with existing addon registration; only a pointer...not a copy
+local ABSync = _G.ABSync
 
 -- enable localization
 ABSync.localeSilent = false
@@ -1278,26 +1274,8 @@ function ABSync:GetActionBarData()
 
     -- update db
     self.db.char.lastScan = date("%Y-%m-%d %H:%M:%S")
-
-    -- sync the updated data into the sync settings only when the same character is triggering the update
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
-        local playerID = self:GetPlayerNameFormatted()
-        local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
-        if playerID == barOwner then
-            -- get the bar index
-            local barIndex = nil
-            for index, name in ipairs(self.db.profile.actionBars) do
-                if name == barName then
-                    barIndex = index
-                    break
-                end
-            end
-            -- trigger the profile sync
-            self:SetBarToSync(barIndex, syncOn)
-        end
-    end
-
-    -- sync actionBars to barsToSync
+    
+    -- sync keys of actionBars to barsToSync and barOwner
     for _, barName in ipairs(self.db.profile.actionBars) do
         -- instantiate barsToSync if it doesn't exist
         if not self.db.profile.barsToSync then
@@ -1309,27 +1287,34 @@ function ABSync:GetActionBarData()
             self.db.profile.barsToSync[barName] = false
         end
 
+        -- instantiate barOwner if it doesn't exist
+        if not self.db.profile.barOwner then
+            self.db.profile.barOwner = {}
+        end
+
         -- if the bar is not in barOwner then add it with default value of "Unknown"
         if not self.db.profile.barOwner[barName] then
             self.db.profile.barOwner[barName] = L["unknown"]
         end
     end
 
-    -- if the current character is the barOwner then update the barData to sync
+    -- sync the updated data into the sync settings only when the same character is triggering the update
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
-        local playerID = self:GetPlayerNameFormatted()
-        local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
-        if playerID == barOwner then
-            -- get the bar index
-            local barIndex = nil
-            for index, name in ipairs(self.db.profile.actionBars) do
-                if name == barName then
-                    barIndex = index
-                    break
+        if syncOn == true then
+            local playerID = self:GetPlayerNameFormatted()
+            local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
+            if playerID == barOwner then
+                -- get the bar index
+                local barIndex = nil
+                for index, name in ipairs(self.db.profile.actionBars) do
+                    if name == barName then
+                        barIndex = index
+                        break
+                    end
                 end
+                -- trigger the profile sync
+                self:SetBarToSync(barIndex, syncOn)
             end
-            -- trigger the profile sync
-            self:SetBarToSync(barIndex, syncOn)
         end
     end
 

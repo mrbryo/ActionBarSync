@@ -1,10 +1,10 @@
---[[-----------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
     Localization for Action Bar Sync
     Language: English (US)
 -----------------------------------------------------------------------------]]
 
 -- Addon ID
-local optionLocName = "ActionBarSync"
+local optionLocName = _G.ABSync.optionLocName
 
 -- switch to true when releasing it
 local silent = false
@@ -12,6 +12,11 @@ local silent = false
 -- instantiate the new locale
 local L = LibStub("AceLocale-3.0"):NewLocale(optionLocName, "enUS", true, silent)
 
+-- following line is replaced when packaged through curseforge using their localization tool
+--@localization(locale="enUS", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
+
+--@do-not-package@ 
+--[[ leaving all for development purposes, export from curseforge ]]
 -- misc
 L["actionbar2"] = "Action Bar 2"
 L["actionbar3"] = "Action Bar 3"
@@ -38,7 +43,7 @@ L["cancel"] = "Cancel"
 L["enabled"] = "Enabled"
 L["disabled"] = "Disabled"
 
--- function OnInitialize
+-- function
 L["actionbarsynctitle"] = "Action Bar Sync"
 L["syncsettings"] = "Sync Settings"
 L["syncsettingsdesc"] = "See directions and current sync settings."
@@ -139,3 +144,5 @@ L["registerevents_variables_loaded"] = "Event - VARIABLES_LOADED"
 
 -- function OnEnable
 L["onenable_db_not_found"] = "Database Not Found? Strange...please reload the UI. If error returns, restart the game."
+
+--@end-do-not-package@
