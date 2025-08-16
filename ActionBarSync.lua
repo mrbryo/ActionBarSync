@@ -310,7 +310,7 @@ function ABSync:OnInitialize()
     self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ABSync.optionLocName, optionsTitle, nil)
     
     -- register some slash commands
-    -- self:RegisterChatCommand("abs", "SlashCommand")
+    self:RegisterChatCommand("abs", "SlashCommand")
     
     --@debug@ leave at end of function
     if self.isLive == false then self:Print(L["initialized"]) end
@@ -979,6 +979,7 @@ function ABSync:UpdateActionBars(backupdttm)
     else
         -- track any errors
         local errors = {}
+        local errorstmp = {}
 
         -- loop over differences an apply changes
         for _, diffData in ipairs(differences) do
@@ -1003,6 +1004,14 @@ function ABSync:UpdateActionBars(backupdttm)
                         name = diffData.name,
                         descr = (L["updateactionbars_player_doesnot_have_spell"]):format(buttonName, spellName, diffData.id)
                     })
+                    table.insert(errorstmp, {
+                        barName = diffData.barName,
+                        buttonID = diffData.buttonID,
+                        actionType = diffData.actionType,
+                        name = spellName,
+                        id = diffData.id,
+                        msg = "Unavailable"
+                    })
 
                 -- proceed if player has the spell
                 else                    
@@ -1020,6 +1029,14 @@ function ABSync:UpdateActionBars(backupdttm)
                             name = diffData.name,
                             descr = (L["updateactionbars_spell_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
                         })
+                        table.insert(errorstmp, {
+                            barName = diffData.barName,
+                            buttonID = diffData.buttonID,
+                            actionType = diffData.actionType,
+                            name = diffData.name,
+                            id = diffData.id,
+                            msg = "Not Found"
+                        })
                     end
                 end
             elseif diffData.actionType == "item" then
@@ -1035,8 +1052,10 @@ function ABSync:UpdateActionBars(backupdttm)
                 -- does player have the item
                 local itemCount = C_Item.GetItemCount(diffData.id)
 
-                -- if the user has the item and the item exists then add to action bar
+                -- add to action bar if two tests pass...
+                -- if the user has the item
                 if itemCount > 0 then
+                    -- item exists
                     if itemName then
                         -- set the action bar button to the item
                         C_Item.PickupItem(itemName)
@@ -1051,6 +1070,14 @@ function ABSync:UpdateActionBars(backupdttm)
                             name = diffData.name,
                             descr = (L["updateactionbars_item_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
                         })
+                        table.insert(errorstmp, {
+                            barName = diffData.barName,
+                            buttonID = diffData.buttonID,
+                            actionType = diffData.actionType,
+                            name = diffData.name,
+                            id = diffData.id,
+                            msg = "Not Found"
+                        })
                     end
 
                 -- if player doesn't have item then log as error
@@ -1061,6 +1088,14 @@ function ABSync:UpdateActionBars(backupdttm)
                         id = diffData.id,
                         name = diffData.name,
                         descr = (L["updateactionbars_user_doesnot_have_item"]):format(buttonName, checkItemName, diffData.id)
+                    })
+                    table.insert(errorstmp, {
+                        barName = diffData.barName,
+                        buttonID = diffData.buttonID,
+                        actionType = diffData.actionType,
+                        name = diffData.name,
+                        id = diffData.id,
+                        msg = "Not in Bags"
                     })
                 end
             elseif diffData.actionType == "macro" then
@@ -1083,6 +1118,14 @@ function ABSync:UpdateActionBars(backupdttm)
                         id = diffData.id,
                         name = diffData.name,
                         descr = (L["updateactionbars_macro_not_found"]):format(buttonName, diffData.id)
+                    })
+                    table.insert(errorstmp, {
+                        barName = diffData.barName,
+                        buttonID = diffData.buttonID,
+                        actionType = diffData.actionType,
+                        name = diffData.name,
+                        id = diffData.id,
+                        msg = "Not Found"
                     })
 
                     -- remove if not found
@@ -1108,6 +1151,14 @@ function ABSync:UpdateActionBars(backupdttm)
                         name = diffData.name,
                         descr = (L["updateactionbars_pet_not_found"]):format(buttonName, diffData.id)
                     })
+                    table.insert(errorstmp, {
+                        barName = diffData.barName,
+                        buttonID = diffData.buttonID,
+                        actionType = diffData.actionType,
+                        name = diffData.name,
+                        id = diffData.id,
+                        msg = "Not Found"
+                    })
                 end
             elseif diffData.actionType == "summonmount" then
                 -- get the mount spell name; see function details for why we get its spell name
@@ -1115,7 +1166,6 @@ function ABSync:UpdateActionBars(backupdttm)
 
                 -- if mount name is found proceed
                 if mountInfo.name then
-                    -- setting an action bar button with Pickup from MountJournal doesn't work!
                     C_MountJournal.Pickup(tonumber(mountInfo.displayID))
                     PlaceAction(tonumber(diffData.buttonID))
                     ClearCursor()
@@ -1127,6 +1177,14 @@ function ABSync:UpdateActionBars(backupdttm)
                         id = diffData.id,
                         name = diffData.name,
                         descr = (L["updateactionbars_mount_not_found"]):format(buttonName, diffData.id)
+                    })
+                    table.insert(errorstmp, {
+                        barName = diffData.barName,
+                        buttonID = diffData.buttonID,
+                        actionType = diffData.actionType,
+                        name = diffData.name,
+                        id = diffData.id,
+                        msg = "Not Found"
                     })
                 end
 
@@ -1161,11 +1219,18 @@ function ABSync:UpdateActionBars(backupdttm)
             if not self.db.char.syncErrors then
                 self.db.char.syncErrors = {}
             end
+            if not self.db.char.syncErrorsTmp then
+                self.db.char.syncErrorsTmp = {}
+            end
             
             -- write to db
             table.insert(self.db.char.syncErrors, {
                 key = backupdttm,
                 errors = errors
+            })
+            table.insert(self.db.char.syncErrorsTmp, {
+                key = backupdttm,
+                errors = errorstmp
             })
 
             -- make sure lastSyncErrorDttm exists
@@ -1329,15 +1394,34 @@ end
     Function:   SlashCommand
     Purpose:    Respond to all slash commands.
 -----------------------------------------------------------------------------]]
-function ABSync:SlashCommand(msg)
-    self:Print(L["slashcommand_none_setup_yet"])
+function ABSync:SlashCommand(text)
+    -- if no text is provided, show the options dialog
+    if text == nil or text == "" then
+        LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+        return
+    end
+    -- get args
+    for arg in string.gmatch(self:GetArgs(text), "%S+") do
+        if arg:lower() == "options" then
+            LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+        elseif arg:lower() == "sync" then
+            self:BeginSync()
+        elseif arg:lower() == "errors" then
+            self:ShowErrorLog()
+        end
+    end
+
+
+
+    -- self:Print(L["slashcommand_none_setup_yet"])
     -- if msg:lower() == "options" then
     --     self:Print("Opening Options...")
     --     LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
     -- else
     --     -- self:Print("Get Action Bar Data!")
-    --     ABSync:ActionBarData()
+    --     -- ABSync:ActionBarData()
     --     -- self:Print("Action Bar Sync - Slash Command does nothing currently!")
+    --     ABSync:ShowSpreadsheetFrame()
     -- end
 end
 
@@ -1399,4 +1483,79 @@ end
 function ABSync:OnDisable()
     -- TODO: Unregister Events?
     self:Print(L["disabled"])
+end
+
+
+function ABSync:ShowErrorLog()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+    
+    -- columns
+    local columns = {"Bar Name", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
+    local columnLoop = {"barName", "buttonID", "actionType", "name", "id", "msg"}
+    local columnSize = {50, 50, 50, 100, 100, 200}
+
+    -- Get screen size
+    local screenWidth = UIParent:GetWidth()
+    local screenHeight = UIParent:GetHeight()
+
+    -- Create the main frame
+    local frame = AceGUI:Create("Frame")
+    frame:SetTitle("Action Bar Sync - Sync Errors")
+    -- TODO: format the dttm or store a formatted value instead...
+    frame:SetStatusText(("Last Sync Error: %s"):format(self.db.char.lastSyncErrorMsg or "-"))
+    frame:SetLayout("Flow")
+    local frameWidth = screenWidth * 0.8
+    local frameHeight = screenHeight * 0.8
+    frame:SetWidth(frameWidth)
+    frame:SetHeight(frameHeight)
+
+    -- Create a scroll container for the spreadsheet
+    local scroll = AceGUI:Create("ScrollFrame")
+    scroll:SetLayout("List")
+    scroll:SetFullWidth(true)
+    scroll:SetFullHeight(true)
+    frame:AddChild(scroll)
+
+    -- determine column width
+    -- 5px for spacing
+    local columnWidth = ((frameWidth - 5) / #columns) - 5
+
+    -- Create header row
+    local header = AceGUI:Create("SimpleGroup")
+    header:SetLayout("Flow")
+    header:SetFullWidth(true)
+    for _, colName in ipairs(columns) do
+        local label = AceGUI:Create("Label")
+        label:SetText("|cff00ff00" .. colName .. "|r")
+        label:SetWidth(columnWidth)
+        header:AddChild(label)
+    end
+    scroll:AddChild(header)
+
+    -- loop over sync errors
+    for _, errorRcd in ipairs(self.db.char.syncErrorsTmp) do
+        -- continue to next row if key doesn't match
+        if errorRcd.key == self.db.char.lastSyncErrorDttm then
+            -- loop over the rows
+            for _, errorRow in ipairs(errorRcd.errors) do
+                -- set up row group of columns
+                local rowGroup = AceGUI:Create("SimpleGroup")
+                rowGroup:SetLayout("Flow")
+                rowGroup:SetFullWidth(true)
+
+                -- loop over the column defintions
+                for _, colDef in ipairs(columnLoop) do
+                    local cell = AceGUI:Create("Label")
+                    cell:SetText(tostring(errorRow[colDef] or "-"))
+                    cell:SetWidth(columnWidth)
+                    rowGroup:AddChild(cell)
+                end
+                scroll:AddChild(rowGroup)
+            end
+        end
+    end
+
+    -- display the frame
+    frame:Show()
 end
