@@ -1103,6 +1103,10 @@ function ABSync:UpdateActionBars(backupdttm)
     end
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetSpellDetails
+    Purpose:    Retrieve spell information based on the spell ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetSpellDetails(spellID, buttonID)
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
@@ -1127,6 +1131,10 @@ function ABSync:GetSpellDetails(spellID, buttonID)
     }
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetItemDetails
+    Purpose:    Retrieve item information based on the item ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetItemDetails(itemID)
     -- fetch blizzard item details
     local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
@@ -1172,6 +1180,10 @@ function ABSync:GetItemDetails(itemID)
     }
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetMacroDetails
+    Purpose:    Retrieve macro information based on the macro ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetMacroDetails(macroID)
     -- get macro information: name, iconTexture, body
     -- isLocal removed in patch 3.0.2
@@ -1187,6 +1199,10 @@ function ABSync:GetMacroDetails(macroID)
     }
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetPetDetails
+    Purpose:    Retrieve pet information based on the pet ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetPetDetails(petID)
     -- get pet information
     local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
@@ -1294,6 +1310,10 @@ function ABSync:GetMountinfo(mountID)
     }
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetActionButtonData
+    Purpose:    Retrieve action button data based on the action ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetActionButtonData(actionID, btnName)
     -- get action type and ID information
     local actionType, infoID, subType = GetActionInfo(actionID)
