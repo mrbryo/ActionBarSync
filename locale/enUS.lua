@@ -82,6 +82,7 @@ Has: %s]=]
 L["never"] = "Never"
 L["no"] = "No"
 L["noerrorsfound"] = "No Errors Found"
+L["noowner"] = "No Owner"
 L["noscancompleted"] = "No Scan Completed"
 L["notfound"] = "Not Found"
 L["notinbags"] = "Not in Bags"

@@ -510,56 +510,13 @@ function ABSync:LookupAction()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetMountinfo
-    Purpose:    Retrieve mount information based on the action ID.
------------------------------------------------------------------------------]]
-function ABSync:GetMountinfo(actionID)
-    -- defaults
-    showDialog = showDialog or false
-
-    -- dialog to show all mount data
-    StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"] = {
-        text = "",
-        button1 = "OK",
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-    
-    -- first call to get mount information based on the action bar action id
-    local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(actionID)
-
-    -- then get additional details on the mount
-    local mountInfo = C_MountJournal.GetMountAllCreatureDisplayInfoByID(mountID)
-
-    -- instantiate a variable for the mount display id
-    local mountDisplayID = ""
-
-    -- loop over mount data and get display ID
-    for _, mountData in ipairs(mountInfo) do
-        for key, value in pairs(mountData) do
-            if key == "creatureDisplayID" then
-                mountDisplayID = value
-            end
-        end
-    end
-
-    --@debug@
-    if self.isLive == false then self:Print((L["getmountinfolookup"]):format(name, mountID, tostring(mountDisplayID))) end
-    --@end-debug@
-
-    -- finally return the spell name
-    return {name = name, mountID = mountID, displayID = mountDisplayID}
-end
-
---[[---------------------------------------------------------------------------
     Function:   GetActionBarNames
     Purpose:    Return the list/table of action bar names.
 -----------------------------------------------------------------------------]]
 function ABSync:GetActionBarNames()
     -- check to make sure a data fetch has happened, if not return No Scan Completed
     local barNames = {}
-    if not self.db.profile.actionBars or #self.db.profile.actionBars == 0 then
+    if not self.db.global.actionBars or #self.db.global.actionBars == 0 then
         -- debug
         -- self:Print("No action bars found")
         -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
@@ -568,7 +525,7 @@ function ABSync:GetActionBarNames()
     end
 
     -- if we get to here just return the list of bar names from the scan
-    return self.db.profile.actionBars
+    return self.db.global.actionBars
 end
 
 --[[---------------------------------------------------------------------------
@@ -599,20 +556,20 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetBarsToSync(key)
     -- check that actionBars variable exists
-    if not self.db.profile.actionBars then
-        self.db.profile.actionBars = {}
+    if not self.db.global.actionBars then
+        self.db.global.actionBars = {}
     end
     -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
     local barName = L["unknown"]
-    if self.db.profile.actionBars[key] then
-        barName = self.db.profile.actionBars[key]
+    if self.db.global.actionBars[key] then
+        barName = self.db.global.actionBars[key]
     end
     -- check for barsToSync
-    if not self.db.profile.barsToSync then
-        self.db.profile.barsToSync = {}
+    if not self.db.global.barsToSync then
+        self.db.global.barsToSync = {}
     end
     -- check for the barName in barsToSync
-    local returnVal = self.db.profile.barsToSync[barName] or false
+    local returnVal = self.db.global.barsToSync[barName] or false
 
     -- finally return a value
     return returnVal
@@ -633,25 +590,25 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:SetBarToSync(key, value)
     -- set the bars to sync
-    local barName = self.db.profile.actionBars[key]
+    local barName = self.db.global.actionBars[key]
 
     -- only the bar owner can uncheck an action bar, prevent other users
     local playerID = self:GetPlayerNameFormatted()
 
     -- make sure barOwner exists
-    if not self.db.profile.barOwner then
-        self.db.profile.barOwner = {}
+    if not self.db.global.barsToSync[barName].barOwner then
+        self.db.global.barsToSync[barName].barOwner = {}
     end
 
     -- get the bar owner or set to Unknown if not found
-    local barOwner = self.db.profile.barOwner[barName] or "Unknown"
+    local barOwner = self.db.global.barsToSync[barName].barOwner[barName] or "Unknown"
 
     -- if the player and the bar owner do not match or the bar owner is not unknown then let user know they can't uncheck this bar from syncing
     if playerID ~= barOwner and barOwner ~= "Unknown" then
         -- show popup
         StaticPopupDialogs["ACTIONBARSYNC_NOT_BAR_OWNER"] = {
             text = (L["actionbarsync_not_bar_owner_text"]):format(barName, barOwner),
-            button1 = "OK",
+            button1 = L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -684,17 +641,17 @@ function ABSync:SetBarToSync(key, value)
     --@end-debug@
 
     -- instantiate barsToSync if it doesn't exist
-    if not self.db.profile.barsToSync then
-        self.db.profile.barsToSync = {}
+    if not self.db.global.barsToSync then
+        self.db.global.barsToSync = {}
     end
 
     -- set the bar to sync values: true or false based on the value passed into this function
-    self.db.profile.barsToSync[barName] = value
+    self.db.global.barsToSync[barName] = value
     
     -- if the value is true, add the bar data to the barData table
     if value == true then
         -- set the bar owner
-        self.db.profile.barOwner[barName] = playerID
+        self.db.global.barsToSync[barName].barOwner[barName] = playerID
 
         -- based on value add or remove the bar data
         for buttonID, buttonData in pairs(self.db.profile.currentBarData[barName]) do
@@ -720,7 +677,7 @@ function ABSync:SetBarToSync(key, value)
         -- if the bar is not set to sync, remove it from the bar data
         self.db.profile.barData[barName] = {}
         -- remove bar owner
-        self.db.profile.barOwner[barName] = nil
+        self.db.global.barsToSync[barName].barOwner[barName] = nil
     end
 
     --@debug@ let the user know the value is changed only when developing though
@@ -789,9 +746,9 @@ function ABSync:BeginSync()
     local barsToSync = false
     
     -- make certain the variable exists to hold bars to sync info
-    if self.db.profile.barsToSync then
+    if self.db.global.barsToSync then
         -- count entries
-        for barName, syncOn in pairs(self.db.profile.barsToSync) do
+        for barName, syncOn in pairs(self.db.global.barsToSync) do
             if syncOn == true then
                 barsToSync = true
                 break
@@ -835,7 +792,7 @@ function ABSync:TriggerBackup(note)
     local backupData = {}
     -- for completeness sake, make sure records are found to be synced...this is actually done in the calling parent but if I decide to call this function elsewhere better check!
     local syncDataFound = false
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+    for barName, syncOn in pairs(self.db.global.barsToSync) do
         if syncOn == true then
             --@debug@
             if self.isLive == false then self:Print((L["triggerbackup_notify"]):format(barName)) end
@@ -897,7 +854,7 @@ function ABSync:UpdateActionBars(backupdttm)
     local differencesFound = false
 
     -- compare the profile barData data to the user's current action bar data
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+    for barName, syncOn in pairs(self.db.global.barsToSync) do
         if syncOn == true then
             for buttonID, buttonData in pairs(self.db.profile.barData[barName]) do
                 -- define what values to check
@@ -951,178 +908,154 @@ function ABSync:UpdateActionBars(backupdttm)
                 id = diffData.id,
             }
 
-            -- get the name of the id based on action type
-            if diffData.actionType == "spell" then
-                -- get spell info
-                local spellData = C_Spell.GetSpellInfo(diffData.id)
-                local spellName = spellData and spellData.name or L["unknown"]
-
-                -- determine if player has the spell, if not report error
-                local hasSpell = C_Spell.IsCurrentSpell(diffData.id) or false
-
-                -- report error if player does not have the spell
-                if hasSpell == false then
-                    -- table.insert(errors, {
-                    --     buttonID = diffData.buttonID,
-                    --     actionType = diffData.actionType,
-                    --     id = diffData.id,
-                    --     name = diffData.name,
-                    --     descr = (L["updateactionbars_player_doesnot_have_spell"]):format(buttonName, spellName, diffData.id)
-                    -- })
-                    err["name"] = spellName
-                    err["msg"] = "Unavailable"
-                    table.insert(errors, err)
-
-                -- proceed if player has the spell
-                else                    
-                    if spellName then
-                        -- set the action bar button to the spell
-                        C_Spell.PickupSpell(spellName)
-                        PlaceAction(tonumber(diffData.buttonID))
+            -- if the button position is populated, remove the item
+            -- the button currently being processed should always be in currentBarData because a sync is required to update action bars...
+            -- check to make sure currentBarData exists
+            if self.db.profile.currentBarData then
+                -- check to make sure the barName exists in currentBarData
+                if self.db.profile.currentBarData[diffData.barName] then
+                    -- check to make sure the buttonID exists in the barName table
+                    if self.db.profile.currentBarData[diffData.barName][diffData.buttonID] then
+                        -- remove the action bar button
+                        PickupAction(tonumber(diffData.buttonID))
                         ClearCursor()
-                    else
-                        -- if spell name not found then log error
-                        -- table.insert(errors, {
-                        --     buttonID = diffData.buttonID,
-                        --     actionType = diffData.actionType,
-                        --     id = diffData.id,
-                        --     name = diffData.name,
-                        --     descr = (L["updateactionbars_spell_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
-                        -- })
-                        err["name"] = diffData.name
-                        err["msg"] = L["notfound"]
-                        table.insert(errors, err)
                     end
                 end
-            elseif diffData.actionType == "item" then
-                local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(diffData.id)
+            end
+        end
 
-                -- need a string as itemName or error occurs if the item actually doesn't exist
-                local checkItemName = itemName or L["unknown"]
+        -- get the name of the id based on action type
+        if actionType == "spell" then
+            -- get spell details
+            local spellInfo = self:GetSpellDetails(actionID, buttonID)
 
-                --@debug@
-                if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(diffData.id, checkItemName)) end
-                --@end-debug@
+            -- report error if player does not have the spell
+            if spellInfo.hasSpell == false then
+                err["name"] = spellInfo.spellName
+                err["msg"] = L["unavailable"]
+                table.insert(errors, err)
 
-                -- does player have the item
-                local itemCount = C_Item.GetItemCount(diffData.id)
-
-                -- add to action bar if two tests pass...
-                -- if the user has the item
-                if itemCount > 0 then
-                    -- item exists
-                    if itemName then
-                        -- set the action bar button to the item
-                        C_Item.PickupItem(itemName)
-                        PlaceAction(tonumber(diffData.buttonID))
-                        ClearCursor()
-                    else
-                        -- if item name not found then log error
-                        -- table.insert(errors, {
-                        --     buttonID = diffData.buttonID,
-                        --     actionType = diffData.actionType,
-                        --     id = diffData.id,
-                        --     name = diffData.name,
-                        --     descr = (L["updateactionbars_item_not_found"]):format(buttonName, diffData.id, diffData.buttonID)
-                        -- })
-                        err["name"] = checkItemName
-                        err["msg"] = L["notfound"]
-                        table.insert(errors, err)
-                    end
-
-                -- if player doesn't have item then log as error
+            -- proceed if player has the spell
+            else                    
+                if spellInfo.name then
+                    -- set the action bar button to the spell
+                    C_Spell.PickupSpell(spellInfo.name)
+                    PlaceAction(tonumber(buttonID))
+                    ClearCursor()
                 else
-                    -- table.insert(errors, {
-                    --     buttonID = diffData.buttonID,
-                    --     actionType = diffData.actionType,
-                    --     id = diffData.id,
-                    --     name = diffData.name,
-                    --     descr = (L["updateactionbars_user_doesnot_have_item"]):format(buttonName, checkItemName, diffData.id)
-                    -- })
+                    err["name"] = diffData.name
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
+                end
+            end
+        elseif actionType == "item" then
+            local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(actionID)
+
+            -- need a string as itemName or error occurs if the item actually doesn't exist
+            local checkItemName = itemName or L["unknown"]
+
+            -- if checkItemName is unknown then see if its a toy?
+            local isToy = false
+            if checkItemName == L["unknown"] then
+                local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(actionID)
+                if toyName then
+                    -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
+                    checkItemName = toyName or L["unknown"]
+                    isToy = true
+                end
+            end
+
+            --@debug@
+            if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(actionID, checkItemName)) end
+            --@end-debug@
+
+            -- does player have the item
+            local itemCount = C_Item.GetItemCount(actionID)
+
+            -- add to action bar if two tests pass...
+            -- if the user has the item
+            if itemCount > 0 then
+                -- item exists
+                if itemName then
+                    -- set the action bar button to the item
+                    C_Item.PickupItem(itemName)
+                    PlaceAction(tonumber(diffData.buttonID))
+                    ClearCursor()
+                else
                     err["name"] = checkItemName
-                    err["msg"] = L["notinbags"]
-                    table.insert(errors, err)
-                end
-            elseif diffData.actionType == "macro" then
-                -- get macro information: name, iconTexture, body, isLocal
-                local macroName = GetMacroInfo(diffData.id)
-
-                -- if macro name is found proceed
-                if macroName then
-                    -- set the action bar button to the macro
-                    PickupMacro(macroName)
-                    PlaceAction(tonumber(diffData.buttonID))
-                    ClearCursor()
-
-                -- if macro name is not found then record error and remove whatever is in the bar
-                else
-                    -- if macro name not found then log error
-                    -- table.insert(errors, {
-                    --     buttonID = diffData.buttonID,
-                    --     actionType = diffData.actionType,
-                    --     id = diffData.id,
-                    --     name = diffData.name,
-                    --     descr = (L["updateactionbars_macro_not_found"]):format(buttonName, diffData.id)
-                    -- })
-                    err["name"] = L["unknown"]
-                    err["msg"] = L["notfound"]
-                    table.insert(errors, err)
-
-                    -- remove if not found
-                    PickupAction(tonumber(diffData.buttonID))
-                    ClearCursor()
-                end
-            elseif diffData.actionType == "summonpet" then
-                -- get pet information
-                local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(diffData.id)
-
-                -- if pet name is found proceed
-                if name then
-                    -- set the action bar button to the pet
-                    C_PetJournal.PickupPet(diffData.id)
-                    PlaceAction(tonumber(diffData.buttonID))
-                    ClearCursor()
-                else
-                    -- if pet name not found then log error
-                    -- table.insert(errors, {
-                    --     buttonID = diffData.buttonID,
-                    --     actionType = diffData.actionType,
-                    --     id = diffData.id,
-                    --     name = diffData.name,
-                    --     descr = (L["updateactionbars_pet_not_found"]):format(buttonName, diffData.id)
-                    -- })
-                    err["name"] = L["unknown"]
-                    err["msg"] = L["notfound"]
-                    table.insert(errors, err)
-                end
-            elseif diffData.actionType == "summonmount" then
-                -- get the mount spell name; see function details for why we get its spell name
-                local mountInfo = self:GetMountinfo(diffData.id)
-
-                -- if mount name is found proceed
-                if mountInfo.name then
-                    C_MountJournal.Pickup(tonumber(mountInfo.displayID))
-                    PlaceAction(tonumber(diffData.buttonID))
-                    ClearCursor()
-                else
-                    -- if mount name not found then log error
-                    -- table.insert(errors, {
-                    --     buttonID = diffData.buttonID,
-                    --     actionType = diffData.actionType,
-                    --     id = diffData.id,
-                    --     name = diffData.name,
-                    --     descr = (L["updateactionbars_mount_not_found"]):format(buttonName, diffData.id)
-                    -- })
-                    err["name"] = L["unknown"]
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
                 end
 
-            -- notfound means the button was empty
-            elseif diffData.actionType == "notfound" then
+            -- could be a toy
+            elseif isToy == true then
+                -- print("toy found: " .. checkItemName)
+                -- set the action bar button to the toy
+                C_ToyBox.PickupToyBoxItem(actionID)
+                PlaceAction(tonumber(buttonID))
+                ClearCursor()
+
+            -- if player doesn't have item then log as error
+            else
+                err["name"] = checkItemName
+                err["msg"] = L["notinbags"]
+                table.insert(errors, err)
+            end
+        elseif actionType == "macro" then
+            -- get macro information: name, iconTexture, body, isLocal
+            local macroName = GetMacroInfo(actionID)
+
+            -- if macro name is found proceed
+            if macroName then
+                -- set the action bar button to the macro
+                PickupMacro(macroName)
+                PlaceAction(tonumber(buttonID))
+                ClearCursor()
+
+            -- if macro name is not found then record error and remove whatever is in the bar
+            else
+                err["name"] = L["unknown"]
+                err["msg"] = L["notfound"]
+                table.insert(errors, err)
+
+                -- remove if not found
                 PickupAction(tonumber(diffData.buttonID))
                 ClearCursor()
             end
+        elseif actionType == "summonpet" then
+            -- get pet information
+            local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(diffData.id)
+
+            -- if pet name is found proceed
+            if name then
+                -- set the action bar button to the pet
+                C_PetJournal.PickupPet(diffData.id)
+                PlaceAction(tonumber(diffData.buttonID))
+                ClearCursor()
+            else
+                err["name"] = L["unknown"]
+                err["msg"] = L["notfound"]
+                table.insert(errors, err)
+            end
+        elseif actionType == "summonmount" then
+            -- get the mount spell name; see function details for why we get its spell name
+            local mountInfo = self:GetMountinfo(diffData.id)
+
+            -- if mount name is found proceed
+            if mountInfo.name then
+                C_MountJournal.Pickup(tonumber(mountInfo.displayID))
+                PlaceAction(tonumber(diffData.buttonID))
+                ClearCursor()
+            else
+                err["name"] = L["unknown"]
+                err["msg"] = L["notfound"]
+                table.insert(errors, err)
+            end
+
+        -- else as actionType is "notfound" means the button was empty
+        else
+            PickupAction(tonumber(diffData.buttonID))
+            ClearCursor()
         end
 
         -- count number of sync error records
@@ -1170,6 +1103,281 @@ function ABSync:UpdateActionBars(backupdttm)
     end
 end
 
+function ABSync:GetSpellDetails(spellID, buttonID)
+    -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
+    local spellData = C_Spell.GetSpellInfo(spellID)
+    local spellName = spellData and spellData.name or L["unknown"]
+
+    -- determine if player has the spell, if not report error
+    -- local hasSpell = C_Spell.IsCurrentSpell(spellID) or false
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            name = spellData and spellData.name or L["unknown"],
+            iconID = spellData and spellData.iconID or -1,
+            originalIconID = spellData and spellData.originalIconID or -1,
+            castTime = spellData and spellData.castTime or -1,
+            minRange = spellData and spellData.minRange or -1,
+            maxRange = spellData and spellData.maxRange or -1,
+            spellID = spellData and spellData.spellID or -1
+        },
+        name = spellName,
+        -- hasSpell = hasSpell,
+    }
+end
+
+function ABSync:GetItemDetails(itemID)
+    -- fetch blizzard item details
+    local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
+
+    -- need a string as itemName or error occurs if the item actually doesn't exist
+    local checkItemName = itemName or L["unknown"]
+
+    -- if checkItemName is unknown then see if its a toy
+    local isToy = false
+    if checkItemName == L["unknown"] then
+        local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
+        if toyName then
+            -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
+            checkItemName = toyName or L["unknown"]
+            isToy = true
+        end
+    end
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            itemName = itemName or L["unknown"],
+            itemLink = itemLink or L["unknown"],
+            itemQuality = itemQuality or L["unknown"],
+            itemLevel = itemLevel or -1,
+            itemMinLevel = itemMinLevel or -1,
+            itemType = itemType or L["unknown"],
+            itemSubType = itemSubType or L["unknown"],
+            itemStackCount = itemStackCount or -1,
+            itemEquipLoc = itemEquipLoc or L["unknown"],
+            itemTexture = itemTexture or -1,
+            sellPrice = sellPrice or -1,
+            classID = classID or -1,
+            subclassID = subclassID or -1,
+            bindType = bindType or -1,
+            expansionID = expansionID or -1,
+            setID = setID or -1,
+            isCraftingReagent = isCraftingReagent or false,
+        },
+        itemID = itemID,
+        finalItemName = checkItemName,
+        isToy = isToy
+    }
+end
+
+function ABSync:GetMacroDetails(macroID)
+    -- get macro information: name, iconTexture, body
+    -- isLocal removed in patch 3.0.2
+    local macroName, iconTexture, body = GetMacroInfo(macroID)
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            name = macroName or L["unknown"],
+            icon = iconTexture or -1,
+            body = body or L["unknown"]
+        }
+    }
+end
+
+function ABSync:GetPetDetails(petID)
+    -- get pet information
+    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            speciesID = speciesID or -1,
+            customName = customName or L["unknown"],
+            level = level or -1,
+            xp = xp or -1,
+            maxXp = maxXp or -1,
+            displayID = displayID or -1,
+            isFavorite = isFavorite or false,
+            name = name or L["unknown"],
+            icon = icon or -1,
+            petType = petType or L["unknown"],
+            creatureID = creatureID or -1,
+            sourceText = sourceText or L["unknown"],
+            description = description or L["unknown"],
+            isWild = isWild or false,
+            canBattle = canBattle or false,
+            isTradeable = isTradeable or false,
+            isUnique = isUnique or false,
+            obtainable = obtainable or false
+        },
+        petID = petID,
+        name = name or L["unknown"],
+    }
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetMountinfo
+    Purpose:    Retrieve mount information based on the action ID.
+-----------------------------------------------------------------------------]]
+function ABSync:GetMountinfo(mountID)
+    -- defaults
+    -- showDialog = showDialog or false
+
+    -- dialog to show all mount data
+    -- StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"] = {
+    --     text = "",
+    --     button1 = "OK",
+    --     timeout = 0,
+    --     whileDead = true,
+    --     hideOnEscape = true,
+    -- }
+    
+    -- first call to get mount information based on the action bar action id
+    local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
+
+    -- make sure certain values are not nil
+    name = name or L["unknown"]
+
+    -- then get additional details on the mount: createDisplayID, isVisible
+    local mountInfo = C_MountJournal.GetMountAllCreatureDisplayInfoByID(mountID)
+
+    -- instantiate a variable for the mount display id
+    local mountDisplayID = L["unknown"]
+
+    -- loop over mount data and get display ID
+    local mountFound = false
+    if type(mountInfo) == "table" then
+        for _, mountData in ipairs(mountInfo) do
+            for key, value in pairs(mountData) do
+                if key == "creatureDisplayID" then
+                    mountDisplayID = value
+                    mountFound = true
+                    break
+                end
+            end
+
+            -- break loop if mount found
+            if mountFound then
+                break
+            end
+        end
+    end
+
+    --@debug@
+    if self.isLive == false then self:Print((L["getmountinfolookup"]):format(name, mountID, tostring(mountDisplayID))) end
+    --@end-debug@
+
+    -- finally return the spell name
+    return {
+        blizData = {
+            name = name,
+            spellID = spellID or -1,
+            icon = icon or -1,
+            isActive = isActive or false,
+            isUsable = isUsable or false,
+            sourceType = sourceType or -1,
+            isFavorite = isFavorite or false,
+            isFactionSpecific = isFactionSpecific or false,
+            faction = faction or -1,
+            shouldHideOnChar = shouldHideOnChar or false,
+            isCollected = isCollected or false,
+            mountID = sourceMountID or -1,
+            isSteadyFlight = isSteadyFlight or false
+        },
+        name = name or L["unknown"],
+        sourceID = sourceMountID or -1,
+        displayID = mountDisplayID or -1,
+        mountID = mountID
+    }
+end
+
+function ABSync:GetActionButtonData(actionID, btnName)
+    -- get action type and ID information
+    local actionType, infoID, subType = GetActionInfo(actionID)
+
+    -- instantiate the return table
+    local returnData = {
+        blizData = {},
+        actionType = actionType or L["unknown"],
+        subType = subType or L["unknown"],
+        actionID = actionID,
+        infoID = infoID,
+        buttonID = buttonID,
+        btnName = btnName,
+        name = L["unknown"],
+        icon = -1,
+        sourceID = -1,
+
+        -- location in the action bar: 1-12
+        barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1,
+    }
+
+    -- get the name of the id based on action type
+    if actionType == "spell" then
+        -- get spell details: data, name, hasSpell
+        local spellInfo = self:GetSpellDetails(infoID, buttonID)
+
+        --@debug@
+        -- for key, value in pairs(spellInfo) do
+        --     self:Print(("spellInfo Key: %s - Value Type: %s"):format(key, type(value)))
+        -- end
+        --@end-debug@
+
+        -- assign data
+        returnData.name = spellInfo.name
+        returnData.icon = spellInfo.blizData.icon
+        returnData.sourceID = spellInfo.blizData.spellID
+        returnData.blizData = spellInfo.blizData
+
+    -- process items
+    elseif actionType == "item" then
+        -- get item details
+        local itemInfo = self:GetItemDetails(infoID, buttonID)
+
+        -- assign data
+        returnData.name = itemInfo.finalItemName
+        returnData.icon = itemInfo.blizData.itemTexture
+        returnData.sourceID = itemInfo.itemID
+        returnData.blizData = itemInfo.blizData
+
+    elseif actionType == "macro" then
+        -- get macro details
+        local macroInfo = self:GetMacroDetails(infoID)
+
+        -- assign data
+        returnData.name = macroInfo.blizData.name
+        returnData.icon = macroInfo.blizData.icon
+        returnData.sourceID = macroInfo.blizData.id
+        returnData.has = macroInfo.hasMacro
+        returnData.blizData = macroInfo.blizData
+
+    elseif actionType == "summonpet" then
+        -- get pet data
+        local petInfo = self:GetPetDetails(infoID)
+
+        -- assign data
+        returnData.name = petInfo.name
+        returnData.icon = petInfo.blizData.icon
+        returnData.blizData = petInfo.blizData
+
+    elseif actionType == "summonmount" then
+        -- get the mount spell name; see function details for why we get its spell name
+        local mountInfo = self:GetMountinfo(infoID)
+
+        -- assign data
+        returnData.name = mountInfo.name
+        returnData.icon = mountInfo.blizData.icon
+        returnData.sourceID = mountInfo.sourceID
+        returnData.blizData = mountInfo.blizData
+    end
+
+    -- finally return the data
+    return returnData
+end
+
 --[[---------------------------------------------------------------------------
     Function:   GetActionBarData
     Purpose:    Fetch current action bar button data.
@@ -1180,7 +1388,7 @@ function ABSync:GetActionBarData()
     local WoW10 = StdFuncs:IsWoW10()
 
     -- reset actionBars
-    self.db.profile.actionBars = {}
+    self.db.global.actionBars = {}
     
     -- reset currentBarData
     self.db.profile.currentBarData = {}
@@ -1193,70 +1401,76 @@ function ABSync:GetActionBarData()
             -- make up a name for each bar using the button names by removing the button number
             local barName = string.gsub(btnName, L["getactionbardata_button_name_template"], "")
 
-            -- translate barName into the blizzard visible name in settings for the bars
+            -- translate and replace barName into the blizzard visible name in settings for the bars
             local barName = ABSync.blizzardTranslate[barName] or L["unknown"]
 
-            -- get action ID and type information
-            local actionID = btnData:GetPagedID()
+            -- skip bar if unknown
+            if barName == L["unknown"] then
+                self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
 
-            -- get action type and ID information
-            local actionType, id, subType = GetActionInfo(actionID)
+            -- continue if barname is known
+            else
+                -- get action ID and type information
+                local actionID = btnData:GetPagedID()
 
-            --@debug@
-            -- debug when if no action info returned
-            -- if self.isLive == false and (not actionType or not id or not subType) then
-            --     local missingValues = {}
-            --     if not actionType then table.insert(missingValues, "Action Type") end
-            --     if not id then table.insert(missingValues, "ID") end
-            --     if not subType then table.insert(missingValues, "Sub Type") end
-            --     self:Print(("Action Bar Button '%s' is missing the following: %s"):format(btnName, table.concat(missingValues, ", ")))
-            -- end
-            --@end-debug@
+                --@debug@
+                -- debug when if no action info returned
+                -- if self.isLive == false and (not actionType or not id or not subType) then
+                --     local missingValues = {}
+                --     if not actionType then table.insert(missingValues, "Action Type") end
+                --     if not id then table.insert(missingValues, "ID") end
+                --     if not subType then table.insert(missingValues, "Sub Type") end
+                --     self:Print(("Action Bar Button '%s' is missing the following: %s"):format(btnName, table.concat(missingValues, ", ")))
+                -- end
+                --@end-debug@
 
-            -- build the info table
-            local info = {
-                -- actionID = actionID or "notfound",
-                name = btnName,
-                actionType = actionType or L["notfound"],
-                id = id or L["notfound"],
-                subType = subType or L["notfound"]
-            }
+                -- build the info table
+                -- local info = {
+                --     btnName = btnName,
+                --     actionType = actionType or L["notfound"],
+                --     sourceID = id or -1,
+                --     subType = subType or L["notfound"]
+                -- }
 
-            -- check if barName is already in actionBars
-            local barNameInserted = false
-            for _, name in ipairs(self.db.profile.actionBars) do
-                if name == barName then
-                    barNameInserted = true
-                    break
+                -- process more data for info based on actionType
+                local buttonData = self:GetActionButtonData(actionID, btnName)
+
+                -- check if barName is already in the global actionBars data
+                local barNameInserted = false
+                for _, name in ipairs(self.db.global.actionBars) do
+                    if name == barName then
+                        barNameInserted = true
+                        break
+                    end
                 end
-            end
 
-            -- add the bar name to the actionBars table if it doesn't exist
-            if barNameInserted == false then
-                table.insert(self.db.profile.actionBars, barName)
-            end
-
-            -- check if barName is already in currentBarData
-            local barNameInserted = false
-            for name, _ in pairs(self.db.profile.currentBarData) do
-                if name == barName then
-                    barNameInserted = true
-                    break
+                -- add the bar name to the actionBars table if it doesn't exist
+                if barNameInserted == false then
+                    table.insert(self.db.global.actionBars, barName)
                 end
-            end
 
-            -- add the bar name to the currentBarData table if it doesn't exist
-            if barNameInserted == false then
-                self.db.profile.currentBarData[barName] = {}
-            end
+                -- check if barName is already in currentBarData
+                local barNameInserted = false
+                for name, _ in pairs(self.db.profile.currentBarData) do
+                    if name == barName then
+                        barNameInserted = true
+                        break
+                    end
+                end
 
-            -- insert the info table into the current action bar data
-            self.db.profile.currentBarData[barName][tostring(actionID)] = info
+                -- add the bar name to the currentBarData table if it doesn't exist
+                if barNameInserted == false then
+                    self.db.profile.currentBarData[barName] = {}
+                end
+
+                -- insert the info table into the current action bar data
+                self.db.profile.currentBarData[barName][tostring(actionID)] = buttonData
+            end
         end
     end
 
     -- sort the actionBars table
-    table.sort(self.db.profile.actionBars, function(a, b)
+    table.sort(self.db.global.actionBars, function(a, b)
         return a < b
     end)
 
@@ -1264,45 +1478,57 @@ function ABSync:GetActionBarData()
     self.db.char.lastScan = date("%Y-%m-%d %H:%M:%S")
     
     -- sync keys of actionBars to barsToSync and barOwner
-    for _, barName in ipairs(self.db.profile.actionBars) do
+    for _, barName in ipairs(self.db.global.actionBars) do
         -- instantiate barsToSync if it doesn't exist
+        if not self.db.global.barsToSync then
+            self.db.global.barsToSync = {}
+        end
+
+        -- if the barName is not in barsToSync then add it with default value of false
+        if not self.db.global.barsToSync[barName] then
+            self.db.global.barsToSync[barName] = {
+                owner = L["noowner"],
+                buttonsToSync = {},
+            }
+        end
+
+        -- instantiate bar owner if it doesn't exist
+        if not self.db.global.barsToSync[barName].owner then
+            self.db.global.barsToSync[barName].owner = L["noowner"]
+        end
+
+        -- instantiate barsToSync also under the character profile
         if not self.db.profile.barsToSync then
             self.db.profile.barsToSync = {}
         end
 
-        -- if the barName is not in barsToSync then add it with default value of false
+        -- if the barName is missing in the profile barToSync data, add it with default value of false
         if not self.db.profile.barsToSync[barName] then
             self.db.profile.barsToSync[barName] = false
-        end
-
-        -- instantiate barOwner if it doesn't exist
-        if not self.db.profile.barOwner then
-            self.db.profile.barOwner = {}
-        end
-
-        -- if the bar is not in barOwner then add it with default value of "Unknown"
-        if not self.db.profile.barOwner[barName] then
-            self.db.profile.barOwner[barName] = L["unknown"]
         end
     end
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
-        if syncOn == true then
-            local playerID = self:GetPlayerNameFormatted()
-            local barOwner = self.db.profile.barOwner[barName] or L["unknown"]
-            if playerID == barOwner then
-                -- get the bar index
-                local barIndex = nil
-                for index, name in ipairs(self.db.profile.actionBars) do
-                    if name == barName then
-                        barIndex = index
-                        break
-                    end
-                end
-                -- trigger the profile sync
-                self:SetBarToSync(barIndex, syncOn)
-            end
+    for barName, barData in pairs(self.db.global.barsToSync) do
+        -- get player unique id
+        local playerID = self:GetPlayerNameFormatted()
+
+        -- get bar current owner
+        local barOwner = self.db.global.barsToSync[barName].owner
+
+        -- see if current player matches the owner
+        if playerID == barOwner then
+            -- get the bar index
+            -- local barIndex = nil
+            -- for index, name in ipairs(self.db.global.actionBars) do
+            --     if name == barName then
+            --         barIndex = index
+            --         break
+            --     end
+            -- end
+            -- trigger the profile sync
+            -- self:SetBarToSync(barIndex, syncOn)
+            self:SetBarToSync(barName, barOwner)
         end
     end
 
@@ -1310,7 +1536,9 @@ function ABSync:GetActionBarData()
     LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
 
     -- let user know its done
+    --@debug@
     if self.isLive == false then self:Print(L["getactionbardata_final_notification"]) end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -1333,8 +1561,6 @@ function ABSync:SlashCommand(text)
             self:ShowErrorLog()
         end
     end
-
-
 
     -- self:Print(L["slashcommand_none_setup_yet"])
     -- if msg:lower() == "options" then
@@ -1431,7 +1657,7 @@ function ABSync:ShowErrorLog()
     local frame = AceGUI:Create("Frame")
     frame:SetTitle("Action Bar Sync - Sync Errors")
     -- TODO: format the dttm or store a formatted value instead...
-    frame:SetStatusText(("Last Sync Error: %s"):format(self.db.char.lastSyncErrorMsg or "-"))
+    frame:SetStatusText(("Last Sync Error: %s"):format(self.db.char.lastSynced or "-"))
     frame:SetLayout("Flow")
     local frameWidth = screenWidth * 0.8
     local frameHeight = screenHeight * 0.8
