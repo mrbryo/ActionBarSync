@@ -33,6 +33,12 @@ ABSync.blizzardTranslate = {
     ["Action"] = L["actionbar1"]
 }
 
+-- lookup for source on sync details
+ABSync.profiletype = {
+    ["profile"] = "profile",
+    ["global"] = "global"
+}
+
 --[[---------------------------------------------------------------------------
     Function:   ABSync:OnInitialize
     Purpose:    Initialize the addon and set up default values.
@@ -85,37 +91,37 @@ function ABSync:OnInitialize()
                     hdr1 = {
                         name = L["introduction"],
                         type = "header",
-                        order = 10
+                        order = 1,
                     },
                     intro = {
                         name = L["introname"],
                         type = "description",
-                        order = 11
+                        order = 2,
                     },
                     step1hdr = {
                         name = L["step1hdr"],
                         type = "header",
-                        order = 20
+                        order = 10,
                     },
                     step1 = {
                         name = L["step1desc"],
                         type = "description",
-                        order = 21,
+                        order = 11,
                     },
                     step2hdr = {
                         name = L["step2hdr"],
                         type = "header",
-                        order = 30
+                        order = 12,
                     },
                     step2 = {
                         name = L["step2desc"],
                         type = "description",
-                        order = 31,
+                        order = 13,
                     },
                     scan = {
                         name = L["scan"],
                         type = "execute",
-                        order = 32,
+                        order = 14,
                         func = function()
                             ABSync:GetActionBarData()
                         end
@@ -124,7 +130,7 @@ function ABSync:OnInitialize()
                         name = L["lastscanname"],
                         desc = L["lastscandescr"],
                         type = "input",
-                        order = 33,
+                        order = 15,
                         disabled = true,
                         get = function(info)
                             return ABSync.db.char.lastScan or L["never"]
@@ -133,26 +139,59 @@ function ABSync:OnInitialize()
                     step3hdr = {
                         name = L["step3hdr"],
                         type = "header",
-                        order = 40
+                        order = 30,
                     },
                     step3 = {
                         name = L["step3desc"],
                         type = "description",
-                        order = 41,
+                        order = 31,
                     },
+
+                    -- bars to sync for sharing with other characters
                     bars2sync = {
                         name = L["bars2sync"],
                         values = function(info, value)
+                            local source = ABSync.profiletype["global"]
+                            return ABSync:GetActionBarNames(source)
+                        end,
+                        type = "multiselect",
+                        order = 32,
+                        get = function(info, key)
+                            local source = ABSync.profiletype["global"]
+                            return ABSync:GetBarsToSync(source, key)
+                        end,
+                        set = function(info, key, value)
+                            -- print(("Info: %s, Key: %s, Value: %s"):format(tostring(info), tostring(key), tostring(value)))
+                            ABSync:SetBarToShare(key, value)
+                        end,
+                    },
+                    step4hdr = {
+                        name = L["step4hdr"],
+                        type = "header",
+                        order = 40,
+                    },
+                    step4 = {
+                        name = L["step4desc"],
+                        type = "description",
+                        order = 41,
+                    },
+
+                    -- bars to sync in current characters UI
+                    profilesync = {
+                        name = L["profilesync"],
+                        values = function(info, value)
+                            local source = ABSync.profiletype["profile"]
                             return ABSync:GetActionBarNames()
                         end,
                         type = "multiselect",
-                        order = 100,
+                        order = 42,
                         get = function(info, key)
+                            local source = ABSync.profiletype["profile"]
                             return ABSync:GetBarsToSync(key)
                         end,
                         set = function(info, key, value)
-                            ABSync:SetBarToSync(key, value)
-                        end
+                            ABSync:SetBarToSync(key)
+                        end,
                     },
                     finalhdr = {
                         name = L["finalhdr"],
@@ -200,7 +239,7 @@ function ABSync:OnInitialize()
                         type = "input",
                         order = 2,
                         get = function(info)
-                            return ABSync:GetLastSyncedOnChar() or "Never"
+                            return ABSync:GetLastSyncedOnChar() or L["never"]
                         end,
                         disabled = true
                     },
@@ -215,22 +254,6 @@ function ABSync:OnInitialize()
                     }
                 }
             },
-            -- lastSyncErrors = {
-            --     name = L["lastsyncerrorsname"],
-            --     desc = L["lastsyncerrorsdesc"],
-            --     type = "group",
-            --     order = 4,
-            --     args = {
-            --         errors = {
-            --             name = function(info)
-            --                return ABSync:GetErrorText(info)
-            --             end,
-            --             type = "description",
-            --             order = 20,
-            --             width = "full",
-            --         }
-            --     }
-            -- },
             actionlookup = {
                 name = L["actionlookupname"],
                 desc = L["actionlookupdesc"],
@@ -509,23 +532,62 @@ function ABSync:LookupAction()
     StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
 end
 
+function ABSync:GetActionBarsCount(source)
+    -- initialize variable
+    local count = 0
+    local tmpdb = {}
+
+    -- point to correct db branch based on source
+    if source == self.profiletype["profile"] then
+        -- print("Using profile database")
+        tmpdb = self.db.profile
+
+    -- always get global if source doesn't match a valid type
+    else
+        -- print("Using global database")
+        tmpdb = self.db.global
+    end
+
+    -- if actionBars variable exist then continue
+    if tmpdb.actionBars then
+        -- print("here1")
+        -- if actionBars is not a table then return 0
+        if tostring(type(tmpdb.actionBars)) == "table" then
+            -- print("here2")
+            count = #tmpdb.actionBars
+        end
+    end
+
+    -- finally return the count
+    -- print("here3")
+    return tonumber(count)
+end
+
 --[[---------------------------------------------------------------------------
     Function:   GetActionBarNames
     Purpose:    Return the list/table of action bar names.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionBarNames()
+function ABSync:GetActionBarNames(source)
     -- check to make sure a data fetch has happened, if not return No Scan Completed
     local barNames = {}
-    if not self.db.global.actionBars or #self.db.global.actionBars == 0 then
-        -- debug
-        -- self:Print("No action bars found")
+    
+    -- get a count of actionbars
+    local count = self:GetActionBarsCount(source)
+
+    -- if actionBars does not exist
+    if count == 0 then
         -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
         table.insert(barNames, L["noscancompleted"])
-        return barNames
-    end
 
-    -- if we get to here just return the list of bar names from the scan
-    return self.db.global.actionBars
+        -- finally return bar name
+        return barNames
+    else
+        -- loop over actionBars and rebuild table to figure this out
+        -- for k, v in pairs(self.db.global.actionBars) do
+        --     table.insert(barNames, v)
+        -- end
+        return self.db.global.actionBars
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -554,25 +616,68 @@ end
     Function:   GetBarsToSync
     Purpose:    Get the bars set to be synced for the current profile.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarsToSync(key)
-    -- check that actionBars variable exists
-    if not self.db.global.actionBars then
-        self.db.global.actionBars = {}
-    end
-    -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
-    local barName = L["unknown"]
-    if self.db.global.actionBars[key] then
-        barName = self.db.global.actionBars[key]
-    end
-    -- check for barsToSync
-    if not self.db.global.barsToSync then
-        self.db.global.barsToSync = {}
-    end
-    -- check for the barName in barsToSync
-    local returnVal = self.db.global.barsToSync[barName] or false
+function ABSync:GetBarsToSync(source, key)
+    -- initialize variables
+    local barName = L["noscancompleted"]
 
-    -- finally return a value
-    return returnVal
+    -- based on source we have slightly different processing
+    if source == self.profiletype["profile"] then
+        -- make sure actionBars exists
+        if not self.db.profile.actionBars then
+            self.db.profile.actionBars = {}
+        end
+
+        -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
+        print("Key: " .. tostring(key))
+        if self.db.profile.actionBars[key] then
+            barName = self.db.profile.actionBars[key]
+        end
+
+        -- check for barsToSync in profile
+        if not self.db.profile.barsToSync then
+            self.db.profile.barsToSync = {}
+        end
+
+        -- get the sync value for the bar, if not found return false
+        if not self.db.profile.barsToSync[barName] then
+            return false
+        end
+
+    elseif source == self.profiletype["global"] then
+        -- make sure actionBars exists
+        if not self.db.global.actionBars then
+            self.db.global.actionBars = {}
+        end
+
+        -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
+        if self.db.global.actionBars[key] then
+            barName = self.db.global.actionBars[key]
+        end    
+        
+        -- check for barsToSync in global
+        if not self.db.global.barsToSync then
+            self.db.global.barsToSync = {}
+        end
+
+        -- get the sync value for the bar, if not found return false
+        if not self.db.global.barsToSync[barName] then
+            return false
+        else
+            -- get player id
+            local playerID = self:GetPlayerNameFormatted()
+
+            -- check if the owner matches the player id, if so return true, else false
+            if self.db.global.barsToSync[barName].owner == playerID then
+                return true
+            else
+                return false
+            end
+        end
+
+    -- invalid profile type
+    else
+        return false
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -585,26 +690,65 @@ function ABSync:GetPlayerNameFormatted()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   SetBarToSync
-    Purpose:    Update the db for current profile when the user changes the values in the options on which bars to sync.
+    Function:   SetBarToShare
+    Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
-function ABSync:SetBarToSync(key, value)
-    -- set the bars to sync
-    local barName = self.db.global.actionBars[key]
+function ABSync:SetBarToShare(key, value)
+    --@debug@
+    print(("(%s) Key: %s, Value: %s"):format("SetBarToShare", tostring(key), tostring(value)))
+    --@end-debug@
 
-    -- only the bar owner can uncheck an action bar, prevent other users
+    -- initialize variables
+    local barName = L["unknown"]
     local playerID = self:GetPlayerNameFormatted()
 
-    -- make sure barOwner exists
-    if not self.db.global.barsToSync[barName].barOwner then
-        self.db.global.barsToSync[barName].barOwner = {}
+    -- initialize missing key dialog
+    StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
+        text = (L["actionbarsync_invalid_key_text"]):format(key, source),
+        button1 = L["ok"],
+        timeout = 15,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+
+    -- check global.actionBars
+    if not self.db.global.actionBars then
+        self.db.global.actionBars = {}
     end
 
-    -- get the bar owner or set to Unknown if not found
-    local barOwner = self.db.global.barsToSync[barName].barOwner[barName] or "Unknown"
+    -- check for input key, if it doesn't exist then let user know and return false
+    if not self.db.global.actionBars[key] then
+        StaticPopup_Show("ACTIONBARSYNC_INVALID_KEY")
+        return false
+    end
 
-    -- if the player and the bar owner do not match or the bar owner is not unknown then let user know they can't uncheck this bar from syncing
-    if playerID ~= barOwner and barOwner ~= "Unknown" then
+    -- set bar name
+    barName = self.db.global.actionBars[key]
+
+    -- need to get the bar owner which is only under the global db
+    -- make sure barsToSync exists under global
+    if not self.db.global.barsToSync then
+        self.db.global.barsToSync = {}
+    end
+
+    -- make sure the bar name exists, if not add it and set defaults
+    if not self.db.global.barsToSync[barName] then
+        self.db.global.barsToSync[barName] = {
+            owner = L["noowner"],
+            buttonsToSync = {},
+        }
+    end
+
+    -- make sure owner exists, if not set the default
+    if not self.db.global.barsToSync[barName].owner then
+        self.db.global.barsToSync[barName].owner = L["noowner"]
+    end
+
+    -- finally...get bar owner
+    local barOwner = self.db.global.barsToSync[barName].owner or L["noowner"]
+    
+    -- if the player and the bar owner do not match or the bar owner is not No Owner (meaning someone owns it) then let user know they can't uncheck this bar from syncing
+    if playerID ~= barOwner and barOwner ~= L["noowner"] then
         -- show popup
         StaticPopupDialogs["ACTIONBARSYNC_NOT_BAR_OWNER"] = {
             text = (L["actionbarsync_not_bar_owner_text"]):format(barName, barOwner),
@@ -617,71 +761,125 @@ function ABSync:SetBarToSync(key, value)
         return
     end
 
-    -- get count of records in currentBarData
-    local currentBarDataCount = 0
-    for _ in pairs(self.db.profile.currentBarData) do
-        currentBarDataCount = currentBarDataCount + 1
+    -- track if bar is found in currentBarData
+    local barFound = false
+    
+    -- make sure currentBarData exists and is a table
+    if type(self.db.profile.currentBarData) == "table" then
+        -- make sure the bar name exists
+        if not self.db.profile.currentBarData[barName] then
+            -- if it doesn't exist then set it to an empty table
+            self.db.profile.currentBarData[barName] = {}
+        else
+            -- if it exists then set barFound to true
+            barFound = true
+        end
     end
 
     -- if currentBarData is emtpy then let user know they must trigger a sync first
-    if currentBarDataCount == 0 then
+    if barFound == false then
         StaticPopupDialogs["ACTIONBARSYNC_NO_SCAN"] = {
-            text = L["actionbarsync_no_scan_text"],
+            text = (L["actionbarsync_no_scan_text"]):format(barName),
             button1 = L["ok"],
-            timeout = 15,
+            button2 = L["cancel"],
+            timeout = 0,
             hideOnEscape = true,
             preferredIndex = 3,
+            OnAccept = function(self)
+                ABSync:GetActionBarData()
+            end,
         }
         StaticPopup_Show("ACTIONBARSYNC_NO_SCAN")
+
+        -- just return to cancel the rest of the function
         return
     end
 
-    --@debug@
-    -- if self.isLive == false then self:Print("Set Bar '" .. tostring(barName) .. "' to sync? " .. (value and "Yes" or "No") .. " - Starting...") end
-    --@end-debug@
+    -- getting to this point has passed all tests so we can sync the data to the global settings and mark this player as the owner
+    -- set the bar owner to the current character
+    self.db.global.barsToSync[barName].owner = playerID
 
-    -- instantiate barsToSync if it doesn't exist
-    if not self.db.global.barsToSync then
-        self.db.global.barsToSync = {}
-    end
-
-    -- set the bar to sync values: true or false based on the value passed into this function
-    self.db.global.barsToSync[barName] = value
-    
-    -- if the value is true, add the bar data to the barData table
+    -- if the value is true, add the bar data to the buttonsToSync table under the barsToSync[barName] table
     if value == true then
         -- set the bar owner
-        self.db.global.barsToSync[barName].barOwner[barName] = playerID
+        self.db.global.barsToSync[barName].owner = playerID
 
-        -- based on value add or remove the bar data
+        -- add the bar data
         for buttonID, buttonData in pairs(self.db.profile.currentBarData[barName]) do
-            -- make sure barData exists
-            if not self.db.profile.barData then
-                self.db.profile.barData = {}
+            -- make sure buttonsToSync exists
+            if not self.db.global.barsToSync[barName].buttonsToSync then
+                self.db.global.barsToSync[barName].buttonsToSync = {}
             end
 
-            -- make sure the barName entry exists in barData
-            if not self.db.profile.barData[barName] then
-                self.db.profile.barData[barName] = {}
-            end
-
-            -- add the button data to the barData table
-            self.db.profile.barData[barName][buttonID] = {
-                actionType = buttonData.actionType,
-                id = buttonData.id,
-                subType = buttonData.subType,
-                name = buttonData.name
-            }
+            -- add the button data to the buttonsToSync table
+            self.db.global.barsToSync[barName].buttonsToSync[buttonID] = buttonData
         end
     else
-        -- if the bar is not set to sync, remove it from the bar data
-        self.db.profile.barData[barName] = {}
+        -- remove all the button data
+        self.db.global.barsToSync[barName].buttonsToSync = {}
+
         -- remove bar owner
-        self.db.global.barsToSync[barName].barOwner[barName] = nil
+        self.db.global.barsToSync[barName].owner = L["noowner"]
     end
 
+    --@debug@
+    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
+    --@end-debug@
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetBarToSync
+    Purpose:    Update the db for current profile when the user changes the values in the options on which bars to sync.
+-----------------------------------------------------------------------------]]
+function ABSync:SetBarToSync(key, value)
+    --@debug@
+    print(("Key: %s, Value: %s"):format(tostring(key), tostring(value)))
+    --@end-debug@
+
+    -- initialize variables
+    local barName = L["unknown"]
+
+    -- initialize missing key dialog
+    StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
+        text = (L["actionbarsync_invalid_key_text"]):format(key),
+        button1 = L["ok"],
+        timeout = 15,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+
+    -- check profile.actionBars
+    if not self.db.profile.actionBars then
+        self.db.profile.actionBars = {}
+    end
+
+    -- check for input key, if it doesn't exist then let user know and return false
+    if not self.db.profile.actionBars[key] then
+        StaticPopup_Show("ACTIONBARSYNC_INVALID_KEY")
+        return false
+    end
+
+    -- set bar name
+    barName = self.db.profile.actionBars[key]
+    
+    -- track if bar is found in currentBarData
+    local barFound = false
+
+    -- check for profile.barsToSync
+    if not self.db.profile.barsToSync then
+        self.db.profile.barsToSync = {}
+    end
+
+    -- check for the barName in profile.barsToSync
+    if not self.db.profile.barsToSync[barName] then
+        self.db.profile.barsToSync[barName] = false
+    end
+
+    -- set the bar to sync on input value to the profile: true or false based on the value passed into this function
+    self.db.profile.barsToSync[barName] = value
+
     --@debug@ let the user know the value is changed only when developing though
-    if self.isLive == false then self:Print((L["setbartosync_final_notification"]):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
+    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -1409,6 +1607,7 @@ function ABSync:GetActionBarData()
 
     -- reset actionBars
     self.db.global.actionBars = {}
+    self.db.profile.actionBars = {}
     
     -- reset currentBarData
     self.db.profile.currentBarData = {}
@@ -1464,10 +1663,24 @@ function ABSync:GetActionBarData()
                     end
                 end
 
-                -- add the bar name to the actionBars table if it doesn't exist
+                -- add the bar name to the global actionBars table if it doesn't exist
                 if barNameInserted == false then
                     table.insert(self.db.global.actionBars, barName)
                 end
+
+                -- check if barName is already in the profile actionBars data
+                barNameInserted = false
+                for _, name in ipairs(self.db.profile.actionBars) do
+                    if name == barName then
+                        barNameInserted = true
+                        break
+                    end
+                end
+
+                -- add the bar name to the profile actionBars table if it doesn't exist
+                if barNameInserted == false then
+                    table.insert(self.db.profile.actionBars, barName)
+                end                
 
                 -- check if barName is already in currentBarData
                 local barNameInserted = false
@@ -1568,7 +1781,8 @@ end
 function ABSync:SlashCommand(text)
     -- if no text is provided, show the options dialog
     if text == nil or text == "" then
-        LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+        self:ShowUI()
+        -- LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
         return
     end
     -- get args
@@ -1577,8 +1791,7 @@ function ABSync:SlashCommand(text)
             LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
         elseif arg:lower() == "sync" then
             self:BeginSync()
-        elseif arg:lower() == "errors" then
-            self:ShowErrorLog()
+        -- elseif arg:lower() == "errors" then
         end
     end
 
@@ -1661,39 +1874,198 @@ end
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
-function ABSync:ShowErrorLog()
+function ABSync:ShowUI()
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
-    
-    -- columns
-    local columns = {"Bar Name", "Bar Pos", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
-    local columnLoop = {"barName", "barPos", "buttonID", "actionType", "name", "id", "msg"}
 
     -- Get screen size
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
 
-    -- Create the main frame
-    local frame = AceGUI:Create("Frame")
-    frame:SetTitle("Action Bar Sync - Sync Errors")
-    -- TODO: format the dttm or store a formatted value instead...
-    frame:SetStatusText(("Last Sync Error: %s"):format(self.db.char.lastSynced or "-"))
-    frame:SetLayout("Flow")
-    local frameWidth = screenWidth * 0.8
-    local frameHeight = screenHeight * 0.8
-    frame:SetWidth(frameWidth)
-    frame:SetHeight(frameHeight)
+    --[[ top group ]]
+
+    local topGroup = AceGUI:Create("SimpleGroup")
+    topGroup:SetLayout("Flow")
+    topGroup:SetFullWidth(true)
+
+    --[[ middle group ]]
+
+    local middleGroup = AceGUI:Create("SimpleGroup")
+    middleGroup:SetLayout("Flow")
+    middleGroup:SetFullWidth(true)
+
+    --[[ bottom group ]]
+
+    local bottomGroup = AceGUI:Create("SimpleGroup")
+    bottomGroup:SetLayout("Flow")
+    bottomGroup:SetFullWidth(true) 
+
+    --[[ top right group ]]
+
+    local topRightGroup = AceGUI:Create("SimpleGroup")
+    topRightGroup:SetLayout("List")
+    topRightGroup:SetFullWidth(true)
+
+    --[[ about frame ]]
+
+    -- create the main about frame
+    local aboutFrame = AceGUI:Create("InlineGroup")
+    aboutFrame:SetTitle("About")
+    aboutFrame:SetLayout("List")
+    -- aboutFrame:SetFullHeight(true)
+
+    --[[ instructions frame ]]
+
+    -- create instructions frame
+    local instructionsFrame = AceGUI:Create("InlineGroup")
+    instructionsFrame:SetTitle("Instructions")
+    instructionsFrame:SetLayout("List")
+    -- instructionsFrame:SetFullHeight(true)
+
+    -- add scroll frame for instructions
+    local instructionsScroll = AceGUI:Create("ScrollFrame")
+    instructionsScroll:SetLayout("List")
+    instructionsScroll:SetFullWidth(true)
+    -- instructionsScroll:SetFullHeight(true)
+    instructionsFrame:AddChild(instructionsScroll)
+
+    -- add step 1
+    local step1 = AceGUI:Create("Label")
+    step1:SetText("1. Open the options and set the correct profile. I suggest to leave the default which is for your current characters profile.")
+    step1:SetFullWidth(true)
+    instructionsScroll:AddChild(step1)
+
+    -- add button to open options for this addon
+    local step1Button = AceGUI:Create("Button")
+    step1Button:SetText("Open Options")
+    step1Button:SetWidth(200)
+    step1Button:SetCallback("OnClick", function()
+        LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+    end)
+    instructionsScroll:AddChild(step1Button)
+    local step1spacer = AceGUI:Create("Label")
+    step1spacer:SetText(" ")
+    step1spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step1spacer)
+
+    -- add step 2
+    local step2 = AceGUI:Create("Label")
+    step2:SetText("2. Click the 'Scan Now' button. An initial scan is required for the addon to function.")
+    step2:SetFullWidth(true)
+    instructionsScroll:AddChild(step2)
+    local step2spacer = AceGUI:Create("Label")
+    step2spacer:SetText(" ")
+    step2spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step2spacer)
+
+    -- add step 3
+    local step3 = AceGUI:Create("Label")
+    step3:SetText("3. Optional, in the 'Share' section, select which action bars to share.")
+    step3:SetFullWidth(true)
+    instructionsScroll:AddChild(step3)
+    local step3spacer = AceGUI:Create("Label")
+    step3spacer:SetText(" ")
+    step3spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step3spacer)
+
+    -- add step 4
+    local step4 = AceGUI:Create("Label")
+    step4:SetText("4. In the 'Sync' section, select character action bars to sync into this character's action bars.")
+    step4:SetFullWidth(true)
+    instructionsScroll:AddChild(step4)
+    local step4spacer = AceGUI:Create("Label")
+    step4spacer:SetText(" ")
+    step4spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step4spacer)
+
+    -- add step 5
+    local step5 = AceGUI:Create("Label")
+    step5:SetText("5. Click the 'Sync Now' button to sync your action bars.")
+    step5:SetFullWidth(true)
+    instructionsScroll:AddChild(step5)
+
+    --[[ scan frame ]]
+
+    -- create group
+    local scanFrame = AceGUI:Create("InlineGroup")
+    scanFrame:SetTitle("Scan Bars")
+    scanFrame:SetLayout("List")
+    -- scanFrame:SetFullHeight(true)
+
+    -- add label
+    local label = AceGUI:Create("Label")
+    label:SetText("Last Scan on this Character")
+    label:SetFullWidth(true)
+    scanFrame:AddChild(label)
+
+    -- add disabled edit box
+    local input = AceGUI:Create("EditBox")
+    input:SetText(self.db.char.lastScan or L["noscancompleted"])
+    input:SetFullWidth(true)
+    input:SetDisabled(true) -- make it read-only
+    scanFrame:AddChild(input)
+
+    -- add scan button
+    local button = AceGUI:Create("Button")
+    button:SetText("Scan Now")
+    button:SetFullWidth(true)
+    button:SetCallback("OnClick", function()
+        ABSync:GetActionBarData()
+    end)
+    scanFrame:AddChild(button)
+
+    --[[ trigger sync frame ]]
+
+    local triggerSyncFrame = AceGUI:Create("InlineGroup")
+    triggerSyncFrame:SetTitle("Trigger Sync")
+    triggerSyncFrame:SetLayout("List")
+
+    -- add last synced label
+    local lastSyncedLabel = AceGUI:Create("Label")
+    lastSyncedLabel:SetText("Last Synced on this Character")
+    lastSyncedLabel:SetFullWidth(true)
+    triggerSyncFrame:AddChild(lastSyncedLabel)
+
+    -- add disabled edit box
+    local lastSyncedInput = AceGUI:Create("EditBox")
+    lastSyncedInput:SetText(self.db.char.lastSyncDttm or L["never"])
+    lastSyncedInput:SetFullWidth(true)
+    lastSyncedInput:SetDisabled(true) -- make it read-only
+    triggerSyncFrame:AddChild(lastSyncedInput)
+
+    -- add button to trigger sync
+    local syncButton = AceGUI:Create("Button")
+    syncButton:SetText("Sync Now")
+    syncButton:SetFullWidth(true)
+    syncButton:SetCallback("OnClick", function()
+        self:BeginSync()
+    end)
+    triggerSyncFrame:AddChild(syncButton)
+
+    --[[ last sync errors frame ]]
+
+    -- create a group for the error scroll frame
+    local lastErrorGroup = AceGUI:Create("InlineGroup")
+    lastErrorGroup:SetTitle("Last Sync Errors")
+    lastErrorGroup:SetLayout("Fill")
+
+    --[[ create frame for last scan errors ]]
+
+    -- columns
+    local columns = {"Bar Name", "Bar Pos", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
+    local columnLoop = {"barName", "barPos", "buttonID", "actionType", "name", "id", "msg"}
 
     -- Create a scroll container for the spreadsheet
     local scroll = AceGUI:Create("ScrollFrame")
     scroll:SetLayout("List")
     scroll:SetFullWidth(true)
     scroll:SetFullHeight(true)
-    frame:AddChild(scroll)
+    lastErrorGroup:AddChild(scroll)
 
     -- determine column width
     -- 5px for spacing
-    local columnWidth = ((frameWidth - 5) / #columns) - 5
+    -- local columnWidth = ((frameWidth - 5) / #columns) - 5
+    local columnWidth = 1/#columns
 
     -- Create header row
     local header = AceGUI:Create("SimpleGroup")
@@ -1702,7 +2074,8 @@ function ABSync:ShowErrorLog()
     for _, colName in ipairs(columns) do
         local label = AceGUI:Create("Label")
         label:SetText("|cff00ff00" .. colName .. "|r")
-        label:SetWidth(columnWidth)
+        -- label:SetWidth(columnWidth)
+        label:SetRelativeWidth(columnWidth)
         header:AddChild(label)
     end
     scroll:AddChild(header)
@@ -1729,6 +2102,108 @@ function ABSync:ShowErrorLog()
             end
         end
     end
+
+    --[[ create share frame ]]
+
+    local shareFrame = AceGUI:Create("InlineGroup")
+    shareFrame:SetTitle("Share")
+    shareFrame:SetLayout("Flow")
+
+    -- add a multiselect for sharing which action bars to share
+    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
+    local dataChanged = false
+    for _, checkboxName in pairs(actionBars) do
+        -- create a checkbox for each action bar
+        local checkBox = AceGUI:Create("CheckBox")
+        checkBox:SetLabel(checkboxName)
+        checkBox:SetValue(self.db.global.barsToSync[checkboxName].owner == playerID)
+        -- checkBox:SetFullWidth(true)
+
+        -- set callback for when checkbox is clicked
+        checkBox:SetCallback("OnValueChanged", function(widget, event, value)
+            -- update the profile barsToSync value
+            self.db.profile.barsToSync[syncKey] = value
+
+            -- data has changed so update tracking variable
+            dataChanged = true
+        end)
+
+        -- add the checkbox to the share frame
+        shareFrame:AddChild(checkBox)
+    end
+
+    if dataChanged == true then
+        -- trigger update for options UI
+        LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
+    end
+
+    -- [[ create sync frame ]]
+
+    -- generate tree
+    local treeData = {}
+    for barName, barData in pairs(self.db.global.barsToSync) do
+ 
+    end
+
+    local syncFrame = AceGUI:Create("TreeGroup")
+    syncFrame:SetTitle("Sync")
+    syncFrame:SetLayout("Flow")
+
+
+
+    --[[ Create the main frame]]
+
+    local frame = AceGUI:Create("Frame")
+    frame:SetTitle("Action Bar Sync")
+    -- TODO: format the dttm or store a formatted value instead...
+    frame:SetStatusText(("Last Synced to UI: %s"):format(self.db.char.lastSynced or "-"))
+    frame:SetLayout("Flow")
+    local frameWidth = screenWidth * 0.8
+    local frameHeight = screenHeight * 0.8
+    frame:SetWidth(frameWidth)
+    frame:SetHeight(frameHeight)
+
+    -- add child frames; must add to group before adding group to main frame
+    aboutFrame:SetAutoAdjustHeight(false)
+    aboutFrame:SetRelativeWidth(0.3)
+    aboutFrame:SetHeight(300)
+
+    instructionsFrame:SetAutoAdjustHeight(false)
+    instructionsFrame:SetRelativeWidth(0.5)
+    instructionsFrame:SetHeight(300)
+
+    scanFrame:SetFullWidth(true)
+
+    triggerSyncFrame:SetFullWidth(true)
+
+    topRightGroup:SetAutoAdjustHeight(false)
+    topRightGroup:SetRelativeWidth(0.2)
+    topRightGroup:SetHeight(300)
+    topRightGroup:AddChild(scanFrame)
+    topRightGroup:AddChild(triggerSyncFrame)
+
+    topGroup:AddChild(aboutFrame)
+    topGroup:AddChild(instructionsFrame)
+    topGroup:AddChild(topRightGroup)
+
+    shareFrame:SetAutoAdjustHeight(false)
+    shareFrame:SetRelativeWidth(0.5)
+    shareFrame:SetHeight(200)
+
+    syncFrame:SetAutoAdjustHeight(false)
+    syncFrame:SetRelativeWidth(0.5)
+    syncFrame:SetHeight(200)
+
+    middleGroup:AddChild(shareFrame)
+    middleGroup:AddChild(syncFrame)
+
+    lastErrorGroup:SetAutoAdjustHeight(false)
+    lastErrorGroup:SetFullWidth(true)
+    lastErrorGroup:SetHeight(300)
+
+    frame:AddChild(topGroup)
+    frame:AddChild(middleGroup)
+    frame:AddChild(lastErrorGroup)
 
     -- display the frame
     frame:Show()
