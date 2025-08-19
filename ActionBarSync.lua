@@ -2151,6 +2151,7 @@ function ABSync:CreateSyncFrame(syncWidth)
     local syncHdrRowGroup = AceGUI:Create("SimpleGroup")
     syncHdrRowGroup:SetLayout("Flow")
     syncHdrRowGroup:SetRelativeWidth(0.97)
+    syncHdr:AddChild(syncHdrRowGroup)
 
     -- add delete header label
     local deleteHdrLabel = AceGUI:Create("Label")
@@ -2169,8 +2170,6 @@ function ABSync:CreateSyncFrame(syncWidth)
     actionBarHdrLabel:SetText("|cff00ff00" .. columns[3] .. "|r")
     actionBarHdrLabel:SetRelativeWidth(columnWidth[3])
     syncHdrRowGroup:AddChild(actionBarHdrLabel)
-
-    syncHdr:AddChild(syncHdrRowGroup)
 
     -- for colIndex, colName in ipairs(columns) do
     --     local label = AceGUI:Create("Label")
