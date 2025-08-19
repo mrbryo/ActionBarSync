@@ -54,194 +54,12 @@ function ABSync:OnInitialize()
     -- initialize the db
     self.db = LibStub("AceDB-3.0"):New("ActionBarSyncDB")
 
-    -- check for initial db setup
-    if not self.db.global.initializedttm then
-        self.db.global.initializedttm = date("%Y-%m-%d %H:%M:%S")
-
-        -- defaults
-        self:InstantiateAll(nil)
-        
-        
-    end
-
     -- Instantiate Option Table
     self.ActionBarSyncOptions = {
         name = L["actionbarsynctitle"],
         handler = ABSync,
         type = "group",
         args = {
-            syncsettings = {
-                name = L["syncsettings"],
-                desc = L["syncsettingsdesc"],
-                type = "group",
-                order = 1,
-                args = {
-                    hdr1 = {
-                        name = L["introduction"],
-                        type = "header",
-                        order = 1,
-                    },
-                    intro = {
-                        name = L["introname"],
-                        type = "description",
-                        order = 2,
-                    },
-                    step1hdr = {
-                        name = L["step1hdr"],
-                        type = "header",
-                        order = 10,
-                    },
-                    step1 = {
-                        name = L["step1desc"],
-                        type = "description",
-                        order = 11,
-                    },
-                    step2hdr = {
-                        name = L["step2hdr"],
-                        type = "header",
-                        order = 12,
-                    },
-                    step2 = {
-                        name = L["step2desc"],
-                        type = "description",
-                        order = 13,
-                    },
-                    scan = {
-                        name = L["scan"],
-                        type = "execute",
-                        order = 14,
-                        func = function()
-                            ABSync:GetActionBarData()
-                        end
-                    },
-                    lastscan = {
-                        name = L["lastscanname"],
-                        desc = L["lastscandescr"],
-                        type = "input",
-                        order = 15,
-                        disabled = true,
-                        get = function(info)
-                            return ABSync.db.char.lastScan or L["never"]
-                        end,
-                    },
-                    step3hdr = {
-                        name = L["step3hdr"],
-                        type = "header",
-                        order = 30,
-                    },
-                    step3 = {
-                        name = L["step3desc"],
-                        type = "description",
-                        order = 31,
-                    },
-
-                    -- bars to sync for sharing with other characters
-                    bars2sync = {
-                        name = L["bars2sync"],
-                        values = function(info, value)
-                            local source = ABSync.profiletype["global"]
-                            return ABSync:GetActionBarNames(source)
-                        end,
-                        type = "multiselect",
-                        order = 32,
-                        get = function(info, key)
-                            local source = ABSync.profiletype["global"]
-                            return ABSync:GetBarsToSync(source, key)
-                        end,
-                        set = function(info, key, value)
-                            -- print(("Info: %s, Key: %s, Value: %s"):format(tostring(info), tostring(key), tostring(value)))
-                            ABSync:SetBarToShare(key, value)
-                        end,
-                    },
-                    step4hdr = {
-                        name = L["step4hdr"],
-                        type = "header",
-                        order = 40,
-                    },
-                    step4 = {
-                        name = L["step4desc"],
-                        type = "description",
-                        order = 41,
-                    },
-
-                    -- bars to sync in current characters UI
-                    profilesync = {
-                        name = L["profilesync"],
-                        values = function(info, value)
-                            local source = ABSync.profiletype["profile"]
-                            return ABSync:GetActionBarNames()
-                        end,
-                        type = "multiselect",
-                        order = 42,
-                        get = function(info, key)
-                            local source = ABSync.profiletype["profile"]
-                            return ABSync:GetBarsToSync(key)
-                        end,
-                        set = function(info, key, value)
-                            ABSync:SetBarToSync(key)
-                        end,
-                    },
-                    finalhdr = {
-                        name = L["finalhdr"],
-                        type = "header",
-                        order = 110
-                    },
-                    finaldescr = {
-                        name = L["finaldescr"],
-                        type = "description",
-                        order = 111,
-                    },
-                    finalstep = {
-                        name = L["finalstep"],
-                        width = "full",
-                        type = "toggle",
-                        order = 112,
-                        get = function(info, key)
-                            -- if the value doesn't exist set a default value
-                            if not ABSync.db.profile.checkOnLogon then
-                                ABSync.db.profile.checkOnLogon = false
-                            end
-                            return ABSync.db.profile.checkOnLogon
-                        end,
-                        set = function(info, key, value)
-                            ABSync.db.profile.checkOnLogon = value
-                        end
-                    }
-                }
-            },
-            sync = {
-                name = L["synctitle"],
-                desc = L["synctitledesc"],
-                type = "group",
-                order = 2,
-                args = {
-                    triggerhdr = {
-                        name = L["triggerhdr"],
-                        type = "header",
-                        order = 1
-                    },
-                    lastupdated = {
-                        name = L["lastupdatedname"],
-                        width = "full",
-                        desc = L["lastupdateddesc"],
-                        type = "input",
-                        order = 2,
-                        get = function(info)
-                            return ABSync:GetLastSyncedOnChar() or L["never"]
-                        end,
-                        disabled = true
-                    },
-                    trigger = {
-                        name = L["triggername"],
-                        desc = L["triggerdesc"],
-                        type = "execute",
-                        order = 3,
-                        func = function()
-                            self:BeginSync()
-                        end
-                    }
-                }
-            },
             actionlookup = {
                 name = L["actionlookupname"],
                 desc = L["actionlookupdesc"],
@@ -762,7 +580,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetPlayerNameFormatted()
     local unitName, unitServer = UnitFullName("player")
-    return unitName .. "-" .. unitServer
+    return unitName .. " - " .. unitServer
 end
 
 --[[---------------------------------------------------------------------------
@@ -1763,7 +1581,8 @@ function ABSync:SlashCommand(text)
             LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
         elseif arg:lower() == "sync" then
             self:BeginSync()
-        -- elseif arg:lower() == "errors" then
+        -- elseif arg:lower() == "test" then
+        --     self:NewUI()
         end
     end
 
@@ -1780,6 +1599,15 @@ function ABSync:SlashCommand(text)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   EventPlayerLogin
+    Purpose:    Handle functionality which is best or must wait for the PLAYER_LOGIN event.
+-----------------------------------------------------------------------------]]
+function ABSync:EventPlayerLogin() 
+    -- check for initial db setup
+    self:InstantiateDB(nil)
+end
+
+--[[---------------------------------------------------------------------------
     Function:   RegisterEvents
     Purpose:    Register all events for the addon.
 -----------------------------------------------------------------------------]]
@@ -1791,18 +1619,23 @@ function ABSync:RegisterEvents()
 	-- self:Hook("ActionBarController_OnEvent", true)
     -- Register Events
     self:RegisterEvent("ADDON_LOADED", function()
+        --@debug@
         if ABSync.isLive == false then self:Print(L["registerevents_addon_loaded"]) end
+        --@end-debug@
     end)
 
     self:RegisterEvent("PLAYER_LOGIN", function()
+        --@debug@
         if ABSync.isLive == false then self:Print(L["registerevents_player_login"]) end
+        --@end-debug@
 
-        -- trigger the collection of action bar button data
-        ABSync:ActionBarData()
+        self:EventPlayerLogin()
     end)
 
     self:RegisterEvent("PLAYER_LOGOUT", function()
+        --@debug@
         if ABSync.isLive == false then self:Print(L["registerevents_player_logout"]) end
+        --@end-debug@
 
         -- clear currentBarData and actionBars when the code is live
         if ABSync.isLive == true then
@@ -1811,7 +1644,9 @@ function ABSync:RegisterEvents()
     end)
 
     self:RegisterEvent("VARIABLES_LOADED", function()
+        --@debug@
         if ABSync.isLive == false then self:Print(L["registerevents_variables_loaded"]) end
+        --@end-debug@
     end)
 
 	-- self:RegisterEvent("ACTIONBAR_UPDATE_STATE", function()
@@ -1842,66 +1677,97 @@ function ABSync:OnDisable()
     self:Print(L["disabled"])
 end
 
---[[---------------------------------------------------------------------------
-    Function:   ShowErrorLog
-    Purpose:    Open custom UI to show last sync errors to user.
------------------------------------------------------------------------------]]
-function ABSync:ShowUI()
+function ABSync:GetCharacterList()
+    -- Get the list of characters from the database
+    local characterList = {}
+
+    -- loop over the bar characters
+    for charName, charData in pairs(self.db.profiles) do
+        table.insert(characterList, charName)
+    end
+
+    -- sort the character list
+    table.sort(characterList)
+
+    -- finally return it
+    return characterList
+end
+
+function ABSync:AddSyncRow(scroll, columnWidth, syncFrom, syncBarName)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- get player
-    local playerID = self:GetPlayerNameFormatted()
+    -- create the row group
+    local rowGroup = AceGUI:Create("SimpleGroup")
+    rowGroup:SetLayout("Flow")
+    rowGroup:SetFullWidth(true)
 
-    -- Get screen size
-    local screenWidth = UIParent:GetWidth()
-    local screenHeight = UIParent:GetHeight()
+    -- create delete checkbox column
+    local deleteCell = AceGUI:Create("CheckBox")
+    deleteCell:SetValue(false)
+    deleteCell:SetCallback("OnValueChanged", function(_, _, value)
+        -- handle delete checkbox logic
+        self:Print(("Delete checkbox for character '%s' for bar '%s' was clicked!"):format(syncFrom, syncBarName))
+    end)
+    deleteCell:SetWidth(columnWidth[1])
+    rowGroup:AddChild(deleteCell)
 
-    --[[ top group ]]
+    -- add label to show character to sync from
+    local characterCell = AceGUI:Create("Label")
+    characterCell:SetText(syncFrom)
+    characterCell:SetRelativeWidth(columnWidth[2])
+    rowGroup:AddChild(characterCell)
 
-    local topGroup = AceGUI:Create("SimpleGroup")
-    topGroup:SetLayout("Flow")
-    topGroup:SetFullWidth(true)
+    -- add label to show action bar name to sync
+    local barCell = AceGUI:Create("Label")
+    barCell:SetText(syncBarName)
+    barCell:SetRelativeWidth(columnWidth[3])
+    rowGroup:AddChild(barCell)
 
-    --[[ middle group ]]
+    -- add the row to the scroll region
+    scroll:AddChild(rowGroup)
+end
 
-    local middleGroup = AceGUI:Create("SimpleGroup")
-    middleGroup:SetLayout("Flow")
-    middleGroup:SetFullWidth(true)
-
-    --[[ bottom group ]]
-
-    local bottomGroup = AceGUI:Create("SimpleGroup")
-    bottomGroup:SetLayout("Flow")
-    bottomGroup:SetFullWidth(true) 
-
-    --[[ top right group ]]
-
-    local topRightGroup = AceGUI:Create("SimpleGroup")
-    topRightGroup:SetLayout("List")
-    topRightGroup:SetFullWidth(true)
-
-    --[[ about frame ]]
+--[[---------------------------------------------------------------------------
+    Function:   CreateAboutFrame
+    Purpose:    Create the About frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateAboutFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
 
     -- create the main about frame
     local aboutFrame = AceGUI:Create("InlineGroup")
     aboutFrame:SetTitle("About")
     aboutFrame:SetLayout("List")
-    -- aboutFrame:SetFullHeight(true)
 
-    --[[ instructions frame ]]
+    -- add note about resizing
+    local resizeNote = AceGUI:Create("Label")
+    resizeNote:SetText("|cffff0000Note:|r Even though window resize functions it doesn't work well. Resize slowly since it seems to redraw it as the cursor moves. I recommend using the default size. Reload the UI to restore it. I don't think its an issue with AceGUI but just a side effect of the WoW UI.")
+    resizeNote:SetFullWidth(true)
+    aboutFrame:AddChild(resizeNote)
+
+    -- return the frame
+    return aboutFrame
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateInstructionsFrame
+    Purpose:    Create the Instructions frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateInstructionsFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
 
     -- create instructions frame
     local instructionsFrame = AceGUI:Create("InlineGroup")
     instructionsFrame:SetTitle("Instructions")
     instructionsFrame:SetLayout("List")
-    -- instructionsFrame:SetFullHeight(true)
 
     -- add scroll frame for instructions
     local instructionsScroll = AceGUI:Create("ScrollFrame")
     instructionsScroll:SetLayout("List")
     instructionsScroll:SetFullWidth(true)
-    -- instructionsScroll:SetFullHeight(true)
     instructionsFrame:AddChild(instructionsScroll)
 
     -- add step 1
@@ -1959,13 +1825,22 @@ function ABSync:ShowUI()
     step5:SetFullWidth(true)
     instructionsScroll:AddChild(step5)
 
-    --[[ scan frame ]]
+    -- finally return the frame
+    return instructionsFrame
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateScanFrame
+    Purpose:    Create the Scan frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateScanFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
 
     -- create group
     local scanFrame = AceGUI:Create("InlineGroup")
     scanFrame:SetTitle("Scan Bars")
     scanFrame:SetLayout("List")
-    -- scanFrame:SetFullHeight(true)
 
     -- add label
     local label = AceGUI:Create("Label")
@@ -1989,8 +1864,19 @@ function ABSync:ShowUI()
     end)
     scanFrame:AddChild(button)
 
-    --[[ trigger sync frame ]]
+    -- return the frame
+    return scanFrame
+end
 
+--[[---------------------------------------------------------------------------
+    Function:   CreateTriggerSyncFrame
+    Purpose:    Create the Trigger Sync frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateTriggerSyncFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create main frame
     local triggerSyncFrame = AceGUI:Create("InlineGroup")
     triggerSyncFrame:SetTitle("Trigger Sync")
     triggerSyncFrame:SetLayout("List")
@@ -2017,25 +1903,34 @@ function ABSync:ShowUI()
     end)
     triggerSyncFrame:AddChild(syncButton)
 
-    --[[ last sync errors frame ]]
+    -- return the frame
+    return triggerSyncFrame
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateLastSyncErrorFrame
+    Purpose:    Create the Last Sync Error frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateLastSyncErrorFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
 
     -- create a group for the error scroll frame
     local lastErrorGroup = AceGUI:Create("InlineGroup")
     lastErrorGroup:SetTitle("Last Sync Errors")
     lastErrorGroup:SetLayout("Fill")
-
-    --[[ create frame for last scan errors ]]
+    lastErrorGroup:SetAutoAdjustHeight(false)
+    lastErrorGroup:SetFullWidth(true)
+    lastErrorGroup:SetHeight(300)
 
     -- columns
     local columns = {"Bar Name", "Bar Pos", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
     local columnLoop = {"barName", "barPos", "buttonID", "actionType", "name", "id", "msg"}
 
     -- Create a scroll container for the spreadsheet
-    local scroll = AceGUI:Create("ScrollFrame")
-    scroll:SetLayout("List")
-    scroll:SetFullWidth(true)
-    scroll:SetFullHeight(true)
-    lastErrorGroup:AddChild(scroll)
+    local errScroll = AceGUI:Create("ScrollFrame")
+    errScroll:SetLayout("List")
+    lastErrorGroup:AddChild(errScroll)
 
     -- determine column width
     -- 5px for spacing
@@ -2043,43 +1938,83 @@ function ABSync:ShowUI()
     local columnWidth = 1/#columns
 
     -- Create header row
-    local header = AceGUI:Create("SimpleGroup")
-    header:SetLayout("Flow")
-    header:SetFullWidth(true)
+    local errHeader = AceGUI:Create("SimpleGroup")
+    errHeader:SetLayout("Flow")
+    errHeader:SetFullWidth(true)
     for _, colName in ipairs(columns) do
         local label = AceGUI:Create("Label")
         label:SetText("|cff00ff00" .. colName .. "|r")
         -- label:SetWidth(columnWidth)
         label:SetRelativeWidth(columnWidth)
-        header:AddChild(label)
+        errHeader:AddChild(label)
     end
-    scroll:AddChild(header)
+    errScroll:AddChild(errHeader)
+
+    --@debug@
+    -- if self.isLive == false then
+    --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
+    --     local testdttmkey = date("%Y%m%d%H%M%S")
+    --     self.db.char.lastSyncErrorDttm = testdttmkey
+    --     local testerrors = {}
+    --     for i = 1, 10 do
+    --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
+    --     end
+    --     table.insert(self.db.char.syncErrors, {
+    --         key = testdttmkey,
+    --         errors = testerrors
+    --     })
+    -- end
+    --@end-debug@
+
+    -- get count of syncErrors
+    local syncErrorCount = 0
+    for _ in ipairs(self.db.char.syncErrors) do
+        syncErrorCount = syncErrorCount + 1
+    end
+    print("Sync Error Count: " .. tostring(syncErrorCount))
 
     -- loop over sync errors
-    for _, errorRcd in ipairs(self.db.char.syncErrors) do
-        -- continue to next row if key doesn't match
-        if errorRcd.key == self.db.char.lastSyncErrorDttm then
-            -- loop over the rows
-            for _, errorRow in ipairs(errorRcd.errors) do
-                -- set up row group of columns
-                local rowGroup = AceGUI:Create("SimpleGroup")
-                rowGroup:SetLayout("Flow")
-                rowGroup:SetFullWidth(true)
+    if syncErrorCount > 0 then
+        for _, errorRcd in ipairs(self.db.char.syncErrors) do
+            -- print("here1")
+            -- continue to next row if key doesn't match
+            if errorRcd.key == self.db.char.lastSyncErrorDttm then
+                -- print("here2")
+                -- loop over the rows
+                for _, errorRow in ipairs(errorRcd.errors) do
+                    -- print("here3")
+                    -- set up row group of columns
+                    local rowGroup = AceGUI:Create("SimpleGroup")
+                    rowGroup:SetLayout("Flow")
+                    rowGroup:SetFullWidth(true)
 
-                -- loop over the column defintions
-                for _, colDef in ipairs(columnLoop) do
-                    local cell = AceGUI:Create("Label")
-                    cell:SetText(tostring(errorRow[colDef] or "-"))
-                    cell:SetWidth(columnWidth)
-                    rowGroup:AddChild(cell)
+                    -- loop over the column defintions
+                    for _, colDef in ipairs(columnLoop) do
+                        -- print("here4")
+                        local cell = AceGUI:Create("Label")
+                        cell:SetText(tostring(errorRow[colDef] or "-"))
+                        cell:SetWidth(columnWidth)
+                        rowGroup:AddChild(cell)
+                    end
+                    errScroll:AddChild(rowGroup)
                 end
-                scroll:AddChild(rowGroup)
             end
         end
     end
 
-    --[[ create share frame ]]
+    -- finally return the frame
+    return lastErrorGroup
+end
 
+--[[---------------------------------------------------------------------------
+    Function:   CreateShareFrame
+    Purpose:    Create the share frame for selecting action bars to share.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateShareFrame()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create main frame
     local shareFrame = AceGUI:Create("InlineGroup")
     shareFrame:SetTitle("Share")
     shareFrame:SetLayout("Flow")
@@ -2141,45 +2076,161 @@ function ABSync:ShowUI()
         LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
     end
 
-    -- [[ create sync frame ]]
+    -- finally return the frame
+    return shareFrame
+end
 
-    -- create frame for tree frame
+--[[---------------------------------------------------------------------------
+    Function:   CreateSyncFrame
+    Purpose:    Create the sync frame for selecting action bars to sync.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateSyncFrame(syncWidth)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- print(("Sync Width: %d"):format(syncWidth))
+
+    -- column
+    local columns = {"Delete", "Character", "Action Bar"}
+    -- local rowDelBtnWidth = 40
+    -- local paddingRemove = 0
+    -- local newRowWidth = (syncWidth - rowDelBtnWidth - paddingRemove) * 0.45
+    local columnWidth = {50, 0.45, 0.45}
+
+    -- create frame
     local syncFrame = AceGUI:Create("InlineGroup")
     syncFrame:SetTitle("Sync")
-    syncFrame:SetLayout("Fill")
+    syncFrame:SetLayout("List")
 
-    -- generate tree, loop over all the action bar data in barsToSync
-    local treeData = {}
-    for barName, barData in pairs(self.db.global.barsToSync) do
-        local treeNode = {
-            value = barName,
-            text = barName,
-            children = {}
-        }
-        -- loop over the owners in barData
-        for ownerName, ownerData in pairs(barData) do
-            local childNode = {
-                value = ownerName,
-                text = ownerName,
-            }
+    -- create button frame
+    local buttonFrame = AceGUI:Create("SimpleGroup")
+    buttonFrame:SetLayout("Flow")
+    buttonFrame:SetFullWidth(true)
+    syncFrame:AddChild(buttonFrame)
 
-            -- add the owner as a child
-            table.insert(treeNode.children, childNode)
-        end
+    -- create button for new rows
+    local addButton = AceGUI:Create("Button")
+    addButton:SetText("Add")
+    addButton:SetWidth(75)
+    addButton:SetCallback("OnClick", function()
+        self:AddSyncRow(syncScroll, columnWidth, nil, syncBarName)
+    end)
+    buttonFrame:AddChild(addButton)
 
-        -- add the action bar to root of tree data
-        table.insert(treeData, treeNode)
+    -- create button for deleting rows
+    local deleteButton = AceGUI:Create("Button")
+    deleteButton:SetText("Delete")
+    deleteButton:SetWidth(75)
+    deleteButton:SetCallback("OnClick", function()
+        self:RemoveSyncRows(syncScroll, columnWidth, nil, syncBarName)
+    end)
+    buttonFrame:AddChild(deleteButton)
+
+    -- create header row container
+    local syncHdr = AceGUI:Create("SimpleGroup")
+    syncHdr:SetLayout("List")
+    syncHdr:SetFullWidth(true)
+
+    -- create scroll frame for header just for proper padding, no rows but the header will be added, not part of other scroll so column names are always visible
+    -- local syncHdrScrollFrame = AceGUI:Create("ScrollFrame")
+    -- syncHdrScrollFrame:SetLayout("List")
+    -- syncHdr:AddChild(syncHdrScrollFrame)
+
+    --@debug@
+    -- for k, v in pairs(syncHdr) do
+    --     print(("Header Row %s: %s"):format(tostring(k), tostring(v)))
+    --     -- if k == "obj" then
+    --     --     for k1, v1 in pairs(v) do
+    --     --         print(("Header Row Object %s: %s"):format(tostring(k1), tostring(v1)))
+    --     --     end
+    --     -- end
+    -- end
+    --@end-debug@
+
+    -- create sync header row grouping
+    local syncHdrRowGroup = AceGUI:Create("SimpleGroup")
+    syncHdrRowGroup:SetLayout("Flow")
+    syncHdrRowGroup:SetRelativeWidth(0.97)
+
+    -- add delete header label
+    local deleteHdrLabel = AceGUI:Create("Label")
+    deleteHdrLabel:SetText("|cff00ff00" .. columns[1] .. "|r")
+    deleteHdrLabel:SetWidth(columnWidth[1])
+    syncHdrRowGroup:AddChild(deleteHdrLabel)
+
+    -- add character header label
+    local characterHdrLabel = AceGUI:Create("Label")
+    characterHdrLabel:SetText("|cff00ff00" .. columns[2] .. "|r")
+    characterHdrLabel:SetRelativeWidth(columnWidth[2])
+    syncHdrRowGroup:AddChild(characterHdrLabel)
+
+    -- add action bar header label
+    local actionBarHdrLabel = AceGUI:Create("Label")
+    actionBarHdrLabel:SetText("|cff00ff00" .. columns[3] .. "|r")
+    actionBarHdrLabel:SetRelativeWidth(columnWidth[3])
+    syncHdrRowGroup:AddChild(actionBarHdrLabel)
+
+    syncHdr:AddChild(syncHdrRowGroup)
+
+    -- for colIndex, colName in ipairs(columns) do
+    --     local label = AceGUI:Create("Label")
+    --     label:SetText("|cff00ff00" .. colName .. "|r")
+    --     label:SetWidth(columnWidth[colIndex])
+    --     syncHdr:AddChild(label)
+    -- end
+
+    -- add the header to the main frame
+    syncFrame:AddChild(syncHdr)
+
+    -- container for the scroll frame
+    local syncScrollContainer = AceGUI:Create("SimpleGroup")
+    syncScrollContainer:SetFullWidth(true)
+    syncScrollContainer:SetLayout("Fill")
+    syncFrame:AddChild(syncScrollContainer)
+
+    -- create a scroll container for the data
+    local syncScroll = AceGUI:Create("ScrollFrame")
+    syncScroll:SetLayout("List")
+    syncScrollContainer:AddChild(syncScroll)
+
+    --@debug@
+    -- add many fake rows
+    for i = 1, 10 do
+        self:AddSyncRow(syncScroll, columnWidth, "Test Char" .. tostring(i), "Test Bar" .. tostring(i))
     end
+    --@end-debug@
 
-    -- create tree frame
-    local treeFrame = AceGUI:Create("TreeGroup")
-    treeFrame:SetTree(treeData)
-    treeFrame:SetFullHeight(true)
-    treeFrame:SetFullWidth(true)
+    -- loop over bar names to add existing entries
+    -- for syncBarName, syncFrom in ipairs(self.db.profile.barsToSync) do
+    --     self:AddSyncRow(syncScroll, columnWidth, syncFrom, syncBarName)
+    -- end
 
-    -- add the tree frame to the sync frame
-    syncFrame:AddChild(treeFrame)
+    -- finally return frame
+    return syncFrame
+end
 
+--[[---------------------------------------------------------------------------
+    Function:   ShowErrorLog
+    Purpose:    Open custom UI to show last sync errors to user.
+-----------------------------------------------------------------------------]]
+function ABSync:ShowUI()
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- get player
+    local playerID = self:GetPlayerNameFormatted()
+
+    -- Get screen size
+    local screenWidth = UIParent:GetWidth()
+    local screenHeight = UIParent:GetHeight()
+
+    -- print(("Screen Size: %d x %d"):format(screenWidth, screenHeight))
+
+    -- set initial sizes
+    local frameWidth = screenWidth * 0.8
+    local frameHeight = screenHeight * 0.8
+    local syncWidth = frameWidth * 0.6
+    
     --[[ Create the main frame]]
 
     local frame = AceGUI:Create("Frame")
@@ -2187,55 +2238,90 @@ function ABSync:ShowUI()
     -- TODO: format the dttm or store a formatted value instead...
     frame:SetStatusText(("Last Synced to UI: %s"):format(self.db.char.lastSynced or "-"))
     frame:SetLayout("Flow")
-    local frameWidth = screenWidth * 0.8
-    local frameHeight = screenHeight * 0.8
     frame:SetWidth(frameWidth)
     frame:SetHeight(frameHeight)
     local dialogFrame = frame.frame
     dialogFrame:SetFrameStrata("DIALOG")
     dialogFrame:SetFrameLevel(1)
 
-    -- add child frames; must add to group before adding group to main frame
+    --[[ top group ]]
+
+    local topGroup = AceGUI:Create("SimpleGroup")
+    topGroup:SetLayout("Flow")
+    topGroup:SetFullWidth(true)
+    frame:AddChild(topGroup)
+
+    --[[ middle group ]]
+
+    local middleGroup = AceGUI:Create("SimpleGroup")
+    middleGroup:SetLayout("Flow")
+    middleGroup:SetFullWidth(true)
+    frame:AddChild(middleGroup)
+
+    --[[ bottom group ]]
+
+    local bottomGroup = AceGUI:Create("SimpleGroup")
+    bottomGroup:SetLayout("Flow")
+    bottomGroup:SetFullWidth(true)
+    frame:AddChild(bottomGroup)
+
+    --[[ about frame ]]
+
+    local aboutFrame = self:CreateAboutFrame()
+    aboutFrame:SetRelativeWidth(0.4)
     aboutFrame:SetAutoAdjustHeight(false)
-    aboutFrame:SetRelativeWidth(0.3)
     aboutFrame:SetHeight(300)
-
-    instructionsFrame:SetAutoAdjustHeight(false)
-    instructionsFrame:SetRelativeWidth(0.5)
-    instructionsFrame:SetHeight(300)
-
-    scanFrame:SetFullWidth(true)
-
-    triggerSyncFrame:SetFullWidth(true)
-
-    topRightGroup:SetAutoAdjustHeight(false)
-    topRightGroup:SetRelativeWidth(0.2)
-    topRightGroup:SetHeight(300)
-    topRightGroup:AddChild(scanFrame)
-    topRightGroup:AddChild(triggerSyncFrame)
-
     topGroup:AddChild(aboutFrame)
+
+    --[[ instructions frame ]]
+
+    local instructionsFrame = self:CreateInstructionsFrame()
+    instructionsFrame:SetRelativeWidth(0.4)
+    instructionsFrame:SetAutoAdjustHeight(false)
+    instructionsFrame:SetHeight(300)
     topGroup:AddChild(instructionsFrame)
+
+    --[[ top right group ]]
+
+    local topRightGroup = AceGUI:Create("SimpleGroup")
+    topRightGroup:SetLayout("List")
+    topRightGroup:SetRelativeWidth(0.2)
+    topRightGroup:SetAutoAdjustHeight(false)
+    topRightGroup:SetHeight(300)
     topGroup:AddChild(topRightGroup)
 
-    shareFrame:SetAutoAdjustHeight(false)
+    --[[ top right - scan frame ]]
+
+    local scanFrame = self:CreateScanFrame()
+    scanFrame:SetFullWidth(true)
+    topRightGroup:AddChild(scanFrame)
+
+    --[[ top right - trigger sync frame ]]
+
+    local triggerSyncFrame = self:CreateTriggerSyncFrame()
+    triggerSyncFrame:SetFullWidth(true)
+    topRightGroup:AddChild(triggerSyncFrame)
+
+    --[[ create share frame ]]
+
+    local shareFrame = self:CreateShareFrame()
     shareFrame:SetRelativeWidth(0.5)
-    shareFrame:SetHeight(200)
-
-    syncFrame:SetAutoAdjustHeight(false)
-    syncFrame:SetRelativeWidth(0.5)
-    syncFrame:SetHeight(200)
-
+    shareFrame:SetAutoAdjustHeight(false)
+    shareFrame:SetHeight(300)
     middleGroup:AddChild(shareFrame)
+
+    -- [[ create sync frame ]]
+
+    local syncFrame = self:CreateSyncFrame(syncWidth)
+    syncFrame:SetRelativeWidth(0.5)
+    syncFrame:SetAutoAdjustHeight(false)
+    syncFrame:SetHeight(300)
     middleGroup:AddChild(syncFrame)
 
-    lastErrorGroup:SetAutoAdjustHeight(false)
-    lastErrorGroup:SetFullWidth(true)
-    lastErrorGroup:SetHeight(300)
+    --[[ last sync errors frame ]]
 
-    frame:AddChild(topGroup)
-    frame:AddChild(middleGroup)
-    frame:AddChild(lastErrorGroup)
+    local lastSyncErrorFrame = self:CreateLastSyncErrorFrame()
+    -- bottomGroup:AddChild(lastSyncErrorFrame)
 
     -- display the frame
     frame:Show()
