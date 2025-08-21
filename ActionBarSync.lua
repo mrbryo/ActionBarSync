@@ -39,6 +39,24 @@ ABSync.profiletype = {
     ["global"] = "global"
 }
 
+-- ui tabs
+ABSync.uitabs = {
+    ["tabs"] = {
+        ["about"] = "About",
+        ["instructions"] = "Instructions",
+        ["share"] = "Share",
+        ["sync"] = "Sync",
+        ["last_sync_errors"] = "Last Sync Errors"
+    },
+    ["order"] = {
+        "about",
+        "instructions",
+        "share",
+        "sync",
+        "last_sync_errors"
+    }
+}
+
 --[[---------------------------------------------------------------------------
     Function:   ABSync:OnInitialize
     Purpose:    Initialize the addon and set up default values.
@@ -211,17 +229,17 @@ function ABSync:InstantiateDB(barName)
         self.db.global.barsToSync = {}
     end
 
-    -- if the barName is not in barsToSync then add it with default value of false
-    if not self.db.global.barsToSync[barName] and barName ~= nil then
-        self.db.global.barsToSync[barName] = {}
-    end
-
     -- instantiate barsToSync also under the character profile
     if not self.db.profile.barsToSync then
         self.db.profile.barsToSync = {}
     end
 
     if barName ~= nil then
+        -- if the barName is not in barsToSync then add it with default value of false
+        if not self.db.global.barsToSync[barName] then
+            self.db.global.barsToSync[barName] = {}
+        end
+
         -- instantiate bar owner if it doesn't exist
         if not self.db.global.barsToSync[barName][playerID] then
             self.db.global.barsToSync[barName][playerID] = {}
@@ -231,6 +249,10 @@ function ABSync:InstantiateDB(barName)
         if not self.db.profile.barsToSync[barName] then
             self.db.profile.barsToSync[barName] = false
         end
+    end
+
+    if not self.db.profile.mytab then
+        self.db.profile.mytab = "instructions"
     end
 end
 
@@ -1528,7 +1550,7 @@ function ABSync:GetActionBarData()
     
     -- sync keys of actionBars to barsToSync and barOwner
     for _, barName in ipairs(self.db.global.actionBars) do
-       self:InstantiateBarsToSync(barName)
+       self:InstantiateDB(barName)
     end
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
@@ -1630,6 +1652,23 @@ function ABSync:RegisterEvents()
         --@end-debug@
 
         self:EventPlayerLogin()
+    end)
+
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self, event, isInitialLogin, isReload)
+        -- only run these commands if this is the initial login
+        if isInitialLogin == true then
+            --@debug@
+            if ABSync.isLive == false then ABSync:Print(L["registerevents_player_entering_world"]) end
+            --@end-debug@
+
+            -- run db initialize again but pass in barName to make sure all keys are setup for this barName
+            ABSync:InstantiateDB(nil)
+
+            -- get action bar data automatically if user has opted in through the settings checkbox
+            if ABSync.db.profile.autoGetActionBarData then
+                ABSync:GetActionBarData()
+            end
+        end
     end)
 
     self:RegisterEvent("PLAYER_LOGOUT", function()
@@ -1737,9 +1776,18 @@ function ABSync:CreateAboutFrame()
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- create the main about frame
-    local aboutFrame = AceGUI:Create("InlineGroup")
-    aboutFrame:SetTitle("About")
+    local aboutFrame = AceGUI:Create("SimpleGroup")
     aboutFrame:SetLayout("List")
+
+    -- author
+    local authorFrame = AceGUI:Create("SimpleGroup")
+    authorFrame:SetLayout("Flow")
+    authorFrame:SetFullWidth(true)
+    aboutFrame:AddChild(authorFrame)
+    local authorLabel = AceGUI:Create("Label")
+    authorLabel:SetText(("Author: %s"):format(C_AddOns.GetAddOnMetadata("ActionBarSync", "Author")))
+    authorLabel:SetFullWidth(true)
+    authorFrame:AddChild(authorLabel)
 
     -- add note about resizing
     local resizeNote = AceGUI:Create("Label")
@@ -1760,9 +1808,8 @@ function ABSync:CreateInstructionsFrame()
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- create instructions frame
-    local instructionsFrame = AceGUI:Create("InlineGroup")
-    instructionsFrame:SetTitle("Instructions")
-    instructionsFrame:SetLayout("List")
+    local instructionsFrame = AceGUI:Create("SimpleGroup")
+    instructionsFrame:SetLayout("Fill")
 
     -- add scroll frame for instructions
     local instructionsScroll = AceGUI:Create("ScrollFrame")
@@ -1775,11 +1822,15 @@ function ABSync:CreateInstructionsFrame()
     step1:SetText("1. Open the options and set the correct profile. I suggest to leave the default which is for your current characters profile.")
     step1:SetFullWidth(true)
     instructionsScroll:AddChild(step1)
+    local step1labelspacer = AceGUI:Create("Label")
+    step1labelspacer:SetText(" ")
+    step1labelspacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step1labelspacer)
 
     -- add button to open options for this addon
     local step1Button = AceGUI:Create("Button")
     step1Button:SetText("Open Options")
-    step1Button:SetWidth(200)
+    step1Button:SetWidth(150)
     step1Button:SetCallback("OnClick", function()
         LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
     end)
@@ -1791,7 +1842,7 @@ function ABSync:CreateInstructionsFrame()
 
     -- add step 2
     local step2 = AceGUI:Create("Label")
-    step2:SetText("2. Click the 'Scan Now' button. An initial scan is required for the addon to function.")
+    step2:SetText("2. On the 'Share' tab, click the 'Scan Now' button. An initial scan is required for the addon to function.")
     step2:SetFullWidth(true)
     instructionsScroll:AddChild(step2)
     local step2spacer = AceGUI:Create("Label")
@@ -1801,7 +1852,7 @@ function ABSync:CreateInstructionsFrame()
 
     -- add step 3
     local step3 = AceGUI:Create("Label")
-    step3:SetText("3. Optional, in the 'Share' section, select which action bars to share.")
+    step3:SetText("3. Optional, on the 'Share' tab, select which action bars to share.")
     step3:SetFullWidth(true)
     instructionsScroll:AddChild(step3)
     local step3spacer = AceGUI:Create("Label")
@@ -1811,7 +1862,7 @@ function ABSync:CreateInstructionsFrame()
 
     -- add step 4
     local step4 = AceGUI:Create("Label")
-    step4:SetText("4. In the 'Sync' section, select character action bars to sync into this character's action bars.")
+    step4:SetText("4. On the 'Sync' tab, select shared action bars from other characters to sync into this character's action bars.")
     step4:SetFullWidth(true)
     instructionsScroll:AddChild(step4)
     local step4spacer = AceGUI:Create("Label")
@@ -1821,9 +1872,48 @@ function ABSync:CreateInstructionsFrame()
 
     -- add step 5
     local step5 = AceGUI:Create("Label")
-    step5:SetText("5. Click the 'Sync Now' button to sync your action bars.")
+    step5:SetText("5. On the 'Sync' tab, click the 'Sync Now' button to sync your action bars.")
     step5:SetFullWidth(true)
     instructionsScroll:AddChild(step5)
+    local step5spacer = AceGUI:Create("Label")
+    step5spacer:SetText(" ")
+    step5spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step5spacer)
+
+    -- add step 6
+    local step6 = AceGUI:Create("Label")
+    step6:SetText("6. Once a sync is complete, you can review any error details on the 'Last Sync Errors' tab.")
+    step6:SetFullWidth(true)
+    instructionsScroll:AddChild(step6)
+    local step6spacer = AceGUI:Create("Label")
+    step6spacer:SetText(" ")
+    step6spacer:SetFullWidth(true)
+    instructionsScroll:AddChild(step6spacer)
+
+    -- done!
+    local doneLabel = AceGUI:Create("Label")
+    doneLabel:SetText("Done!")
+    doneLabel:SetFullWidth(true)
+    instructionsScroll:AddChild(doneLabel)
+    local doneSpacer = AceGUI:Create("Label")
+    doneSpacer:SetText(" ")
+    doneSpacer:SetFullWidth(true)
+    instructionsScroll:AddChild(doneSpacer)
+
+    -- FAQ Frame
+    local faqFrame = AceGUI:Create("InlineGroup")
+    faqFrame:SetTitle("FAQ")
+    faqFrame:SetLayout("List")
+    faqFrame:SetFullWidth(true)
+
+    -- add FAQ content
+    local faqLabel = AceGUI:Create("Label")
+    faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")
+    -- faqLabel:SetText("Q: What does this addon do?\nA: This addon syncs action bars between characters.")
+    faqLabel:SetFullWidth(true)
+    faqFrame:AddChild(faqLabel)
+
+    instructionsScroll:AddChild(faqFrame)
 
     -- finally return the frame
     return instructionsFrame
@@ -2010,14 +2100,24 @@ end
     Function:   CreateShareFrame
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareFrame()
+function ABSync:CreateShareFrame(playerID)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- create main frame
+    local mainShareFrame = AceGUI:Create("SimpleGroup")
+    mainShareFrame:SetLayout("List")
+    mainShareFrame:SetFullWidth(true)
+
+    -- create the scan frame
+    local triggerScanFrame = self:CreateScanFrame()
+    mainShareFrame:AddChild(triggerScanFrame)
+
+    -- create share frame
     local shareFrame = AceGUI:Create("InlineGroup")
     shareFrame:SetTitle("Share")
     shareFrame:SetLayout("Flow")
+    mainShareFrame:AddChild(shareFrame)
 
     -- add a multiselect for sharing which action bars to share
     local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
@@ -2031,15 +2131,29 @@ function ABSync:CreateShareFrame()
         local checkboxValue = false
         if self.db.global then
             if self.db.global.barsToSync then
+                --@debug@
+                -- print(("Checkbox Name: %s, Player ID: %s"):format(checkboxName, playerID))
+                --@end-debug@
+
+                -- continue if the action bar name, same as checkboxName, is found in the table
                 if self.db.global.barsToSync[checkboxName] then
+
+                    -- continue if the playerID exists in the table for the checkboxName
                     if self.db.global.barsToSync[checkboxName][playerID] then
+
+                        -- continue if the table under playerID exists
                         if type(self.db.global.barsToSync[checkboxName][playerID]) == "table" then
+                            -- initialize variable to track record count
                             local recordCount = 0
+
+                            -- loop just once to make sure a record exists
                             for _ in pairs(self.db.global.barsToSync[checkboxName][playerID]) do
                                 recordCount = recordCount + 1
                                 -- only need to loop once
                                 break
                             end
+
+                            -- if a record is returned then set the checkbox to true/checked
                             if recordCount > 0 then
                                 checkboxValue = true
                             end
@@ -2077,7 +2191,7 @@ function ABSync:CreateShareFrame()
     end
 
     -- finally return the frame
-    return shareFrame
+    return mainShareFrame
 end
 
 --[[---------------------------------------------------------------------------
@@ -2226,8 +2340,8 @@ function ABSync:ShowUI()
     -- print(("Screen Size: %d x %d"):format(screenWidth, screenHeight))
 
     -- set initial sizes
-    local frameWidth = screenWidth * 0.8
-    local frameHeight = screenHeight * 0.8
+    local frameWidth = screenWidth * 0.6
+    local frameHeight = screenHeight * 0.6
     local syncWidth = frameWidth * 0.6
     
     --[[ Create the main frame]]
@@ -2236,91 +2350,55 @@ function ABSync:ShowUI()
     frame:SetTitle("Action Bar Sync")
     -- TODO: format the dttm or store a formatted value instead...
     frame:SetStatusText(("Last Synced to UI: %s"):format(self.db.char.lastSynced or "-"))
-    frame:SetLayout("Flow")
+    frame:SetLayout("Fill")
     frame:SetWidth(frameWidth)
     frame:SetHeight(frameHeight)
     local dialogFrame = frame.frame
     dialogFrame:SetFrameStrata("DIALOG")
     dialogFrame:SetFrameLevel(1)
 
-    --[[ top group ]]
+    -- create tab table
+    local tabs = {}
+    for _, tabkey in ipairs(ABSync.uitabs.order) do
+        local tabname = ABSync.uitabs.tabs[tabkey]
+        -- print(("Tab: %s, Key: %s"):format(tabname, tabkey))
+        table.insert(tabs, { text = tabname, value = tabkey })
+    end
 
-    local topGroup = AceGUI:Create("SimpleGroup")
-    topGroup:SetLayout("Flow")
-    topGroup:SetFullWidth(true)
-    frame:AddChild(topGroup)
+    -- create tab group
+    local tabGroup = AceGUI:Create("TabGroup")
+    tabGroup:SetLayout("Fill")
+    tabGroup:SetTabs(tabs)
 
-    --[[ middle group ]]
+    -- adjust content based on selected tab
+    tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
+        -- clear all children
+        tabGroup:ReleaseChildren()
 
-    local middleGroup = AceGUI:Create("SimpleGroup")
-    middleGroup:SetLayout("Flow")
-    middleGroup:SetFullWidth(true)
-    frame:AddChild(middleGroup)
+        -- check which tab is selected
+        if group == "about" then
+            local aboutFrame = self:CreateAboutFrame()
+            tabGroup:AddChild(aboutFrame)
+        elseif group == "instructions" then
+            local instructionsFrame = self:CreateInstructionsFrame()
+            tabGroup:AddChild(instructionsFrame)
+        elseif group == "share" then
+            local shareFrame = self:CreateShareFrame(playerID)
+            tabGroup:AddChild(shareFrame)
+        elseif group == "sync" then
+            local syncFrame = self:CreateSyncFrame(syncWidth)
+            tabGroup:AddChild(syncFrame)
+        elseif group == "last_sync_errors" then
+            local lastSyncErrorFrame = self:CreateLastSyncErrorFrame()
+            tabGroup:AddChild(lastSyncErrorFrame)
+        end
+    end)
 
-    --[[ bottom group ]]
+    -- set the tab
+    tabGroup:SelectTab(self.db.profile.mytab)
 
-    local bottomGroup = AceGUI:Create("SimpleGroup")
-    bottomGroup:SetLayout("Flow")
-    bottomGroup:SetFullWidth(true)
-    frame:AddChild(bottomGroup)
-
-    --[[ about frame ]]
-
-    local aboutFrame = self:CreateAboutFrame()
-    aboutFrame:SetRelativeWidth(0.4)
-    aboutFrame:SetAutoAdjustHeight(false)
-    aboutFrame:SetHeight(300)
-    topGroup:AddChild(aboutFrame)
-
-    --[[ instructions frame ]]
-
-    local instructionsFrame = self:CreateInstructionsFrame()
-    instructionsFrame:SetRelativeWidth(0.4)
-    instructionsFrame:SetAutoAdjustHeight(false)
-    instructionsFrame:SetHeight(300)
-    topGroup:AddChild(instructionsFrame)
-
-    --[[ top right group ]]
-
-    local topRightGroup = AceGUI:Create("SimpleGroup")
-    topRightGroup:SetLayout("List")
-    topRightGroup:SetRelativeWidth(0.2)
-    topRightGroup:SetAutoAdjustHeight(false)
-    topRightGroup:SetHeight(300)
-    topGroup:AddChild(topRightGroup)
-
-    --[[ top right - scan frame ]]
-
-    local scanFrame = self:CreateScanFrame()
-    scanFrame:SetFullWidth(true)
-    topRightGroup:AddChild(scanFrame)
-
-    --[[ top right - trigger sync frame ]]
-
-    local triggerSyncFrame = self:CreateTriggerSyncFrame()
-    triggerSyncFrame:SetFullWidth(true)
-    topRightGroup:AddChild(triggerSyncFrame)
-
-    --[[ create share frame ]]
-
-    local shareFrame = self:CreateShareFrame()
-    shareFrame:SetRelativeWidth(0.5)
-    shareFrame:SetAutoAdjustHeight(false)
-    shareFrame:SetHeight(300)
-    middleGroup:AddChild(shareFrame)
-
-    -- [[ create sync frame ]]
-
-    local syncFrame = self:CreateSyncFrame(syncWidth)
-    syncFrame:SetRelativeWidth(0.5)
-    syncFrame:SetAutoAdjustHeight(false)
-    syncFrame:SetHeight(300)
-    middleGroup:AddChild(syncFrame)
-
-    --[[ last sync errors frame ]]
-
-    local lastSyncErrorFrame = self:CreateLastSyncErrorFrame()
-    -- bottomGroup:AddChild(lastSyncErrorFrame)
+    -- finally add the tab group
+    frame:AddChild(tabGroup)
 
     -- display the frame
     frame:Show()

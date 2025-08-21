@@ -97,6 +97,7 @@ Name: %s
 Has: %s]=]
 L["profilesync"] = "Sync to My UI"
 L["registerevents_addon_loaded"] = "Event - ADDON_LOADED"
+L["registerevents_player_entering_world"] = "Event - PLAYER_ENTERING_WORLD"
 L["registerevents_player_login"] = "Event - PLAYER_LOGIN"
 L["registerevents_player_logout"] = "Event - PLAYER_LOGOUT"
 L["registerevents_starting"] = "Registering Events..."
