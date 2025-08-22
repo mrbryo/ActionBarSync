@@ -2194,6 +2194,56 @@ function ABSync:CreateShareFrame(playerID)
     return mainShareFrame
 end
 
+function ABSync:CreateSyncCheckbox(barName, playerID)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create a checkbox
+    local checkBox = AceGUI:Create("CheckBox")
+    
+    -- set barName to green and playerID to orange
+    checkBox:SetLabel("|cff00ff00" .. barName .. "|r from |cffffa500" .. playerID .. "|r")
+    checkBox:SetFullWidth(true)
+    
+    -- if they equal then it sets the value to true, otherwise, false
+    checkBox:SetValue(self.db.profile.barsToSync[barName] == playerID)
+    checkBox:SetCallback("OnValueChanged", function(_, _, value)
+        if value == true then
+            self.db.profile.barsToSync[barName] = playerID
+        else
+            self.db.profile.barsToSync[barName] = false
+        end
+    end)
+    
+    -- finally return a new checkbox
+    return checkBox
+end
+
+local function CreateSimpleScrollFrame(parent, width, height)
+    -- Main scroll frame
+    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(width, height)
+    scrollFrame:SetPoint("CENTER", parent, "CENTER")
+
+    -- Content frame inside the scroll frame
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(width, 1) -- Height will be set dynamically
+    scrollFrame:SetScrollChild(content)
+
+    -- Example: Add 30 labels to the content frame
+    local rowHeight = 24
+    for i = 1, 30 do
+        local label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        label:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -((i - 1) * rowHeight))
+        label:SetText("Row " .. i)
+    end
+
+    -- Set content height for scrolling
+    content:SetHeight(30 * rowHeight)
+
+    return scrollFrame
+end
+
 --[[---------------------------------------------------------------------------
     Function:   CreateSyncFrame
     Purpose:    Create the sync frame for selecting action bars to sync.
@@ -2202,121 +2252,80 @@ function ABSync:CreateSyncFrame(syncWidth)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- print(("Sync Width: %d"):format(syncWidth))
+    -- create main frame
+    local syncFrame = AceGUI:Create("SimpleGroup")
+    syncFrame:SetLayout("Flow")
+    syncFrame:SetWidth(syncWidth)
 
-    -- column
-    local columns = {"Delete", "Character", "Action Bar"}
-    -- local rowDelBtnWidth = 40
-    -- local paddingRemove = 0
-    -- local newRowWidth = (syncWidth - rowDelBtnWidth - paddingRemove) * 0.45
-    local columnWidth = {50, 0.45, 0.45}
+    -- create frame for check sync on login
+    local loginCheckFrame = AceGUI:Create("InlineGroup")
+    loginCheckFrame:SetTitle("Sync on Login")
+    loginCheckFrame:SetLayout("List")
+    syncFrame:AddChild(loginCheckFrame)
 
-    -- create frame
-    local syncFrame = AceGUI:Create("InlineGroup")
-    syncFrame:SetTitle("Sync")
-    syncFrame:SetLayout("List")
-
-    -- create button frame
-    local buttonFrame = AceGUI:Create("SimpleGroup")
-    buttonFrame:SetLayout("Flow")
-    buttonFrame:SetFullWidth(true)
-    syncFrame:AddChild(buttonFrame)
-
-    -- create button for new rows
-    local addButton = AceGUI:Create("Button")
-    addButton:SetText("Add")
-    addButton:SetWidth(75)
-    addButton:SetCallback("OnClick", function()
-        self:AddSyncRow(syncScroll, columnWidth, nil, syncBarName)
+    -- create checkbox for sync on login
+    local loginCheckBox = AceGUI:Create("CheckBox")
+    loginCheckBox:SetLabel("Enable Sync on Login")
+    loginCheckBox:SetValue(self.db.profile.checkOnLogon)
+    loginCheckBox:SetCallback("OnValueChanged", function(_, _, value)
+        self.db.profile.checkOnLogon = value
     end)
-    buttonFrame:AddChild(addButton)
 
-    -- create button for deleting rows
-    local deleteButton = AceGUI:Create("Button")
-    deleteButton:SetText("Delete")
-    deleteButton:SetWidth(75)
-    deleteButton:SetCallback("OnClick", function()
-        self:RemoveSyncRows(syncScroll, columnWidth, nil, syncBarName)
-    end)
-    buttonFrame:AddChild(deleteButton)
+    -- add checkbox to login check frame
+    loginCheckFrame:AddChild(loginCheckBox)
 
-    -- create header row container
-    local syncHdr = AceGUI:Create("SimpleGroup")
-    syncHdr:SetLayout("List")
-    syncHdr:SetFullWidth(true)
+    -- create frame for listing who can be synced from and their bars
+    local scrollContainer = AceGUI:Create("InlineGroup")
+    scrollContainer:SetTitle("Sync From?")
+    scrollContainer:SetFullWidth(true)
+    scrollContainer:SetLayout("Fill")
+    syncFrame:AddChild(scrollContainer)
 
-    -- create scroll frame for header just for proper padding, no rows but the header will be added, not part of other scroll so column names are always visible
-    -- local syncHdrScrollFrame = AceGUI:Create("ScrollFrame")
-    -- syncHdrScrollFrame:SetLayout("List")
-    -- syncHdr:AddChild(syncHdrScrollFrame)
+    -- local scrollWidth = scrollContainer.frame:GetWidth()
+    -- local scrollHeight = scrollContainer.frame:GetHeight()
+    -- print(("Scroll Container Size: %d x %d"):format(scrollWidth, scrollHeight))
+    
+    -- create scroll frame
+    local scrollFrame = AceGUI:Create("ScrollFrame")
+    scrollFrame:SetLayout("List")
+    scrollContainer:AddChild(scrollFrame)
+
+    -- loop over data and add checkboxes per character and action bar combo where they are enabled
+    -- primary loop is actionBars as it's sorted
+    for _, barName in ipairs(self.db.global.actionBars) do
+        
+        -- verify bar exists in global.barsToSync
+        if self.db.global.barsToSync[barName] ~= nil then
+            
+            -- loop over the barName in global.barsToSync
+            for playerID, buttonData in pairs(self.db.global.barsToSync[barName]) do
+                -- to see if enabled the buttonData must be a table and have at least 1 record
+                -- count variable
+                local foundData = false
+                
+                -- make sure buttonData is a table
+                if type(buttonData) == "table" then
+                    -- next returns the first key in the table or nill if the table is empty
+                    if next(buttonData) then
+                        foundData = true
+                    end
+                end
+
+                -- create a checkbox if data is found
+                if foundData == true then
+                    scrollFrame:AddChild(self:CreateSyncCheckbox(barName, playerID))
+                end
+            end
+        end
+    end
 
     --@debug@
-    -- for k, v in pairs(syncHdr) do
-    --     print(("Header Row %s: %s"):format(tostring(k), tostring(v)))
-    --     -- if k == "obj" then
-    --     --     for k1, v1 in pairs(v) do
-    --     --         print(("Header Row Object %s: %s"):format(tostring(k1), tostring(v1)))
-    --     --     end
-    --     -- end
-    -- end
-    --@end-debug@
-
-    -- create sync header row grouping
-    local syncHdrRowGroup = AceGUI:Create("SimpleGroup")
-    syncHdrRowGroup:SetLayout("Flow")
-    syncHdrRowGroup:SetRelativeWidth(0.97)
-    syncHdr:AddChild(syncHdrRowGroup)
-
-    -- add delete header label
-    local deleteHdrLabel = AceGUI:Create("Label")
-    deleteHdrLabel:SetText("|cff00ff00" .. columns[1] .. "|r")
-    deleteHdrLabel:SetWidth(columnWidth[1])
-    syncHdrRowGroup:AddChild(deleteHdrLabel)
-
-    -- add character header label
-    local characterHdrLabel = AceGUI:Create("Label")
-    characterHdrLabel:SetText("|cff00ff00" .. columns[2] .. "|r")
-    characterHdrLabel:SetRelativeWidth(columnWidth[2])
-    syncHdrRowGroup:AddChild(characterHdrLabel)
-
-    -- add action bar header label
-    local actionBarHdrLabel = AceGUI:Create("Label")
-    actionBarHdrLabel:SetText("|cff00ff00" .. columns[3] .. "|r")
-    actionBarHdrLabel:SetRelativeWidth(columnWidth[3])
-    syncHdrRowGroup:AddChild(actionBarHdrLabel)
-
-    -- for colIndex, colName in ipairs(columns) do
-    --     local label = AceGUI:Create("Label")
-    --     label:SetText("|cff00ff00" .. colName .. "|r")
-    --     label:SetWidth(columnWidth[colIndex])
-    --     syncHdr:AddChild(label)
-    -- end
-
-    -- add the header to the main frame
-    syncFrame:AddChild(syncHdr)
-
-    -- container for the scroll frame
-    local syncScrollContainer = AceGUI:Create("SimpleGroup")
-    syncScrollContainer:SetFullWidth(true)
-    syncScrollContainer:SetLayout("Fill")
-    syncFrame:AddChild(syncScrollContainer)
-
-    -- create a scroll container for the data
-    local syncScroll = AceGUI:Create("ScrollFrame")
-    syncScroll:SetLayout("List")
-    syncScrollContainer:AddChild(syncScroll)
-
-    --@debug@
-    -- add many fake rows
-    for i = 1, 10 do
-        self:AddSyncRow(syncScroll, columnWidth, "Test Char" .. tostring(i), "Test Bar" .. tostring(i))
+    local testData = {}
+    for i = 1, 20 do
+        scrollFrame:AddChild(self:CreateSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
     end
     --@end-debug@
-
-    -- loop over bar names to add existing entries
-    -- for syncBarName, syncFrom in ipairs(self.db.profile.barsToSync) do
-    --     self:AddSyncRow(syncScroll, columnWidth, syncFrom, syncBarName)
-    -- end
+    scrollFrame:FixScroll()
 
     -- finally return frame
     return syncFrame
@@ -2386,6 +2395,9 @@ function ABSync:ShowUI()
             local shareFrame = self:CreateShareFrame(playerID)
             tabGroup:AddChild(shareFrame)
         elseif group == "sync" then
+            -- local scrollWidth = tabGroup.frame:GetWidth()
+            -- local scrollHeight = tabGroup.frame:GetHeight()
+            -- print(("Scroll Container Size: %d x %d"):format(scrollWidth, scrollHeight))
             local syncFrame = self:CreateSyncFrame(syncWidth)
             tabGroup:AddChild(syncFrame)
         elseif group == "last_sync_errors" then
