@@ -39,6 +39,11 @@ ABSync.profiletype = {
     ["global"] = "global"
 }
 
+-- lookup macro types
+ABSync.MacroType = {}
+ABSync.MacroType.general = "general"
+ABSync.MacroType.character = "character"
+
 -- ui tabs
 ABSync.uitabs = {
     ["tabs"] = {
@@ -224,6 +229,11 @@ function ABSync:InstantiateDB(barName)
         }
     end
 
+    -- character last diff data
+    if not self.db.char.lastDiffData then
+        self.db.char.lastDiffData = {}
+    end
+
     -- instantiate barsToSync if it doesn't exist
     if not self.db.global.barsToSync then
         self.db.global.barsToSync = {}
@@ -254,6 +264,16 @@ function ABSync:InstantiateDB(barName)
     if not self.db.profile.mytab then
         self.db.profile.mytab = "instructions"
     end
+
+    --@debug@
+    -- if self.isLive == false then
+    --     if barName ~= nil then
+    --         self:Print(("(%s) Instantiated DB for bar: %s and Player: %s"):format("InstantiateDB", barName, playerID))
+    --     else
+    --         self:Print(("(%s) Instantiated DB for player: %s (bars skipped)"):format("InstantiateDB", playerID))
+    --     end
+    -- end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -448,6 +468,10 @@ function ABSync:LookupAction()
     StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetActionBarsCount
+    Purpose:    Get the count of action bars for a specific source.
+-----------------------------------------------------------------------------]]
 function ABSync:GetActionBarsCount(source)
     -- initialize variable
     local count = 0
@@ -529,71 +553,12 @@ function ABSync:GetLastSyncedOnChar()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetBarsToSync
-    Purpose:    Get the bars set to be synced for the current profile.
+    Function:   SetLastSyncedOnChar
+    Purpose:    Set the last synced time for the action bars to update the Last Synced field in the options for the current character.
+       TODO:    Accept a timestamp parameter, parse it into the format show in the date command in this function.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarsToSync(source, key)
-    -- initialize variables
-    local barName = L["noscancompleted"]
-
-    -- based on source we have slightly different processing
-    if source == self.profiletype["profile"] then
-        -- make sure actionBars exists
-        if not self.db.profile.actionBars then
-            self.db.profile.actionBars = {}
-        end
-
-        -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
-        print("Key: " .. tostring(key))
-        if self.db.profile.actionBars[key] then
-            barName = self.db.profile.actionBars[key]
-        end
-
-        -- check for barsToSync in profile
-        if not self.db.profile.barsToSync then
-            self.db.profile.barsToSync = {}
-        end
-
-        -- get the sync value for the bar, if not found return false
-        if not self.db.profile.barsToSync[barName] then
-            return false
-        end
-
-    elseif source == self.profiletype["global"] then
-        -- make sure actionBars exists
-        if not self.db.global.actionBars then
-            self.db.global.actionBars = {}
-        end
-
-        -- check if the key exists in actionBars, if so fetch it, if not set to "Unknown"
-        if self.db.global.actionBars[key] then
-            barName = self.db.global.actionBars[key]
-        end    
-        
-        -- check for barsToSync in global
-        if not self.db.global.barsToSync then
-            self.db.global.barsToSync = {}
-        end
-
-        -- get the sync value for the bar, if not found return false
-        if not self.db.global.barsToSync[barName] then
-            return false
-        else
-            -- get player id
-            local playerID = self:GetPlayerNameFormatted()
-
-            -- check if the owner matches the player id, if so return true, else false
-            if self.db.global.barsToSync[barName][playerID] ~= nil then
-                return true
-            else
-                return false
-            end
-        end
-
-    -- invalid profile type
-    else
-        return false
-    end
+function ABSync:SetLastSyncedOnChar()
+    self.db.char.lastSynced = date("%Y-%m-%d %H:%M:%S")
 end
 
 --[[---------------------------------------------------------------------------
@@ -606,12 +571,28 @@ function ABSync:GetPlayerNameFormatted()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetBarToShare
+    Purpose:    Check if a specific action bar is set to share for a specific player.
+-----------------------------------------------------------------------------]]
+function ABSync:GetBarToShare(barName, playerID)
+    if not self.db.global.barsToSync then
+        return false
+    elseif not self.db.global.barsToSync[barName] then
+        return false
+    elseif not self.db.global.barsToSync[barName][playerID] then
+        return false
+    else
+        return next(self.db.global.barsToSync[barName][playerID]) ~= nil
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   SetBarToShare
     Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
 function ABSync:SetBarToShare(barName, value)
     --@debug@
-    print(("(%s) Key: %s, Value: %s"):format("SetBarToShare", tostring(barName), tostring(value)))
+    -- print(("(%s) Key: %s, Value: %s"):format("SetBarToShare", tostring(barName), tostring(value)))
     --@end-debug@
 
     -- initialize variables
@@ -681,6 +662,20 @@ function ABSync:SetBarToShare(barName, value)
     --@debug@
     if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
     --@end-debug@
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetBarToSync
+    Purpose:    Check if a specific bar is set to sync for a specific player.
+-----------------------------------------------------------------------------]]
+function ABSync:GetBarToSync(barName, playerID)
+    if not self.db.profile.barsToSync then
+        return false
+    elseif not self.db.profile.barsToSync[barName] then
+        return false
+    else
+        return self.db.profile.barsToSync[barName] == playerID
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -799,14 +794,11 @@ function ABSync:BeginSync()
     -- track testing
     local barsToSync = false
     
-    -- make certain the variable exists to hold bars to sync info
-    if self.db.profile.barsToSync then
-        -- count entries
-        for barName, syncOn in pairs(self.db.profile.barsToSync) do
-            if syncOn == true then
-                barsToSync = true
-                break
-            end
+    -- count entries
+    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+        if syncOn ~= false then
+            barsToSync = true
+            break
         end
     end
 
@@ -829,7 +821,7 @@ function ABSync:TriggerBackup(note)
 
     -- set up backup timestamp
     local backupdttm = date("%Y%m%d%H%M%S")
-    self.db.char.lastSynced = date("%Y-%m-%d %H:%M:%S")
+    self:SetLastSyncedOnChar()
 
     -- track any errors in the data
     local errors = {}
@@ -848,7 +840,7 @@ function ABSync:TriggerBackup(note)
     -- for completeness sake, make sure records are found to be synced...this is actually done in the calling parent but if I decide to call this function elsewhere better check!
     local syncDataFound = false
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
-        if syncOn == true then
+        if syncOn ~= false then
             --@debug@
             if self.isLive == false then self:Print((L["triggerbackup_notify"]):format(barName)) end
             --@end-debug@
@@ -898,6 +890,11 @@ function ABSync:TriggerBackup(note)
     return backupdttm
 end
 
+function ABSync:RemoveButtonAction(buttonID)
+    PickupAction(tonumber(buttonID))
+    ClearCursor()
+end
+
 --[[---------------------------------------------------------------------------
     Function:   UpdateActionBars
     Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
@@ -908,24 +905,31 @@ function ABSync:UpdateActionBars(backupdttm)
     local differences = {}
     local differencesFound = false
 
-    -- compare the profile currentBarData data to the user's current action bar data
-    for barName, syncOn in pairs(self.db.global.barsToSync) do
-        if syncOn == true then
-            for buttonID, buttonData in pairs(self.db.char.currentBarData[barName]) do
+    -- compare the global barsToSync data to the user's current action bar data
+    -- loop over only the bars the character wants to sync
+    for barName, sharedby in pairs(self.db.profile.barsToSync) do
+        if sharedby ~= false then
+            -- print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
+            -- loop over the shared data
+            for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do
                 -- define what values to check
-                local checkValues = { "id", "actionType", "subType" }
+                local checkValues = { "sourceID", "actionType", "subType" }
                 
                 -- loop over checkValues
                 for _, testit in ipairs(checkValues) do
                     if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
                         differencesFound = true
                         table.insert(differences, {
-                            buttonID = buttonID,
-                            actionType = buttonData.actionType,
-                            id = buttonData.id,
-                            name = buttonData.name,
+                            shared = self.db.global.barsToSync[barName][sharedby][buttonID],
+                            current = self.db.char.currentBarData[barName][buttonID],
                             barName = barName,
-                            position = string.match(buttonData.name, "(%d+)$") or L["unknown"],
+                            sharedBy = sharedby,
+                            -- buttonID = buttonID,
+                            -- actionType = buttonData.actionType,
+                            -- id = buttonData.sourceID,
+                            -- name = buttonData.name,
+                            -- position = buttonData.barPosn,
+                            -- currentButton = self.db.char.currentBarData[barName][buttonID],
                         })
                         break
                     end
@@ -946,171 +950,189 @@ function ABSync:UpdateActionBars(backupdttm)
         }
         StaticPopup_Show("ACTIONBARSYNC_NO_DIFFS_FOUND")
     else
+        -- capture last diff data
+        self.db.char.lastDiffData = differences
+
         -- track any errors
         local errors = {}
 
-        -- loop over differences an apply changes
+        -- loop over differences and apply changes
         for _, diffData in ipairs(differences) do
             -- create readable button name
-            local buttonName = (L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
+            -- local buttonName = (L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
 
             -- instantiate standard error fields
             local err = {
                 barName = diffData.barName,
-                barPos = diffData.position,
-                buttonID = diffData.buttonID,
-                actionType = diffData.actionType,
-                id = diffData.id,
+                barPos = diffData.shared.barPosn,
+                buttonID = diffData.shared.actionID,
+                type = diffData.shared.actionType,
+                name = diffData.shared.name,
+                id = diffData.shared.sourceID,
+                sharedby = diffData.sharedBy,
+                msg = ""
             }
 
             -- if the button position is populated, remove the item
             -- the button currently being processed should always be in currentBarData because a sync is required to update action bars...
-            -- check to make sure currentBarData exists
-            if self.db.char.currentBarData then
-                -- check to make sure the barName exists in currentBarData
-                if self.db.char.currentBarData[diffData.barName] then
-                    -- check to make sure the buttonID exists in the barName table
-                    if self.db.char.currentBarData[diffData.barName][diffData.buttonID] then
-                        -- remove the action bar button
-                        PickupAction(tonumber(diffData.buttonID))
-                        ClearCursor()
-                    end
-                end
-            end
-        end
+            -- check to make sure the buttonID exists in the barName table
+            -- if self.db.char.currentBarData[diffData.barName][diffData.buttonID] then
+            --     -- remove the action bar button
+            --     PickupAction(tonumber(diffData.buttonID))
+            --     ClearCursor()
+            -- end
 
-        -- get the name of the id based on action type
-        if actionType == "spell" then
-            -- get spell details
-            local spellInfo = self:GetSpellDetails(actionID, buttonID)
+            -- track if something was updated to action bar
+            local buttonUpdated = false
 
-            -- report error if player does not have the spell
-            if spellInfo.hasSpell == false then
-                err["name"] = spellInfo.spellName
-                err["msg"] = L["unavailable"]
-                table.insert(errors, err)
+            --[[ process based on type ]]
 
-            -- proceed if player has the spell
-            else                    
-                if spellInfo.name then
+            -- if unknown then shared action bar has no button there, if current char has a button in that position remove it
+            if err.type == L["unknown"] and diffData.current.name ~= L["unknown"] then
+                -- call function to remove a buttons action
+                self:RemoveButtonAction(err.buttonID)
+
+                -- button was updated
+                buttonUpdated = true
+
+            elseif err.type == "spell" then
+                -- see if character has spell
+                local hasSpell = self:CharacterHasSpell(err.id)
+
+                -- report error if player does not have the spell
+                if hasSpell == false then
+                    -- update message to show character doesn't have the spell
+                    err["msg"] = L["unavailable"]
+
+                    -- insert the error record into tracking table
+                    table.insert(errors, err)
+
+                -- proceed if player has the spell
+                -- make sure we have a name that isn't unknown
+                elseif err.name ~= L["unknown"] then
                     -- set the action bar button to the spell
-                    C_Spell.PickupSpell(spellInfo.name)
-                    PlaceAction(tonumber(buttonID))
+                    C_Spell.PickupSpell(err.name)
+                    PlaceAction(tonumber(err.buttonID))
                     ClearCursor()
+
+                    -- button was updated
+                    buttonUpdated = true
+
+                -- else should never trigger but set message to not found and add to tracking table
                 else
-                    err["name"] = diffData.name
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
                 end
-            end
-        elseif actionType == "item" then
-            local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(actionID)
+            elseif err.type == "item" then
+                --@debug@
+                if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(err.id, err.name)) end
+                --@end-debug@
 
-            -- need a string as itemName or error occurs if the item actually doesn't exist
-            local checkItemName = itemName or L["unknown"]
+                -- does player have the item
+                local itemCount = self:GetItemCount(err.id)
 
-            -- if checkItemName is unknown then see if its a toy?
-            local isToy = false
-            if checkItemName == L["unknown"] then
-                local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(actionID)
-                if toyName then
-                    -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
-                    checkItemName = toyName or L["unknown"]
-                    isToy = true
+                -- if the user has the item, then add it to their action bar as long as the name is not unknown
+                if itemCount > 0 then
+                    -- item exists
+                    if err.name ~= L["unknown"] then
+                        -- set the action bar button to the item
+                        C_Item.PickupItem(err.name)
+                        PlaceAction(tonumber(err.buttonID))
+                        ClearCursor()
+
+                        -- button was updated
+                        buttonUpdated = true
+
+                    -- else should never trigger but just in case set message to not found and add to tracking table
+                    else
+                        err["msg"] = L["notfound"]
+                        table.insert(errors, err)
+                    end
+
+                -- could be a toy
+                elseif isToy == true then
+                    -- print("toy found: " .. checkItemName)
+                    -- set the action bar button to the toy
+                    C_ToyBox.PickupToyBoxItem(err.id)
+                    PlaceAction(tonumber(err.buttonID))
+                    ClearCursor()
+
+                    -- button was updated
+                    buttonUpdated = true
+
+                -- if player doesn't have item then log as error
+                else
+                    err["msg"] = L["notinbags"]
+                    table.insert(errors, err)
                 end
-            end
+            elseif err.type == "macro" then
+                -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
+                if diffData.shared.macroType == ABSync.MacroType.character then
+                    err["msg"] = L["charactermacro"]
+                    table.insert(errors, err)
+                
+                -- if macro name is found proceed
+                elseif err.name ~= L["unknown"] then
+                    -- set the action bar button to the macro
+                    PickupMacro(err.name)
+                    PlaceAction(tonumber(err.buttonID))
+                    ClearCursor()
 
-            --@debug@
-            if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(actionID, checkItemName)) end
-            --@end-debug@
+                    -- button was updated
+                    buttonUpdated = true
 
-            -- does player have the item
-            local itemCount = C_Item.GetItemCount(actionID)
+                -- if name is unknown then check the id...use the id to place the action
+                elseif err.id ~= -1 then
+                    PickupMacro(err.id)
+                    PlaceAction(tonumber(err.buttonID))
+                    ClearCursor()
 
-            -- add to action bar if two tests pass...
-            -- if the user has the item
-            if itemCount > 0 then
-                -- item exists
-                if itemName then
-                    -- set the action bar button to the item
-                    C_Item.PickupItem(itemName)
+                -- if macro name or id is not found then record error
+                else
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
+                end
+            elseif err.type == "summonpet" then
+                -- if pet name is found proceed
+                if err.id ~= -1 then
+                    -- set the action bar button to the pet
+                    C_PetJournal.PickupPet(err.id)
+                    PlaceAction(tonumber(err.buttonID))
+                    ClearCursor()
+
+                    -- button was updated
+                    buttonUpdated = true
+                else
+                    err["msg"] = L["notfound"]
+                    table.insert(errors, err)
+                end
+            elseif actionType == "summonmount" then
+                -- get the mount spell name; see function details for why we get its spell name
+                -- local mountInfo = self:GetMountinfo(diffData.id)
+
+                -- if mount name is found proceed
+                if mountInfo.name then
+                    C_MountJournal.Pickup(tonumber(mountInfo.displayID))
                     PlaceAction(tonumber(diffData.buttonID))
                     ClearCursor()
+
+                    -- button was updated
+                    buttonUpdated = true
                 else
-                    err["name"] = checkItemName
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
                 end
 
-            -- could be a toy
-            elseif isToy == true then
-                -- print("toy found: " .. checkItemName)
-                -- set the action bar button to the toy
-                C_ToyBox.PickupToyBoxItem(actionID)
-                PlaceAction(tonumber(buttonID))
-                ClearCursor()
-
-            -- if player doesn't have item then log as error
+            -- proper response if action type is not recognized
             else
-                err["name"] = checkItemName
-                err["msg"] = L["notinbags"]
-                table.insert(errors, err)
-            end
-        elseif actionType == "macro" then
-            -- get macro information: name, iconTexture, body, isLocal
-            local macroName = GetMacroInfo(actionID)
-
-            -- if macro name is found proceed
-            if macroName then
-                -- set the action bar button to the macro
-                PickupMacro(macroName)
-                PlaceAction(tonumber(buttonID))
-                ClearCursor()
-
-            -- if macro name is not found then record error and remove whatever is in the bar
-            else
-                err["name"] = L["unknown"]
-                err["msg"] = L["notfound"]
-                table.insert(errors, err)
-
-                -- remove if not found
-                PickupAction(tonumber(diffData.buttonID))
-                ClearCursor()
-            end
-        elseif actionType == "summonpet" then
-            -- get pet information
-            local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(diffData.id)
-
-            -- if pet name is found proceed
-            if name then
-                -- set the action bar button to the pet
-                C_PetJournal.PickupPet(diffData.id)
-                PlaceAction(tonumber(diffData.buttonID))
-                ClearCursor()
-            else
-                err["name"] = L["unknown"]
-                err["msg"] = L["notfound"]
-                table.insert(errors, err)
-            end
-        elseif actionType == "summonmount" then
-            -- get the mount spell name; see function details for why we get its spell name
-            local mountInfo = self:GetMountinfo(diffData.id)
-
-            -- if mount name is found proceed
-            if mountInfo.name then
-                C_MountJournal.Pickup(tonumber(mountInfo.displayID))
-                PlaceAction(tonumber(diffData.buttonID))
-                ClearCursor()
-            else
-                err["name"] = L["unknown"]
-                err["msg"] = L["notfound"]
-                table.insert(errors, err)
+                -- TODO: unknown type response
             end
 
-        -- else as actionType is "notfound" means the button was empty
-        else
-            PickupAction(tonumber(diffData.buttonID))
-            ClearCursor()
+            -- remove if not found and button has an action
+            if err.current.sourceID ~= -1 and buttonUpdated == false then
+                PickupAction(tonumber(err.buttonID))
+                ClearCursor()
+            end
         end
 
         -- count number of sync error records
@@ -1158,6 +1180,16 @@ function ABSync:UpdateActionBars(backupdttm)
     end
 end
 
+function ABSync:GetItemCount(buttonID)
+    local itemCount = C_Item.GetItemCount(buttonID)
+    return itemCount
+end
+
+function ABSync:CharacterHasSpell(spellID)
+    local hasSpell = C_Spell.IsCurrentSpell(spellID) or false
+    return hasSpell
+end
+
 --[[---------------------------------------------------------------------------
     Function:   GetSpellDetails
     Purpose:    Retrieve spell information based on the spell ID.
@@ -1166,9 +1198,6 @@ function ABSync:GetSpellDetails(spellID, buttonID)
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
     local spellName = spellData and spellData.name or L["unknown"]
-
-    -- determine if player has the spell, if not report error
-    -- local hasSpell = C_Spell.IsCurrentSpell(spellID) or false
 
     -- finally return the data collected
     return {
@@ -1182,7 +1211,6 @@ function ABSync:GetSpellDetails(spellID, buttonID)
             spellID = spellData and spellData.spellID or -1
         },
         name = spellName,
-        -- hasSpell = hasSpell,
     }
 end
 
@@ -1199,14 +1227,23 @@ function ABSync:GetItemDetails(itemID)
 
     -- if checkItemName is unknown then see if its a toy
     local isToy = false
-    if checkItemName == L["unknown"] then
-        local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
-        if toyName then
-            -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
-            checkItemName = toyName or L["unknown"]
-            isToy = true
-        end
+    local toyData = {}
+    -- if checkItemName == L["unknown"] then
+    local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
+    if toyName then
+        print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
+        checkItemName = toyName or L["unknown"]
+        isToy = true
+        toyData = {
+            id = toyID,
+            name = toyName,
+            icon = toyIcon,
+            isFavorite = toyIsFavorite,
+            hasFanfare = toyHasFanfare,
+            quality = toyItemQuality
+        }
     end
+    -- end
 
     -- finally return the data collected
     return {
@@ -1231,7 +1268,8 @@ function ABSync:GetItemDetails(itemID)
         },
         itemID = itemID,
         finalItemName = checkItemName,
-        isToy = isToy
+        isToy = isToy,
+        toyData = toyData
     }
 end
 
@@ -1244,13 +1282,21 @@ function ABSync:GetMacroDetails(macroID)
     -- isLocal removed in patch 3.0.2
     local macroName, iconTexture, body = GetMacroInfo(macroID)
 
+    -- macro type: general or character
+    local macroType = ABSync.MacroType.general
+    if tonumber(macroID) > 120 then
+        macroType = ABSync.MacroType.character
+    end
+
     -- finally return the data collected
     return {
         blizData = {
             name = macroName or L["unknown"],
             icon = iconTexture or -1,
             body = body or L["unknown"]
-        }
+        },
+        macroType = macroType,
+        id = macroID,
     }
 end
 
@@ -1417,6 +1463,8 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.icon = itemInfo.blizData.itemTexture
         returnData.sourceID = itemInfo.itemID
         returnData.blizData = itemInfo.blizData
+        returnData.isToy = itemInfo.isToy
+        returnData.toyData = itemInfo.toyData
 
     elseif actionType == "macro" then
         -- get macro details
@@ -1425,8 +1473,8 @@ function ABSync:GetActionButtonData(actionID, btnName)
         -- assign data
         returnData.name = macroInfo.blizData.name
         returnData.icon = macroInfo.blizData.icon
-        returnData.sourceID = macroInfo.blizData.id
-        returnData.has = macroInfo.hasMacro
+        returnData.body = macroInfo.blizData.body
+        returnData.sourceID = macroInfo.id
         returnData.blizData = macroInfo.blizData
 
     elseif actionType == "summonpet" then
@@ -1437,6 +1485,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.name = petInfo.name
         returnData.icon = petInfo.blizData.icon
         returnData.blizData = petInfo.blizData
+        returnData.sourceID = petInfo.petID
 
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
@@ -1447,6 +1496,8 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.icon = mountInfo.blizData.icon
         returnData.sourceID = mountInfo.sourceID
         returnData.blizData = mountInfo.blizData
+        returnData.displayID = mountInfo.displayID
+        returnData.mountID = mountInfo.mountID
     end
 
     -- finally return the data
@@ -1468,6 +1519,9 @@ function ABSync:GetActionBarData()
     
     -- reset currentBarData
     self.db.char.currentBarData = {}
+
+    -- get player unique id
+    local playerID = self:GetPlayerNameFormatted()
     
     -- get action bar details
     for btnName, btnData in pairs(_G) do
@@ -1554,27 +1608,14 @@ function ABSync:GetActionBarData()
     end
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
+    -- for barName, barData in pairs(self.db.global.barsToSync) do
     for barName, barData in pairs(self.db.global.barsToSync) do
-        -- get player unique id
-        local playerID = self:GetPlayerNameFormatted()
+        -- if the bar data table for the current player is empty set checked to false, otherwise, true; next() checks the next record of a table and if it's nil then its empty and we want a false value for empty tables; true means its populated because the use decided to share it
+        local checked = next(barData[playerID]) ~= nil
+        -- self:Print(("Bar Name: %s, Character: %s, is shared? %s"):format(barName, playerID, tostring(checked)))
 
-        -- get bar current owner
-        local barOwner = self.db.global.barsToSync[barName].owner
-
-        -- see if current player matches the owner
-        if playerID == barOwner then
-            -- get the bar index
-            -- local barIndex = nil
-            -- for index, name in ipairs(self.db.global.actionBars) do
-            --     if name == barName then
-            --         barIndex = index
-            --         break
-            --     end
-            -- end
-            -- trigger the profile sync
-            -- self:SetBarToSync(barIndex, syncOn)
-            self:SetBarToSync(barName, barOwner)
-        end
+        -- call existing function when the share check boxes are clicked; pass in existing checked value
+        self:SetBarToShare(barName, checked)
     end
 
     -- trigger update for options UI
@@ -1799,6 +1840,32 @@ function ABSync:CreateAboutFrame()
     return aboutFrame
 end
 
+function ABSync:AddInstruction(parent, i, instruct, addSpacer)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- check addSpacer
+    if not addSpacer or addSpacer == nil then
+        addSpacer = false
+    end
+
+    -- instantiate label
+    local step = AceGUI:Create("Label")
+
+    -- add the index as the instruction number and then the text
+    step:SetText(("%d. %s"):format(i, instruct))
+    step:SetFullWidth(true)
+    parent:AddChild(step)
+
+    -- add the spacer after the text
+    if addSpacer == true then
+        local spacer = AceGUI:Create("Label")
+        spacer:SetText(" ")
+        spacer:SetFullWidth(true)
+        parent:AddChild(spacer)
+    end
+end
+
 --[[---------------------------------------------------------------------------
     Function:   CreateInstructionsFrame
     Purpose:    Create the Instructions frame for the addon.
@@ -1806,6 +1873,23 @@ end
 function ABSync:CreateInstructionsFrame()
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
+
+    -- get instructions
+    local instructions = {
+        "Open the options and set the correct profile. I suggest to leave the default which is for your current character.",
+        "On the 'Share' tab, click the 'Scan Now' button. An initial scan is required for the addon to function.",
+        "Optional, on the 'Share' tab, select which action bars to share.",
+        "On the 'Sync' tab, select the shared action bars from other characters to update this character's action bars.",
+        "On the 'Sync' tab, once the previous step is done, click the 'Sync Now' button to sync your action bars. If you want your bars auto synced, enable the 'Auto Sync on Login' option.",
+        "Done!",
+    }
+
+    -- FAQ
+    -- Example:
+    -- "Q: What does this addon do?\nA: This addon syncs action bars between characters."
+    local faq = {
+        "New addon so nothing yet. This is a placeholder.",
+    }
 
     -- create instructions frame
     local instructionsFrame = AceGUI:Create("SimpleGroup")
@@ -1817,88 +1901,26 @@ function ABSync:CreateInstructionsFrame()
     instructionsScroll:SetFullWidth(true)
     instructionsFrame:AddChild(instructionsScroll)
 
-    -- add step 1
-    local step1 = AceGUI:Create("Label")
-    step1:SetText("1. Open the options and set the correct profile. I suggest to leave the default which is for your current characters profile.")
-    step1:SetFullWidth(true)
-    instructionsScroll:AddChild(step1)
-    local step1labelspacer = AceGUI:Create("Label")
-    step1labelspacer:SetText(" ")
-    step1labelspacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step1labelspacer)
+    -- loop over instructions
+    for i, instruct in ipairs(instructions) do
+        self:AddInstruction(instructionsScroll, i, instruct, true)
 
-    -- add button to open options for this addon
-    local step1Button = AceGUI:Create("Button")
-    step1Button:SetText("Open Options")
-    step1Button:SetWidth(150)
-    step1Button:SetCallback("OnClick", function()
-        LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
-    end)
-    instructionsScroll:AddChild(step1Button)
-    local step1spacer = AceGUI:Create("Label")
-    step1spacer:SetText(" ")
-    step1spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step1spacer)
-
-    -- add step 2
-    local step2 = AceGUI:Create("Label")
-    step2:SetText("2. On the 'Share' tab, click the 'Scan Now' button. An initial scan is required for the addon to function.")
-    step2:SetFullWidth(true)
-    instructionsScroll:AddChild(step2)
-    local step2spacer = AceGUI:Create("Label")
-    step2spacer:SetText(" ")
-    step2spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step2spacer)
-
-    -- add step 3
-    local step3 = AceGUI:Create("Label")
-    step3:SetText("3. Optional, on the 'Share' tab, select which action bars to share.")
-    step3:SetFullWidth(true)
-    instructionsScroll:AddChild(step3)
-    local step3spacer = AceGUI:Create("Label")
-    step3spacer:SetText(" ")
-    step3spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step3spacer)
-
-    -- add step 4
-    local step4 = AceGUI:Create("Label")
-    step4:SetText("4. On the 'Sync' tab, select shared action bars from other characters to sync into this character's action bars.")
-    step4:SetFullWidth(true)
-    instructionsScroll:AddChild(step4)
-    local step4spacer = AceGUI:Create("Label")
-    step4spacer:SetText(" ")
-    step4spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step4spacer)
-
-    -- add step 5
-    local step5 = AceGUI:Create("Label")
-    step5:SetText("5. On the 'Sync' tab, click the 'Sync Now' button to sync your action bars.")
-    step5:SetFullWidth(true)
-    instructionsScroll:AddChild(step5)
-    local step5spacer = AceGUI:Create("Label")
-    step5spacer:SetText(" ")
-    step5spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step5spacer)
-
-    -- add step 6
-    local step6 = AceGUI:Create("Label")
-    step6:SetText("6. Once a sync is complete, you can review any error details on the 'Last Sync Errors' tab.")
-    step6:SetFullWidth(true)
-    instructionsScroll:AddChild(step6)
-    local step6spacer = AceGUI:Create("Label")
-    step6spacer:SetText(" ")
-    step6spacer:SetFullWidth(true)
-    instructionsScroll:AddChild(step6spacer)
-
-    -- done!
-    local doneLabel = AceGUI:Create("Label")
-    doneLabel:SetText("Done!")
-    doneLabel:SetFullWidth(true)
-    instructionsScroll:AddChild(doneLabel)
-    local doneSpacer = AceGUI:Create("Label")
-    doneSpacer:SetText(" ")
-    doneSpacer:SetFullWidth(true)
-    instructionsScroll:AddChild(doneSpacer)
+        -- add other interface widgets as needed based on index
+        if i == 1 then
+            -- add button to open options for this addon
+            local step1Button = AceGUI:Create("Button")
+            step1Button:SetText("Open Options")
+            step1Button:SetWidth(150)
+            step1Button:SetCallback("OnClick", function()
+                LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
+            end)
+            instructionsScroll:AddChild(step1Button)
+            local step1spacer = AceGUI:Create("Label")
+            step1spacer:SetText(" ")
+            step1spacer:SetFullWidth(true)
+            instructionsScroll:AddChild(step1spacer)
+        end
+    end
 
     -- FAQ Frame
     local faqFrame = AceGUI:Create("InlineGroup")
@@ -1913,6 +1935,7 @@ function ABSync:CreateInstructionsFrame()
     faqLabel:SetFullWidth(true)
     faqFrame:AddChild(faqLabel)
 
+    -- add the FAQ frame to the instructions scroll
     instructionsScroll:AddChild(faqFrame)
 
     -- finally return the frame
@@ -1950,6 +1973,7 @@ function ABSync:CreateScanFrame()
     button:SetText("Scan Now")
     button:SetFullWidth(true)
     button:SetCallback("OnClick", function()
+        -- refresh of the shared data is done in this function too
         ABSync:GetActionBarData()
     end)
     scanFrame:AddChild(button)
@@ -2128,40 +2152,7 @@ function ABSync:CreateShareFrame(playerID)
         checkBox:SetLabel(checkboxName)
 
         -- determine checkbox value
-        local checkboxValue = false
-        if self.db.global then
-            if self.db.global.barsToSync then
-                --@debug@
-                -- print(("Checkbox Name: %s, Player ID: %s"):format(checkboxName, playerID))
-                --@end-debug@
-
-                -- continue if the action bar name, same as checkboxName, is found in the table
-                if self.db.global.barsToSync[checkboxName] then
-
-                    -- continue if the playerID exists in the table for the checkboxName
-                    if self.db.global.barsToSync[checkboxName][playerID] then
-
-                        -- continue if the table under playerID exists
-                        if type(self.db.global.barsToSync[checkboxName][playerID]) == "table" then
-                            -- initialize variable to track record count
-                            local recordCount = 0
-
-                            -- loop just once to make sure a record exists
-                            for _ in pairs(self.db.global.barsToSync[checkboxName][playerID]) do
-                                recordCount = recordCount + 1
-                                -- only need to loop once
-                                break
-                            end
-
-                            -- if a record is returned then set the checkbox to true/checked
-                            if recordCount > 0 then
-                                checkboxValue = true
-                            end
-                        end
-                    end 
-                end
-            end
-        end
+        local checkboxValue = self:GetBarToShare(checkboxName, playerID)
 
         -- set the checkbox initial value
         checkBox:SetValue(checkboxValue)
@@ -2194,7 +2185,23 @@ function ABSync:CreateShareFrame(playerID)
     return mainShareFrame
 end
 
-function ABSync:CreateSyncCheckbox(barName, playerID)
+--[[---------------------------------------------------------------------------
+    Function:   SyncOnValueChanged
+    Purpose:    Sync the action bar state when the checkbox value changes.
+-----------------------------------------------------------------------------]]
+function ABSync:SyncOnValueChanged(value, barName, playerID)
+    if value == true then
+        self.db.profile.barsToSync[barName] = playerID
+    else
+        self.db.profile.barsToSync[barName] = false
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateSyncCheckbox
+    Purpose:    Create a checkbox for syncing action bars.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateSyncCheckbox(barName, playerID, currentPlayerID)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
@@ -2202,65 +2209,48 @@ function ABSync:CreateSyncCheckbox(barName, playerID)
     local checkBox = AceGUI:Create("CheckBox")
     
     -- set barName to green and playerID to orange
-    checkBox:SetLabel("|cff00ff00" .. barName .. "|r from |cffffa500" .. playerID .. "|r")
+    local label = "|cff00ff00" .. barName .. "|r from |cffffa500" .. playerID .. "|r"
+    if playerID == currentPlayerID then
+        label = ("%s from %s"):format(barName, playerID)
+    end
+    checkBox:SetLabel(label)
     checkBox:SetFullWidth(true)
     
     -- if they equal then it sets the value to true, otherwise, false
-    checkBox:SetValue(self.db.profile.barsToSync[barName] == playerID)
+    checkBox:SetValue(self:GetBarToSync(barName, playerID))
     checkBox:SetCallback("OnValueChanged", function(_, _, value)
-        if value == true then
-            self.db.profile.barsToSync[barName] = playerID
-        else
-            self.db.profile.barsToSync[barName] = false
-        end
+        local playerID = playerID
+        local barName = barName
+        ABSync:SyncOnValueChanged(value, barName, playerID)
     end)
-    
+    checkBox:SetDisabled(playerID == currentPlayerID)
+
     -- finally return a new checkbox
     return checkBox
-end
-
-local function CreateSimpleScrollFrame(parent, width, height)
-    -- Main scroll frame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(width, height)
-    scrollFrame:SetPoint("CENTER", parent, "CENTER")
-
-    -- Content frame inside the scroll frame
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(width, 1) -- Height will be set dynamically
-    scrollFrame:SetScrollChild(content)
-
-    -- Example: Add 30 labels to the content frame
-    local rowHeight = 24
-    for i = 1, 30 do
-        local label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        label:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -((i - 1) * rowHeight))
-        label:SetText("Row " .. i)
-    end
-
-    -- Set content height for scrolling
-    content:SetHeight(30 * rowHeight)
-
-    return scrollFrame
 end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateSyncFrame
     Purpose:    Create the sync frame for selecting action bars to sync.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateSyncFrame(syncWidth)
+function ABSync:CreateSyncFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
+
+    -- current player ID
+    local currentPlayerID = self:GetPlayerNameFormatted()
 
     -- create main frame
     local syncFrame = AceGUI:Create("SimpleGroup")
     syncFrame:SetLayout("Flow")
-    syncFrame:SetWidth(syncWidth)
+    syncFrame:SetFullWidth(true)
+    parent:AddChild(syncFrame)
 
     -- create frame for check sync on login
     local loginCheckFrame = AceGUI:Create("InlineGroup")
     loginCheckFrame:SetTitle("Sync on Login")
     loginCheckFrame:SetLayout("List")
+    loginCheckFrame:SetRelativeWidth(0.5)
     syncFrame:AddChild(loginCheckFrame)
 
     -- create checkbox for sync on login
@@ -2274,16 +2264,28 @@ function ABSync:CreateSyncFrame(syncWidth)
     -- add checkbox to login check frame
     loginCheckFrame:AddChild(loginCheckBox)
 
+    -- create frame for manual sync
+    local manualSyncFrame = AceGUI:Create("InlineGroup")
+    manualSyncFrame:SetTitle("Manual Sync")
+    manualSyncFrame:SetLayout("List")
+    manualSyncFrame:SetRelativeWidth(0.5)
+    syncFrame:AddChild(manualSyncFrame)
+
+    -- create button for manual sync
+    local manualSyncButton = AceGUI:Create("Button")
+    manualSyncButton:SetText("Sync Now")
+    manualSyncButton:SetCallback("OnClick", function()
+        self:BeginSync()
+    end)
+    manualSyncFrame:AddChild(manualSyncButton)
+
     -- create frame for listing who can be synced from and their bars
     local scrollContainer = AceGUI:Create("InlineGroup")
     scrollContainer:SetTitle("Sync From?")
-    scrollContainer:SetFullWidth(true)
     scrollContainer:SetLayout("Fill")
+    scrollContainer:SetFullWidth(true)
+    scrollContainer:SetFullHeight(true)
     syncFrame:AddChild(scrollContainer)
-
-    -- local scrollWidth = scrollContainer.frame:GetWidth()
-    -- local scrollHeight = scrollContainer.frame:GetHeight()
-    -- print(("Scroll Container Size: %d x %d"):format(scrollWidth, scrollHeight))
     
     -- create scroll frame
     local scrollFrame = AceGUI:Create("ScrollFrame")
@@ -2313,22 +2315,21 @@ function ABSync:CreateSyncFrame(syncWidth)
 
                 -- create a checkbox if data is found
                 if foundData == true then
-                    scrollFrame:AddChild(self:CreateSyncCheckbox(barName, playerID))
+                    scrollFrame:AddChild(self:CreateSyncCheckbox(barName, playerID, currentPlayerID))
                 end
             end
         end
     end
 
-    --@debug@
-    local testData = {}
-    for i = 1, 20 do
-        scrollFrame:AddChild(self:CreateSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
-    end
-    --@end-debug@
-    scrollFrame:FixScroll()
+    -- --@debug@
+    -- -- for adding 20 rows of fake data
+    -- for i = 1, 20 do
+    --     scrollFrame:AddChild(self:CreateSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
+    -- end
+    -- --@end-debug@
 
     -- finally return frame
-    return syncFrame
+    -- return syncFrame
 end
 
 --[[---------------------------------------------------------------------------
@@ -2351,7 +2352,6 @@ function ABSync:ShowUI()
     -- set initial sizes
     local frameWidth = screenWidth * 0.6
     local frameHeight = screenHeight * 0.6
-    local syncWidth = frameWidth * 0.6
     
     --[[ Create the main frame]]
 
@@ -2398,8 +2398,7 @@ function ABSync:ShowUI()
             -- local scrollWidth = tabGroup.frame:GetWidth()
             -- local scrollHeight = tabGroup.frame:GetHeight()
             -- print(("Scroll Container Size: %d x %d"):format(scrollWidth, scrollHeight))
-            local syncFrame = self:CreateSyncFrame(syncWidth)
-            tabGroup:AddChild(syncFrame)
+            local syncFrame = self:CreateSyncFrame(tabGroup)
         elseif group == "last_sync_errors" then
             local lastSyncErrorFrame = self:CreateLastSyncErrorFrame()
             tabGroup:AddChild(lastSyncErrorFrame)
