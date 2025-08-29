@@ -51,31 +51,46 @@ ABSync.uitabs = {
         ["instructions"] = "Instructions",
         ["share"] = "Share",
         ["sync"] = "Sync",
-        ["last_sync_errors"] = "Last Sync Errors"
+        ["last_sync_errors"] = "Last Sync Errors",
+        ["developer"] = "Developer"
     },
     ["order"] = {
         "about",
         "instructions",
         "share",
         "sync",
-        "last_sync_errors"
+        "last_sync_errors",
+        "developer"
     }
 }
+
+-- initialize the mount db
+if not ActionBarSyncMountDB then
+    ActionBarSyncMountDB = {}
+end
 
 --[[---------------------------------------------------------------------------
     Function:   ABSync:OnInitialize
     Purpose:    Initialize the addon and set up default values.
 -----------------------------------------------------------------------------]]
 function ABSync:OnInitialize()
-    --@debug@
-    if self.isLive == false then self:Print(L["initializing"]) end
-    --@end-debug@
-
     -- Instantiate Standard Functions
     local StdFuncs = ABSync:GetModule("StandardFunctions")
 
     -- initialize the db
     self.db = LibStub("AceDB-3.0"):New("ActionBarSyncDB")
+
+    -- check dev mode
+    if not self.db.char then
+        self.db.char = {}
+    end
+    if not self.db.char.isDevMode then
+        self.db.char.isDevMode = false
+    end
+
+    --@debug@
+    if self.db.char.isDevMode == true then self:Print(L["initializing"]) end
+    --@end-debug@
 
     -- Instantiate Option Table
     self.ActionBarSyncOptions = {
@@ -165,7 +180,7 @@ function ABSync:OnInitialize()
     self:RegisterChatCommand("abs", "SlashCommand")
     
     --@debug@ leave at end of function
-    if self.isLive == false then self:Print(L["initialized"]) end
+    if self.db.char.isDevMode == true then self:Print(L["initialized"]) end
     --@end-debug@
 end
 
@@ -188,6 +203,11 @@ function ABSync:InstantiateDB(barName)
     end
     if not self.db.global.actionBars then
         self.db.global.actionBars = {}
+    end
+
+    -- auto reset mount journal filters flag
+    if not self.db.profile.autoResetMountFilters then
+        self.db.profile.autoResetMountFilters = false
     end
 
     -- currentBarData holds the last scan of data fetched from the action bars for the current character; hence stored in char
@@ -266,7 +286,7 @@ function ABSync:InstantiateDB(barName)
     end
 
     --@debug@
-    -- if self.isLive == false then
+    -- if self.db.char.isDevMode == true then
     --     if barName ~= nil then
     --         self:Print(("(%s) Instantiated DB for bar: %s and Player: %s"):format("InstantiateDB", barName, playerID))
     --     else
@@ -376,7 +396,7 @@ function ABSync:LookupAction()
 
     --@debug@
     -- "Looking up Action - Type: %s - ID: %s"
-    if self.isLive == false then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
+    if self.db.char.isDevMode == true then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
     --@end-debug@
 
     -- check for valid action type
@@ -660,7 +680,7 @@ function ABSync:SetBarToShare(barName, value)
     end
 
     --@debug@
-    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
+    if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -730,7 +750,7 @@ function ABSync:SetBarToSync(key, value)
     self.db.profile.barsToSync[barName] = value
 
     --@debug@ let the user know the value is changed only when developing though
-    if self.isLive == false then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
+    if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -842,7 +862,7 @@ function ABSync:TriggerBackup(note)
     for barName, syncOn in pairs(self.db.profile.barsToSync) do
         if syncOn ~= false then
             --@debug@
-            if self.isLive == false then self:Print((L["triggerbackup_notify"]):format(barName)) end
+            if self.db.char.isDevMode == true then self:Print((L["triggerbackup_notify"]):format(barName)) end
             --@end-debug@
 
             -- make sync data found
@@ -893,6 +913,74 @@ end
 function ABSync:RemoveButtonAction(buttonID)
     PickupAction(tonumber(buttonID))
     ClearCursor()
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   MountJournalFilterBackup
+    Purpose:    Backup the current mount journal filter settings.
+
+    NOT USED YET
+-----------------------------------------------------------------------------]]
+function ABSync:MountJournalFilterBackup()
+    -- backup current filter settings
+    self.db.char.mountJournalFilters = {
+        collected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED),
+        notCollected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED),
+        unusable = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE),
+    }
+
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   MountJournalFilterReset
+    Purpose:    Reset the mount journal filter settings to default.
+-----------------------------------------------------------------------------]]
+function ABSync:MountJournalFilterReset()
+    -- reset default filter settings
+    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, true)
+    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, false)
+    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, false)
+    C_MountJournal.SetAllSourceFilters(true)
+    C_MountJournal.SetSearch("")
+    C_MountJournal.SetAllTypeFilters(true)
+
+    -- notify user
+    self:Print("Mount Journal filters have been set to show all collected mounts.")
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   MountJournalFilterRestore
+    Purpose:    Restore the mount journal filter settings from backup.
+
+    NOT USED YET
+-----------------------------------------------------------------------------]]
+function ABSync:MountJournalFilterRestore()
+    -- restore previous filter settings
+    if self.db.char.mountJournalFilters then
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, self.db.char.mountJournalFilters.collected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, self.db.char.mountJournalFilters.notCollected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, self.db.char.mountJournalFilters.unusable)
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   MountIdToOriginalIndex
+    Purpose:    Get the original index of a mount by its ID.
+    Credit:     MountJournalEnhanced authors!
+
+    Usage:      Should call MountJournalFilterReset() before calling this but should add code to let user know if mount is not found and ask if filter should be restored to default or our own "default".
+-----------------------------------------------------------------------------]]
+function ABSync:MountIDToOriginalIndex(mountID)
+    -- get the current number from the journal
+    local count = C_MountJournal.GetNumDisplayedMounts()
+    for i = 1, count do
+        local displayedMountID = select(12, C_MountJournal.GetDisplayedMountInfo(i))
+        if displayedMountID == mountID then
+            return i
+        end
+    end
+
+    return nil
 end
 
 --[[---------------------------------------------------------------------------
@@ -955,6 +1043,11 @@ function ABSync:UpdateActionBars(backupdttm)
 
         -- track any errors
         local errors = {}
+
+        -- track if a mount issue occurred
+        local mountIssue = false
+        local mountIssueCount = 0
+        local mountCount = 0
 
         -- loop over differences and apply changes
         for _, diffData in ipairs(differences) do
@@ -1025,7 +1118,7 @@ function ABSync:UpdateActionBars(backupdttm)
                 end
             elseif err.type == "item" then
                 --@debug@
-                if self.isLive == false then self:Print((L["updateactionbars_debug_item_name"]):format(err.id, err.name)) end
+                -- if self.db.char.isDevMode == true then self:Print((L["updateactionbars_debug_item_name"]):format(err.id, err.name)) end
                 --@end-debug@
 
                 -- does player have the item
@@ -1034,7 +1127,7 @@ function ABSync:UpdateActionBars(backupdttm)
                 -- if the user has the item, then add it to their action bar as long as the name is not unknown
                 if itemCount > 0 then
                     -- item exists
-                    if err.name ~= L["unknown"] then
+                    if err.name ~= L["unknown"] and diffData.shared.isToy == false then
                         -- set the action bar button to the item
                         C_Item.PickupItem(err.name)
                         PlaceAction(tonumber(err.buttonID))
@@ -1050,7 +1143,7 @@ function ABSync:UpdateActionBars(backupdttm)
                     end
 
                 -- could be a toy
-                elseif isToy == true then
+                elseif diffData.shared.isToy == true then
                     -- print("toy found: " .. checkItemName)
                     -- set the action bar button to the toy
                     C_ToyBox.PickupToyBoxItem(err.id)
@@ -1106,14 +1199,12 @@ function ABSync:UpdateActionBars(backupdttm)
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
                 end
-            elseif actionType == "summonmount" then
-                -- get the mount spell name; see function details for why we get its spell name
-                -- local mountInfo = self:GetMountinfo(diffData.id)
-
-                -- if mount name is found proceed
-                if mountInfo.name then
-                    C_MountJournal.Pickup(tonumber(mountInfo.displayID))
-                    PlaceAction(tonumber(diffData.buttonID))
+            elseif err.type == "summonmount" then
+                -- get mount journal index
+                local mountJournalIndex = self:MountIDToOriginalIndex(diffData.shared.mountID)
+                if mountJournalIndex then
+                    C_MountJournal.Pickup(mountJournalIndex)
+                    PlaceAction(tonumber(err.buttonID))
                     ClearCursor()
 
                     -- button was updated
@@ -1121,7 +1212,14 @@ function ABSync:UpdateActionBars(backupdttm)
                 else
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
+
+                    -- update mount issue flag
+                    mountIssue = true
+                    mountIssueCount = mountIssueCount + 1
                 end
+
+                -- count mounts
+                mountCount = mountCount + 1
 
             -- proper response if action type is not recognized
             else
@@ -1129,7 +1227,7 @@ function ABSync:UpdateActionBars(backupdttm)
             end
 
             -- remove if not found and button has an action
-            if err.current.sourceID ~= -1 and buttonUpdated == false then
+            if diffData.current.sourceID ~= -1 and buttonUpdated == false then
                 PickupAction(tonumber(err.buttonID))
                 ClearCursor()
             end
@@ -1152,7 +1250,7 @@ function ABSync:UpdateActionBars(backupdttm)
         -- store errors
         if #errors > 0 then
             --@debug@
-            if self.isLive == false then self:Print((L["actionbarsync_sync_errors_found"]):format(backupdttm)) end
+            if self.db.char.isDevMode == true then self:Print((L["actionbarsync_sync_errors_found"]):format(backupdttm)) end
             --@end-debug@
 
             -- make sure syncErrors exists
@@ -1175,16 +1273,37 @@ function ABSync:UpdateActionBars(backupdttm)
             self.db.char.lastSyncErrorDttm = backupdttm
 
             -- trigger update for options UI
-            LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
+            -- LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
+        end
+
+        -- show popup if mount issue is true
+        if mountIssue == true then
+            StaticPopupDialogs["ACTIONBARSYNC_MOUNT_ISSUE"] = {
+                text = (L["actionbarsync_mount_issue_text"]):format(mountIssueCount, mountCount),
+                button1 = L["ok"],
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+            }
+            StaticPopup_Show("ACTIONBARSYNC_MOUNT_ISSUE")
         end
     end
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   GetItemCount
+    Purpose:    Retrieve the item count for a specific button ID.
+-----------------------------------------------------------------------------]]
 function ABSync:GetItemCount(buttonID)
     local itemCount = C_Item.GetItemCount(buttonID)
     return itemCount
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   CharacterHasSpell
+    Purpose:    Check if the current character has a specific spell.
+-----------------------------------------------------------------------------]]
 function ABSync:CharacterHasSpell(spellID)
     local hasSpell = C_Spell.IsCurrentSpell(spellID) or false
     return hasSpell
@@ -1231,7 +1350,7 @@ function ABSync:GetItemDetails(itemID)
     -- if checkItemName == L["unknown"] then
     local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
     if toyName then
-        print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
+        -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
         checkItemName = toyName or L["unknown"]
         isToy = true
         toyData = {
@@ -1358,33 +1477,43 @@ function ABSync:GetMountinfo(mountID)
     -- make sure certain values are not nil
     name = name or L["unknown"]
 
-    -- then get additional details on the mount: createDisplayID, isVisible
-    local mountInfo = C_MountJournal.GetMountAllCreatureDisplayInfoByID(mountID)
+    -- get more mount data looking for how to pickup a mount with the cursor correctly
+    local displayIDs = C_MountJournal.GetAllCreatureDisplayIDsForMountID(mountID)
 
-    -- instantiate a variable for the mount display id
-    local mountDisplayID = L["unknown"]
+    -- get more mount data!!!
+    local creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
+    local extraInfo = {
+        creatureDisplayInfoID = creatureDisplayInfoID or -1,
+        description = description or L["unknown"],
+        source = source or L["unknown"],
+        isSelfMount = isSelfMount or false,
+        mountTypeID = mountTypeID or -1,
+        uiModelSceneID = uiModelSceneID or -1,
+        animID = animID or -1,
+        spellVisualKitID = spellVisualKitID or -1,
+        disablePlayerMountPreview = disablePlayerMountPreview or false
+    }
 
-    -- loop over mount data and get display ID
-    local mountFound = false
-    if type(mountInfo) == "table" then
-        for _, mountData in ipairs(mountInfo) do
-            for key, value in pairs(mountData) do
-                if key == "creatureDisplayID" then
-                    mountDisplayID = value
-                    mountFound = true
-                    break
-                end
-            end
+    -- and get more data!!!
+    local mountCreatureDisplayInfoLink = L["unknown"]
+    if spellID then
+        mountCreatureDisplayInfoLink = C_MountJournal.GetMountLink(spellID)
+    end
 
-            -- break loop if mount found
-            if mountFound then
-                break
-            end
+    -- get the mountID to displayIndex mapping
+    local mountLookup = C_MountJournal.GetMountIDs()
+
+    -- loop over the values to get the key
+    local displayIndex = -1
+    for journalIndex, journalMountID in pairs(mountLookup) do
+        if journalMountID == mountID then
+            displayIndex = journalIndex
+            break
         end
     end
 
     --@debug@
-    if self.isLive == false then self:Print((L["getmountinfolookup"]):format(name, mountID, tostring(mountDisplayID))) end
+    -- if self.db.char.isDevMode == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
     --@end-debug@
 
     -- finally return the spell name
@@ -1406,8 +1535,11 @@ function ABSync:GetMountinfo(mountID)
         },
         name = name or L["unknown"],
         sourceID = sourceMountID or -1,
-        displayID = mountDisplayID or -1,
-        mountID = mountID
+        displayIndex = displayIndex or -1,
+        mountID = mountID,
+        displayIDs = displayIDs or {},
+        extraInfo = extraInfo or {},
+        displayInfoLink = mountCreatureDisplayInfoLink
     }
 end
 
@@ -1476,6 +1608,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.body = macroInfo.blizData.body
         returnData.sourceID = macroInfo.id
         returnData.blizData = macroInfo.blizData
+        returnData.macroType = macroInfo.macroType
 
     elseif actionType == "summonpet" then
         -- get pet data
@@ -1496,12 +1629,88 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.icon = mountInfo.blizData.icon
         returnData.sourceID = mountInfo.sourceID
         returnData.blizData = mountInfo.blizData
-        returnData.displayID = mountInfo.displayID
+        returnData.displayIndex = mountInfo.displayIndex
         returnData.mountID = mountInfo.mountID
+        returnData.displayIDs = mountInfo.displayIDs
+        returnData.extraInfo = mountInfo.extraInfo
     end
 
     -- finally return the data
     return returnData
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   RefreshMountDB
+    Purpose:    For development purposes only! Refresh the mount database for the current player.
+-----------------------------------------------------------------------------]]
+function ABSync:RefreshMountDB()
+    -- get playerID
+    local playerID = self:GetPlayerNameFormatted()
+
+    -- clear the existing mount database
+    ActionBarSyncMountDB[playerID] = {}
+
+    --[[ create sorted list of mount ID's ]]
+    
+    -- get all the mount id's
+    local mountLookup = C_MountJournal.GetMountIDs()
+
+    -- build table of mount ID's as keys and the index as the key's value
+    local reversed = {}
+    for journalIndex, journalMountID in pairs(mountLookup) do
+        reversed[journalIndex] = journalMountID
+    end
+
+    -- build a table of just mount ID's for sorting them
+    local keys = {}
+    for journalMountID in pairs(reversed) do
+        table.insert(keys, journalMountID)
+    end
+
+    -- sort the keys
+    table.sort(keys)
+
+    -- create sorted mountIDLookup table
+    local mountIDLookup = {}
+    for _, journalMountID in ipairs(keys) do
+        table.insert(mountIDLookup, reversed[journalMountID])
+    end
+
+    -- clear unused tables
+    wipe(reversed)
+    wipe(keys)
+
+    -- loop over sorted mount ID's
+    for journalMountID, journalIndex in pairs(mountIDLookup) do
+        -- get mount data
+        local mountInfo = self:GetMountinfo(journalMountID)
+
+        -- add index to mountInfo and the associated mount ID to confirm data from GetMountinfo aligns with the GetMountIDs function
+        mountInfo.journalIndex = journalIndex
+        mountInfo.journalMountID = journalMountID
+
+        -- add to table
+        table.insert(ActionBarSyncMountDB[playerID], mountInfo)
+        -- ActionBarSyncMountDB[playerID][tostring(journalMountID)] = mountInfo
+    end
+
+    -- notify user its done
+    self:Print("Mount DB Refreshed! Reload the UI by using this command: /reload")
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ClearMountDB
+    Purpose:    Clear the mount database for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:ClearMountDB()
+    -- get playerID
+    local playerID = self:GetPlayerNameFormatted()
+
+    -- clear the existing mount database
+    ActionBarSyncMountDB[playerID] = {}
+
+    -- notify user its done
+    self:Print("Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character.")
 end
 
 --[[---------------------------------------------------------------------------
@@ -1623,8 +1832,26 @@ function ABSync:GetActionBarData()
 
     -- let user know its done
     --@debug@
-    if self.isLive == false then self:Print(L["getactionbardata_final_notification"]) end
+    if self.db.char.isDevMode == true then self:Print(L["getactionbardata_final_notification"]) end
     --@end-debug@
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   EnableDevelopment
+    Purpose:    Enable development mode for testing and debugging.
+-----------------------------------------------------------------------------]]
+function ABSync:EnableDevelopment()
+    self.db.char.isDevMode = true
+    self:Print("Development Mode: Enabled")
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   DisableDevelopment
+    Purpose:    Disable development mode for testing and debugging.
+-----------------------------------------------------------------------------]]
+function ABSync:DisableDevelopment()
+    self.db.char.isDevMode = false
+    self:Print("Development Mode: Disabled")
 end
 
 --[[---------------------------------------------------------------------------
@@ -1644,8 +1871,23 @@ function ABSync:SlashCommand(text)
             LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
         elseif arg:lower() == "sync" then
             self:BeginSync()
+        elseif arg:lower() == "enablemodedeveloper" then
+            if not self.db.char.isDevMode or self.db.char.isDevMode == false then
+                self:EnableDevelopment()
+            else
+                self:DisableDevelopment()
+            end
+        elseif arg:lower() == "refreshmountdb" then
+            if self.db.char.isDevMode == true then
+                self:RefreshMountDB()
+            end
         -- elseif arg:lower() == "test" then
-        --     self:NewUI()
+            -- local mountIDs = C_MountJournal.GetMountIDs()
+            -- for midx, mountID in ipairs(mountIDs) do
+            --     -- local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
+            --     -- self:Print(("(Test) Mount - Name: %s - ID: %d - Source ID: %d"):format(name, mountID, sourceMountID))
+            --     print(("<Test> Mount - ID: %d (%d)"):format(mountID, midx))
+            -- end
         end
     end
 
@@ -1671,11 +1913,45 @@ function ABSync:EventPlayerLogin()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   EventPlayerLogout
+    Purpose:    Handle functionality which is best or must wait for the PLAYER_LOGOUT event.
+-----------------------------------------------------------------------------]]
+function ABSync:EventPlayerLogout()
+    --@debug@
+    if self.db.char.isDevMode == true then self:Print(L["registerevents_player_logout"]) end
+    --@end-debug@
+
+    -- clear currentBarData and actionBars when not in developer mode
+    if self.db.char.isDevMode == false then
+        ABSync.db.profile.currentBarData = {}
+        ABSync:ClearMountDB()
+    end
+end
+
+-- function ABSync:PrintMountInfo(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+--     local newCursorTypeTranslated = L["unknown"]
+--     local oldCursorTypeTranslated = L["unknown"]
+
+--     for k, v in pairs(Enum.UICursorType) do
+--         if tonumber(v) == tonumber(newCursorType) then
+--             newCursorTypeTranslated = k
+--             print(("(NEW) Key: %s, Value: %s, Type: %s (%d)"):format(k, v, tostring(newCursorTypeTranslated), tonumber(newCursorType)))
+--         end
+--         if tonumber(v) == tonumber(oldCursorType) then
+--             oldCursorTypeTranslated = k
+--             print(("(OLD) Key: %s, Value: %s, oldCursorType: %s (%d)"):format(k, v, tostring(oldCursorTypeTranslated), tonumber(oldCursorType)))
+--         end
+--     end
+
+--     self:Print(("Cursor Changed - isDefault: %s, newCursorType: %s (%d), oldCursorType: %s (%d), oldCursorVirtualID: %s"):format(tostring(isDefault), tostring(newCursorTypeTranslated), tonumber(newCursorType), tostring(oldCursorTypeTranslated), tonumber(oldCursorType), tonumber(oldCursorVirtualID)))
+-- end
+
+--[[---------------------------------------------------------------------------
     Function:   RegisterEvents
     Purpose:    Register all events for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:RegisterEvents()
-    if ABSync.isLive == false then self:Print(L["registerevents_starting"]) end
+    if self.db.char.isDevMode == true then self:Print(L["registerevents_starting"]) end
 	-- Hook to Action Bar On Load Calls
 	-- self:Hook("ActionBarController_OnLoad", true)
 	-- Hook to Action Bar On Event Calls
@@ -1683,23 +1959,24 @@ function ABSync:RegisterEvents()
     -- Register Events
     self:RegisterEvent("ADDON_LOADED", function()
         --@debug@
-        if ABSync.isLive == false then self:Print(L["registerevents_addon_loaded"]) end
+        if self.db.char.isDevMode == true then self:Print(L["registerevents_addon_loaded"]) end
         --@end-debug@
     end)
 
     self:RegisterEvent("PLAYER_LOGIN", function()
         --@debug@
-        if ABSync.isLive == false then self:Print(L["registerevents_player_login"]) end
+        if self.db.char.isDevMode == true then self:Print(L["registerevents_player_login"]) end
         --@end-debug@
 
         self:EventPlayerLogin()
     end)
 
-    self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self, event, isInitialLogin, isReload)
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", function(event, isInitialLogin, isReload)
+        print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event,tostring(isInitialLogin), tostring(isReload)))
         -- only run these commands if this is the initial login
         if isInitialLogin == true then
             --@debug@
-            if ABSync.isLive == false then ABSync:Print(L["registerevents_player_entering_world"]) end
+            if self.db.char.isDevMode == true then ABSync:Print(L["registerevents_player_entering_world"]) end
             --@end-debug@
 
             -- run db initialize again but pass in barName to make sure all keys are setup for this barName
@@ -1713,21 +1990,24 @@ function ABSync:RegisterEvents()
     end)
 
     self:RegisterEvent("PLAYER_LOGOUT", function()
-        --@debug@
-        if ABSync.isLive == false then self:Print(L["registerevents_player_logout"]) end
-        --@end-debug@
-
-        -- clear currentBarData and actionBars when the code is live
-        if ABSync.isLive == true then
-            ABSync.db.profile.currentBarData = {}
-        end
+        ABSync:EventPlayerLogout()
     end)
 
     self:RegisterEvent("VARIABLES_LOADED", function()
         --@debug@
-        if ABSync.isLive == false then self:Print(L["registerevents_variables_loaded"]) end
+        if self.db.char.isDevMode == true then self:Print(L["registerevents_variables_loaded"]) end
         --@end-debug@
     end)
+
+    --[[ trying to process cursor changed is CRAZY...giving up for now... ]]
+    -- self:RegisterEvent("CURSOR_CHANGED", function(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+    --     self:Print("Event - CURSOR_CHANGED")
+    --     --@debug@
+    --     if ABSync.isDevMode == false then
+    --         ABSync:PrintMountInfo(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+    --     end
+    --     --@end-debug@
+    -- end)
 
 	-- self:RegisterEvent("ACTIONBAR_UPDATE_STATE", function()
 	-- 	self:Print("Event - ACTIONBAR_UPDATE_STATE")
@@ -1751,10 +2031,16 @@ function ABSync:OnEnable()
     self:Print(L["enabled"])
 end
 
--- Trigger code when addon is disabled.
+--[[---------------------------------------------------------------------------
+    Function:   OnDisable
+    Purpose:    Trigger code when addon is disabled.
+-----------------------------------------------------------------------------]]
 function ABSync:OnDisable()
     -- TODO: Unregister Events?
     self:Print(L["disabled"])
+
+    -- same clean up should occur when disabled
+    ABSync:EventPlayerLogout()
 end
 
 function ABSync:GetCharacterList()
@@ -1983,89 +2269,113 @@ function ABSync:CreateScanFrame()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateTriggerSyncFrame
-    Purpose:    Create the Trigger Sync frame for the addon.
+    Function:   AddErrorCell
+    Purpose:    Add a cell of error information to the error display.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateTriggerSyncFrame()
+function ABSync:AddErrorCell(data, width)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
+    
+    -- print("here4")
+    local cell = AceGUI:Create("Label")
+    cell:SetText(tostring(data or "-"))
+    cell:SetRelativeWidth(width)
+    
+    -- finally return the cell
+    return cell
+end
 
-    -- create main frame
-    local triggerSyncFrame = AceGUI:Create("InlineGroup")
-    triggerSyncFrame:SetTitle("Trigger Sync")
-    triggerSyncFrame:SetLayout("List")
+--[[---------------------------------------------------------------------------
+    Function:   AddErrorRow
+    Purpose:    Add a row of error information to the error display.
+-----------------------------------------------------------------------------]]
+function ABSync:AddErrorRow(data, columns)
+    -- print("here3")
+    
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+    
+    -- set up row group of columns
+    local rowGroup = AceGUI:Create("SimpleGroup")
+    rowGroup:SetLayout("Flow")
+    rowGroup:SetFullWidth(true)
+    -- parentScrollArea:AddChild(rowGroup)
 
-    -- add last synced label
-    local lastSyncedLabel = AceGUI:Create("Label")
-    lastSyncedLabel:SetText("Last Synced on this Character")
-    lastSyncedLabel:SetFullWidth(true)
-    triggerSyncFrame:AddChild(lastSyncedLabel)
+    -- loop over the column definitions
+    for _, colDef in ipairs(columns) do
+        -- translate data if necessary
+        local colVal = data[colDef.key]
+        if colDef.key == "type" then
+            colVal = ABSync.actionTypeLookup[data[colDef.key]]
+        end
+        rowGroup:AddChild(self:AddErrorCell(colVal, colDef.width))
+        -- print(("Key: %s, Width: %f, Data: %s"):format(colDef.key, colDef.width, tostring(data[colDef.key])))
+    end
 
-    -- add disabled edit box
-    local lastSyncedInput = AceGUI:Create("EditBox")
-    lastSyncedInput:SetText(self.db.char.lastSyncDttm or L["never"])
-    lastSyncedInput:SetFullWidth(true)
-    lastSyncedInput:SetDisabled(true) -- make it read-only
-    triggerSyncFrame:AddChild(lastSyncedInput)
-
-    -- add button to trigger sync
-    local syncButton = AceGUI:Create("Button")
-    syncButton:SetText("Sync Now")
-    syncButton:SetFullWidth(true)
-    syncButton:SetCallback("OnClick", function()
-        self:BeginSync()
-    end)
-    triggerSyncFrame:AddChild(syncButton)
-
-    -- return the frame
-    return triggerSyncFrame
+    -- finally return the grouping
+    return rowGroup
 end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateLastSyncErrorFrame
     Purpose:    Create the Last Sync Error frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateLastSyncErrorFrame()
+function ABSync:CreateLastSyncErrorFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- create a group for the error scroll frame
-    local lastErrorGroup = AceGUI:Create("InlineGroup")
-    lastErrorGroup:SetTitle("Last Sync Errors")
-    lastErrorGroup:SetLayout("Fill")
-    lastErrorGroup:SetAutoAdjustHeight(false)
+    -- create main frame
+    local lastErrorGroup = AceGUI:Create("SimpleGroup")
+    lastErrorGroup:SetLayout("Flow")
     lastErrorGroup:SetFullWidth(true)
-    lastErrorGroup:SetHeight(300)
+    lastErrorGroup:SetFullHeight(true)
+    parent:AddChild(lastErrorGroup)
 
     -- columns
-    local columns = {"Bar Name", "Bar Pos", "Button ID", "Action Type", "Action Name", "Action ID", "Message"}
-    local columnLoop = {"barName", "barPos", "buttonID", "actionType", "name", "id", "msg"}
-
-    -- Create a scroll container for the spreadsheet
-    local errScroll = AceGUI:Create("ScrollFrame")
-    errScroll:SetLayout("List")
-    lastErrorGroup:AddChild(errScroll)
+    local columns = {
+        { name = "Bar Name", key = "barName", width = 0.10},        -- 10
+        { name = "Bar Pos", key = "barPos", width = 0.05},          -- 15
+        { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
+        { name = "Action Type", key = "type", width = 0.10},        -- 30
+        { name = "Action Name", key = "name", width = 0.25},        -- 55
+        { name = "Action ID", key = "id", width = 0.05},            -- 60
+        { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
+        { name = "Message", key = "msg", width = 0.25}              -- 100
+    }
 
     -- determine column width
     -- 5px for spacing
     -- local columnWidth = ((frameWidth - 5) / #columns) - 5
-    local columnWidth = 1/#columns
+    -- local columnWidth = 1/(#columns+1)
+    -- columnWidth = tonumber(string.format("%.2f", columnWidth))
+    -- print("Column Width: " .. tostring(columnWidth))
 
-    -- Create header row
+    -- Create header row; important to add the header group to the parent group to maintain a proper layout
     local errHeader = AceGUI:Create("SimpleGroup")
     errHeader:SetLayout("Flow")
     errHeader:SetFullWidth(true)
-    for _, colName in ipairs(columns) do
+    lastErrorGroup:AddChild(errHeader)
+    for _, colDefn in ipairs(columns) do
         local label = AceGUI:Create("Label")
-        label:SetText("|cff00ff00" .. colName .. "|r")
-        -- label:SetWidth(columnWidth)
-        label:SetRelativeWidth(columnWidth)
+        label:SetText("|cff00ff00" .. colDefn.name .. "|r")
+        label:SetRelativeWidth(colDefn.width)
         errHeader:AddChild(label)
     end
-    errScroll:AddChild(errHeader)
+
+    -- create a container for the scroll region
+    local errScrollContainer = AceGUI:Create("SimpleGroup")
+    errScrollContainer:SetLayout("Fill")
+    errScrollContainer:SetFullWidth(true)
+    errScrollContainer:SetFullHeight(true)
+    lastErrorGroup:AddChild(errScrollContainer)
+
+    -- Create a scroll container for the spreadsheet
+    local errScroll = AceGUI:Create("ScrollFrame")
+    errScroll:SetLayout("List")
+    errScrollContainer:AddChild(errScroll)
 
     --@debug@
-    -- if self.isLive == false then
+    -- if self.db.char.isDevMode == true then
     --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
     --     local testdttmkey = date("%Y%m%d%H%M%S")
     --     self.db.char.lastSyncErrorDttm = testdttmkey
@@ -2081,13 +2391,28 @@ function ABSync:CreateLastSyncErrorFrame()
     --@end-debug@
 
     -- get count of syncErrors
-    local syncErrorCount = 0
-    for _ in ipairs(self.db.char.syncErrors) do
-        syncErrorCount = syncErrorCount + 1
-    end
-    print("Sync Error Count: " .. tostring(syncErrorCount))
+    local syncErrorCount = #self.db.char.syncErrors
 
     -- loop over sync errors
+    --[[ 
+        errorRcd contains the following properties:
+            property        description
+            --------------- --------------------------------------------------------
+            key             has a value of a date and time string
+            errors          is a table containing error records
+
+        errors contains the following:
+            property        description
+            --------------- --------------------------------------------------------
+            barPos          the action is in which button in the action bars; action bars have buttons 1 to 12
+            type            the action type
+            name            the name of the action
+            barName         the name of the action bar it resides
+            id              the ID of the action
+            msg             the error message
+            sharedby        the player who shared the action
+            buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
+    ]]
     if syncErrorCount > 0 then
         for _, errorRcd in ipairs(self.db.char.syncErrors) do
             -- print("here1")
@@ -2096,28 +2421,11 @@ function ABSync:CreateLastSyncErrorFrame()
                 -- print("here2")
                 -- loop over the rows
                 for _, errorRow in ipairs(errorRcd.errors) do
-                    -- print("here3")
-                    -- set up row group of columns
-                    local rowGroup = AceGUI:Create("SimpleGroup")
-                    rowGroup:SetLayout("Flow")
-                    rowGroup:SetFullWidth(true)
-
-                    -- loop over the column defintions
-                    for _, colDef in ipairs(columnLoop) do
-                        -- print("here4")
-                        local cell = AceGUI:Create("Label")
-                        cell:SetText(tostring(errorRow[colDef] or "-"))
-                        cell:SetWidth(columnWidth)
-                        rowGroup:AddChild(cell)
-                    end
-                    errScroll:AddChild(rowGroup)
+                    errScroll:AddChild(self:AddErrorRow(errorRow, columns))
                 end
             end
         end
     end
-
-    -- finally return the frame
-    return lastErrorGroup
 end
 
 --[[---------------------------------------------------------------------------
@@ -2249,35 +2557,63 @@ function ABSync:CreateSyncFrame(parent)
     -- create frame for check sync on login
     local loginCheckFrame = AceGUI:Create("InlineGroup")
     loginCheckFrame:SetTitle("Sync on Login")
-    loginCheckFrame:SetLayout("List")
+    loginCheckFrame:SetLayout("Flow")
     loginCheckFrame:SetRelativeWidth(0.5)
     syncFrame:AddChild(loginCheckFrame)
+
+    -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
+    local autoMountFilterReset = AceGUI:Create("CheckBox")
+    autoMountFilterReset:SetLabel("Automatically Reset Mount Journal Filters")
+    autoMountFilterReset:SetValue(self.db.profile.autoResetMountFilters)
+    autoMountFilterReset:SetWidth(275)
+    autoMountFilterReset:SetDisabled(self.db.profile.checkOnLogon == false)
+    autoMountFilterReset:SetCallback("OnValueChanged", function(_, _, value)
+        self.db.profile.autoResetMountFilters = value
+    end)
 
     -- create checkbox for sync on login
     local loginCheckBox = AceGUI:Create("CheckBox")
     loginCheckBox:SetLabel("Enable Sync on Login")
-    loginCheckBox:SetValue(self.db.profile.checkOnLogon)
+    loginCheckBox:SetValue(false)
     loginCheckBox:SetCallback("OnValueChanged", function(_, _, value)
         self.db.profile.checkOnLogon = value
+        if value == true then
+            autoMountFilterReset:SetDisabled(false)
+        else
+            autoMountFilterReset:SetDisabled(true)
+        end
     end)
 
     -- add checkbox to login check frame
     loginCheckFrame:AddChild(loginCheckBox)
 
+    -- add checkbox to login check frame; want it to follow loginCheckBox even through its made first
+    loginCheckFrame:AddChild(autoMountFilterReset)
+
     -- create frame for manual sync
     local manualSyncFrame = AceGUI:Create("InlineGroup")
     manualSyncFrame:SetTitle("Manual Sync")
-    manualSyncFrame:SetLayout("List")
+    manualSyncFrame:SetLayout("Flow")
     manualSyncFrame:SetRelativeWidth(0.5)
     syncFrame:AddChild(manualSyncFrame)
 
     -- create button for manual sync
     local manualSyncButton = AceGUI:Create("Button")
     manualSyncButton:SetText("Sync Now")
+    manualSyncButton:SetWidth(100)
     manualSyncButton:SetCallback("OnClick", function()
         self:BeginSync()
     end)
     manualSyncFrame:AddChild(manualSyncButton)
+
+    -- create button for manual mount filter reset
+    local manualMountFilterResetButton = AceGUI:Create("Button")
+    manualMountFilterResetButton:SetText("Reset Mount Filters")
+    manualMountFilterResetButton:SetWidth(160)
+    manualMountFilterResetButton:SetCallback("OnClick", function()
+        self:MountJournalFilterReset()
+    end)
+    manualSyncFrame:AddChild(manualMountFilterResetButton)
 
     -- create frame for listing who can be synced from and their bars
     local scrollContainer = AceGUI:Create("InlineGroup")
@@ -2321,6 +2657,9 @@ function ABSync:CreateSyncFrame(parent)
         end
     end
 
+    -- set values from db
+    loginCheckBox:SetValue(self.db.profile.checkOnLogon)
+
     -- --@debug@
     -- -- for adding 20 rows of fake data
     -- for i = 1, 20 do
@@ -2330,6 +2669,80 @@ function ABSync:CreateSyncFrame(parent)
 
     -- finally return frame
     -- return syncFrame
+end
+
+function ABSync:CreateDeveloperFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create main frame
+    local devFrame = AceGUI:Create("SimpleGroup")
+    devFrame:SetLayout("Flow")
+    devFrame:SetFullWidth(true)
+    parent:AddChild(devFrame)
+
+    --[[ warning! ]]
+
+    -- create frame for warning
+    local warningFrame = AceGUI:Create("InlineGroup")
+    warningFrame:SetTitle("|cffff0000Warning!|r")
+    warningFrame:SetLayout("List")
+    warningFrame:SetFullWidth(true)
+    devFrame:AddChild(warningFrame)
+
+    -- add developer tab warning
+    local devWarningLabel = AceGUI:Create("Label")
+    devWarningLabel:SetText("This tab is used for development purposes only. If you are a user and using anything on this tab, then please use at your own risk. Please do not open tickets about this tab.")
+    devWarningLabel:SetFullWidth(true)
+    warningFrame:AddChild(devWarningLabel)
+
+    --[[ mount db refresh ]]
+
+    -- create frame for mount db
+    local mountDBFrame = AceGUI:Create("InlineGroup")
+    mountDBFrame:SetTitle("Mount Database")
+    mountDBFrame:SetLayout("Flow")
+    mountDBFrame:SetRelativeWidth(0.5)
+    devFrame:AddChild(mountDBFrame)
+
+    -- add label explaining the purpose of the button
+    local mountDBRefreshInfoLabel = AceGUI:Create("Label")
+    mountDBRefreshInfoLabel:SetText("Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file.")
+    mountDBRefreshInfoLabel:SetFullWidth(true)
+    mountDBFrame:AddChild(mountDBRefreshInfoLabel)
+
+    -- add space between text and button; terrible way to add space...need to figure out how to add bottom padding or switch to standard UI design outside of AceGUI
+    local spacer = AceGUI:Create("Label")
+    spacer:SetText(" ")
+    spacer:SetFullWidth(true)
+    mountDBFrame:AddChild(spacer)
+
+    -- create button to refresh mount db
+    local mountDBRefreshButton = AceGUI:Create("Button")
+    mountDBRefreshButton:SetText("Refresh Mount DB")
+    mountDBRefreshButton:SetWidth(150)
+    mountDBRefreshButton:SetCallback("OnClick", function()
+        ABSync:RefreshMountDB()
+    end)
+    mountDBFrame:AddChild(mountDBRefreshButton)
+
+    -- create button to reload the ui
+    local mountDBReloadButton = AceGUI:Create("Button")
+    mountDBReloadButton:SetText("Reload UI")
+    mountDBReloadButton:SetWidth(150)
+    mountDBReloadButton:SetCallback("OnClick", function()
+        C_UI.Reload()
+    end)
+    mountDBFrame:AddChild(mountDBReloadButton)
+
+    -- create button to clear db for this char
+    local mountDBClearButton = AceGUI:Create("Button")
+    mountDBClearButton:SetText("Clear Character Mount DB")
+    mountDBClearButton:SetWidth(200)
+    mountDBClearButton:SetCallback("OnClick", function()
+        ABSync:ClearMountDB()
+    end)
+    mountDBFrame:AddChild(mountDBClearButton)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2371,7 +2784,11 @@ function ABSync:ShowUI()
     for _, tabkey in ipairs(ABSync.uitabs.order) do
         local tabname = ABSync.uitabs.tabs[tabkey]
         -- print(("Tab: %s, Key: %s"):format(tabname, tabkey))
-        table.insert(tabs, { text = tabname, value = tabkey })
+
+        -- if developer mode disabled, skip the developer tab, otherwise add the tab
+        if tabkey ~= "developer" or (tabkey == "developer" and self.db.char.isDevMode == true) then
+            table.insert(tabs, { text = tabname, value = tabkey })
+        end
     end
 
     -- create tab group
@@ -2395,13 +2812,11 @@ function ABSync:ShowUI()
             local shareFrame = self:CreateShareFrame(playerID)
             tabGroup:AddChild(shareFrame)
         elseif group == "sync" then
-            -- local scrollWidth = tabGroup.frame:GetWidth()
-            -- local scrollHeight = tabGroup.frame:GetHeight()
-            -- print(("Scroll Container Size: %d x %d"):format(scrollWidth, scrollHeight))
             local syncFrame = self:CreateSyncFrame(tabGroup)
         elseif group == "last_sync_errors" then
-            local lastSyncErrorFrame = self:CreateLastSyncErrorFrame()
-            tabGroup:AddChild(lastSyncErrorFrame)
+            local lastSyncErrorFrame = self:CreateLastSyncErrorFrame(tabGroup)
+        elseif group == "developer" then
+            local developerFrame = self:CreateDeveloperFrame(tabGroup)
         end
     end)
 
