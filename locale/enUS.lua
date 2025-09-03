@@ -37,7 +37,7 @@ L["actionbarsynctitle"] = "Action Bar Sync"
 L["actioniddesc"] = "The ID of the item you want to look up."
 L["actionidname"] = "Action ID"
 L["actionlookupdesc"] = "This section allows you to look up actions by ID."
-L["actionlookupintro"] = "This section allows you to look up actions by type and ID or Name."
+L["actionlookupintro"] = "This section allows you to look up actions by type and ID."
 L["actionlookupname"] = "Action ID Lookup"
 L["actiontypedesc"] = "The type of the action you want to look up."
 L["actiontypename"] = "Action Type"
@@ -56,7 +56,7 @@ L["initializing"] = "Initializing..."
 L["introduction"] = "Introduction"
 L["introname"] = "This addon allows you to sync selected action bars across characters."
 L["invalidactiontype"] = "Invalid Action Type. Please enter/select a valid action type."
-L["item"] = "Item"
+L["item"] = "Item/Toy"
 L["itemlookupresult"] = [=[Item Lookup Result
 ID: %s
 Name: %s
@@ -142,4 +142,5 @@ L["updateactionbars_user_doesnot_have_item"] = "(%s) User does not have item '%s
 L["yes"] = "Yes"
 L["actionbarsync_mount_issue_text"] = "%d out of %d mount issues occurred. The functionality from Blizzard to assign mounts to an action bar requires those mounts to be visible in the Mount Journal. The issues this addon has encountered could be caused by the current Mount Journal filters. Either reset the filters to default or click the button 'Reset Mount Journal Filters' (only makes collected and usable mounts visible) and try the sync again."
 L["charactermacro"] = "Character specific macro's can't be shared. To share a macro, it must be moved/copied to the General Macro tab's in the macro interface (original)."
+L["notapplicable"] = "Not Applicable"
 --@end-do-not-package@

@@ -12,6 +12,22 @@ local ABSync = _G.ABSync
 ABSync.localeSilent = false
 local L = LibStub("AceLocale-3.0"):GetLocale(ABSync.optionLocName, ABSync.localeSilent)
 
+-- addon access to UI elements
+ABSync.ui = {
+    editbox = {},
+    scroll = {}
+}
+
+-- addon ui columns
+ABSync.columns = {
+    lookupHistory = {
+        { name = "Type", key = "type", width = 0.20 },      -- 20
+        { name = "ID", key = "id", width = 0.10 },          -- 30
+        { name = "Name", key = "name", width = 0.60 },      -- 90
+        { name = "Has", key = "has", width = 0.10 },        -- 100
+    }
+}
+
 -- lookup values for action button lookup
 ABSync.actionTypeLookup = {
     ["spell"] = L["spell"],
@@ -52,7 +68,8 @@ ABSync.uitabs = {
         ["share"] = "Share",
         ["sync"] = "Sync",
         ["last_sync_errors"] = "Last Sync Errors",
-        ["developer"] = "Developer"
+        ["lookup"] = "Lookup",
+        ["developer"] = "Developer",
     },
     ["order"] = {
         "about",
@@ -60,7 +77,8 @@ ABSync.uitabs = {
         "share",
         "sync",
         "last_sync_errors",
-        "developer"
+        "lookup",
+        "developer",
     }
 }
 
@@ -97,71 +115,7 @@ function ABSync:OnInitialize()
         name = L["actionbarsynctitle"],
         handler = ABSync,
         type = "group",
-        args = {
-            actionlookup = {
-                name = L["actionlookupname"],
-                desc = L["actionlookupdesc"],
-                type = "group",
-                order = 5,
-                args = {
-                    intro = {
-                        name = L["actionlookupintro"],
-                        type = "description",
-                        order = 0,
-                        width = "full",
-                    },
-                    objectname = {
-                        name = L["objectname"],
-                        desc = L["objectnamedesc"],
-                        type = "input",
-                        width = "full",
-                        order = 1,
-                        get = function(info)
-                            return ABSync:GetLastActionName()
-                        end,
-                        set = function(info, value)
-                            ABSync:SetLastActionName(value)
-                        end
-                    },
-                    actionID = {
-                        name = L["actionidname"],
-                        desc = L["actioniddesc"],
-                        type = "input",
-                        order = 2,
-                        get = function(info)
-                            return ABSync:GetLastActionID()
-                        end,
-                        set = function(info, value)
-                            ABSync:SetLastActionID(value)
-                        end
-                    },
-                    actionType = {
-                        name = L["actiontypename"],
-                        desc = L["actiontypedesc"],
-                        type = "select",
-                        order = 3,
-                        values = function()
-                            return ABSync:GetActionTypeValues()
-                        end,
-                        get = function(info)
-                            return ABSync:GetLastActionType()
-                        end,
-                        set = function(info, value)
-                            ABSync:SetLastActionType(value)
-                        end
-                    },
-                    lookupButton = {
-                        name = L["lookupbuttonname"],
-                        desc = L["lookupbuttondesc"],
-                        type = "execute",
-                        order = 4,
-                        func = function()
-                            ABSync:LookupAction()
-                        end
-                    }
-                }
-            }
-        }
+        args = {}
     }
    
     -- get the ace db options for profile management
@@ -190,7 +144,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:InstantiateDB(barName)
     -- get current playerID
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetPlayerNameKey()
 
     -- option which lets the user pick to check if they bars are out of sync after logon
     if not self.db.profile.checkOnLogon then
@@ -249,6 +203,16 @@ function ABSync:InstantiateDB(barName)
         }
     end
 
+    -- character specific lookup history
+    if not self.db.char.lookupHistory then
+        self.db.char.lookupHistory = {}
+    end
+
+    -- set default for max history lookup records
+    if not self.db.char.lookupHistoryMaxRecords then
+        self.db.char.lookupHistoryMaxRecords = 20
+    end
+
     -- character last diff data
     if not self.db.char.lastDiffData then
         self.db.char.lastDiffData = {}
@@ -301,10 +265,6 @@ end
     Purpose:    Get the last action name for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionName()
-    if not self.db.char.actionLookup.name then
-        self.db.char.actionLookup = {}
-        self.db.char.actionLookup.name = ""
-    end
     return self.db.char.actionLookup.name
 end
 
@@ -313,9 +273,6 @@ end
     Purpose:    Set the last action name for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastActionName(value)
-    if not self.db.char.actionLookup then
-        self.db.char.actionLookup = {}
-    end
     self.db.char.actionLookup.name = value
 end
 
@@ -324,9 +281,6 @@ end
     Purpose:    Get the last action ID for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionID()
-    if not self.db.char.actionLookup.id then
-        self.db.char.actionLookup.id = ""
-    end
     return self.db.char.actionLookup.id
 end
 
@@ -335,9 +289,6 @@ end
     Purpose:    Set the last action ID for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastActionID(value)
-    if not self.db.char.actionLookup then
-        self.db.char.actionLookup = {}
-    end
     self.db.char.actionLookup.id = value
 end
 
@@ -354,13 +305,7 @@ end
     Purpose:    Get the last action type for the current character. Defaults to "spell" if never set.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionType()
-    if not self.db.char.actionLookup then
-        self.db.char.actionLookup = {}
-    end
-    if not self.db.char.actionLookup.type then
-        self.db.char.actionLookup.type = "spell"
-    end
-    return self.db.char.actionLookup.type or ""
+    return self.db.char.actionLookup.type or "spell"
 end
 
 --[[---------------------------------------------------------------------------
@@ -368,10 +313,33 @@ end
     Purpose:    Set the last action type for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastActionType(value)
-    if not self.db.char.actionLookup then
-        self.db.char.actionLookup = {}
-    end
     self.db.char.actionLookup.type = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   InsertLookupHistory
+    Purpose:    Insert a new entry into the lookup history and only keeping the max records set by the user.
+-----------------------------------------------------------------------------]]
+function ABSync:InsertLookupHistory(info)
+    -- reduce down to N records based on user setting
+    -- local tmpTable = {}
+    -- for i = 1, (self.db.char.lookupHistoryMaxRecords - 1) do
+    --     table.insert(tmpTable, self.db.char.lookupHistory[i])
+    --     if #tmpTable >= self.db.profile.lookupHistorySize then
+    --         break
+    --     end
+    -- end
+
+    -- insert the record
+    table.insert(self.db.char.lookupHistory, 1, info)
+
+    -- if +1 of max records exist and the table has more then reduce the table size
+    local nextRecord = self.db.char.lookupHistoryMaxRecords + 1
+    if #self.db.char.lookupHistory > self.db.char.lookupHistoryMaxRecords then
+        for i = nextRecord, #self.db.char.lookupHistory do
+            table.remove(self.db.char.lookupHistory, i)
+        end
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -379,15 +347,6 @@ end
     Purpose:    Look up the action based on the last entered action type and ID.
 -----------------------------------------------------------------------------]]
 function ABSync:LookupAction()
-    -- dialog to show results
-    StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"] = {
-        text = "",
-        button1 = L["ok"],
-        timeout = 0,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
     -- get the action type
     local actionType = self:GetLastActionType()
     
@@ -399,93 +358,65 @@ function ABSync:LookupAction()
     if self.db.char.isDevMode == true then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
     --@end-debug@
 
-    -- check for valid action type
-    if not self.actionTypeLookup[actionType] then
-        StaticPopupDialogs["ACTIONBARSYNC_INVALID_ACTION_TYPE"] = {
-            text = L["invalidactiontype"],
-            button1 = L["ok"],
-            timeout = 15,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-        StaticPopup_Show("ACTIONBARSYNC_INVALID_ACTION_TYPE")
-        return
-    end
-
     -- instantiate variable to store final message
     local dialogMessage = ""
 
+    -- instantiate lookup storage
+    local lookupInfo = {
+        type = actionType,
+        id = actionID,
+        name = L["unknown"],
+        has = L["no"]
+    }
+
     -- perform lookup based on type
     if actionType == "spell" then
-        -- get spell info
-        local spellData = C_Spell.GetSpellInfo(actionID)
-        local spellName = spellData and spellData.name or L["unknown"]
+        -- get spell details: data, name, hasSpell
+        local spellInfo = self:GetSpellDetails(actionID)
 
-        -- assign to field
-        self:SetLastActionName(spellName)
-
-        -- determine if player has the spell, if not report error
-        local hasSpell = C_Spell.IsCurrentSpell(actionID) and L["yes"] or L["no"]
-
-        -- generate message
-        dialogMessage = (L["spelllookupresult"]):format(actionID, spellName, hasSpell)
+        -- update details
+        lookupInfo.name = spellInfo.name
+        lookupInfo.has = spellInfo.hasSpell
     elseif actionType == "item" then
-        -- get item info
-        local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(actionID)
+        -- get item details
+        local itemInfo = self:GetItemDetails(actionID)
 
-        -- does player have the item
-        local itemCount = C_Item.GetItemCount(actionID)
-
-        -- assign results
-        self:SetLastActionName(itemName)
-
-        -- generate message
-        local hasItem = (itemCount > 0) and L["yes"] or L["no"]
-        dialogMessage = (L["itemlookupresult"]):format(actionID, itemName, hasItem)
+        -- update details
+        lookupInfo.name = itemInfo.name
+        lookupInfo.has = itemInfo.hasItem
     elseif actionType == "macro" then
-        -- get macro information: name, iconTexture, body, isLocal
-        local macroName, macroIcon, macroBody = GetMacroInfo(actionID)
-
-        -- does player have this macro?
-        local hasMacro = macroName and L["yes"] or L["no"]
-
-        -- fix macroName for output
-        macroName = macroName or L["unknown"]
-
-        -- assign to field
-        self:SetLastActionName(macroName)
-
-        -- generate message
-        dialogMessage = (L["macrolookupresult"]):format(actionID, macroName, hasMacro)
+        -- get macro details
+        local macroInfo = self:GetMacroDetails(actionID)
+        
+        -- update details
+        lookupInfo.name = macroInfo.blizData.name
+        lookupInfo.has = macroInfo.hasMacro
     elseif actionType == "summonpet" then
-        -- get pet information
-        local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(actionID)
+        -- get pet data
+        local petInfo = self:GetPetDetails(actionID)
 
-        -- check if has pet
-        local hasPet = name and L["yes"] or L["no"]
-
-        -- assign to field
-        self:SetLastActionName(name)        
-
-        -- generate message
-        dialogMessage = (L["petlookupresult"]):format(actionID, name, hasPet)
+        -- update details
+        lookupInfo.name = petInfo.name
+        lookupInfo.has = petInfo.hasPet
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
         local mountInfo = self:GetMountinfo(actionID)
 
+        -- update name
+        lookupInfo.name = mountInfo.name
+
+        -- get mount journal index
+        local mountJournalIndex = self:MountIDToOriginalIndex(mountInfo.mountID)
+
         -- has mount
-        local hasMount = mountInfo.name and "Yes" or "No"
-
-        -- assign to field
-        self:SetLastActionName(mountInfo.name)
-
-        -- generate message
-        dialogMessage = (L["mountlookupresult"]):format(actionID, mountInfo.name, hasMount)
+        lookupInfo.has = mountJournalIndex and "Yes" or "No"
     end
 
-    -- show results in dialog
-    StaticPopupDialogs["ACTIONBARSYNC_LOOKUP_RESULT"].text = dialogMessage
-    StaticPopup_Show("ACTIONBARSYNC_LOOKUP_RESULT")
+    -- insert record to lookupHistory
+    self:InsertLookupHistory(lookupInfo)
+
+    -- update scroll region for lookup history
+    self:UpdateLookupHistory()
 end
 
 --[[---------------------------------------------------------------------------
@@ -591,6 +522,24 @@ function ABSync:GetPlayerNameFormatted()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetPlayerNameKey
+    Purpose:    Get the formatted key needed to track shared bars based on character and spec.
+-----------------------------------------------------------------------------]]
+function ABSync:GetPlayerNameKey()
+    -- get player and server name
+    local unitName, unitServer = UnitFullName("player")
+
+    -- get characters current spec number
+    local specializationIndex = C_SpecializationInfo.GetSpecialization()
+
+    -- get the name of the current spec number
+    local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
+
+    -- finally return the special key
+    return ("%s-%s-%s"):format(unitName, unitServer, name)
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetBarToShare
     Purpose:    Check if a specific action bar is set to share for a specific player.
 -----------------------------------------------------------------------------]]
@@ -617,7 +566,7 @@ function ABSync:SetBarToShare(barName, value)
 
     -- initialize variables
     local barName = barName or L["unknown"]
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetPlayerNameKey()
 
     -- check for input barName, if it doesn't exist then let user know and return false
     if not self.db.global.barsToSync[barName] then
@@ -1295,8 +1244,8 @@ end
     Function:   GetItemCount
     Purpose:    Retrieve the item count for a specific button ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetItemCount(buttonID)
-    local itemCount = C_Item.GetItemCount(buttonID)
+function ABSync:GetItemCount(id)
+    local itemCount = C_Item.GetItemCount(id)
     return itemCount
 end
 
@@ -1305,7 +1254,7 @@ end
     Purpose:    Check if the current character has a specific spell.
 -----------------------------------------------------------------------------]]
 function ABSync:CharacterHasSpell(spellID)
-    local hasSpell = C_Spell.IsCurrentSpell(spellID) or false
+    local hasSpell = C_Spell.IsCurrentSpell(spellID) and L["yes"] or L["no"]
     return hasSpell
 end
 
@@ -1313,10 +1262,11 @@ end
     Function:   GetSpellDetails
     Purpose:    Retrieve spell information based on the spell ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetSpellDetails(spellID, buttonID)
+function ABSync:GetSpellDetails(spellID)
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
     local spellName = spellData and spellData.name or L["unknown"]
+    local hasSpell = self:CharacterHasSpell(spellID)
 
     -- finally return the data collected
     return {
@@ -1330,6 +1280,7 @@ function ABSync:GetSpellDetails(spellID, buttonID)
             spellID = spellData and spellData.spellID or -1
         },
         name = spellName,
+        hasSpell = hasSpell
     }
 end
 
@@ -1344,10 +1295,12 @@ function ABSync:GetItemDetails(itemID)
     -- need a string as itemName or error occurs if the item actually doesn't exist
     local checkItemName = itemName or L["unknown"]
 
+    -- does player have the item
+    local itemCount = self:GetItemCount(itemID)
+
     -- if checkItemName is unknown then see if its a toy
     local isToy = false
     local toyData = {}
-    -- if checkItemName == L["unknown"] then
     local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
     if toyName then
         -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
@@ -1362,7 +1315,6 @@ function ABSync:GetItemDetails(itemID)
             quality = toyItemQuality
         }
     end
-    -- end
 
     -- finally return the data collected
     return {
@@ -1388,7 +1340,8 @@ function ABSync:GetItemDetails(itemID)
         itemID = itemID,
         finalItemName = checkItemName,
         isToy = isToy,
-        toyData = toyData
+        toyData = toyData,
+        hasItem = (itemCount > 0) and L["yes"] or L["no"],
     }
 end
 
@@ -1416,6 +1369,7 @@ function ABSync:GetMacroDetails(macroID)
         },
         macroType = macroType,
         id = macroID,
+        hasMacro = macroName and L["yes"] or L["no"],
     }
 end
 
@@ -1451,6 +1405,7 @@ function ABSync:GetPetDetails(petID)
         },
         petID = petID,
         name = name or L["unknown"],
+        hasPet = name and L["yes"] or L["no"]
     }
 end
 
@@ -1571,7 +1526,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
     -- get the name of the id based on action type
     if actionType == "spell" then
         -- get spell details: data, name, hasSpell
-        local spellInfo = self:GetSpellDetails(infoID, buttonID)
+        local spellInfo = self:GetSpellDetails(infoID)
 
         --@debug@
         -- for key, value in pairs(spellInfo) do
@@ -1584,11 +1539,12 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.icon = spellInfo.blizData.icon
         returnData.sourceID = spellInfo.blizData.spellID
         returnData.blizData = spellInfo.blizData
+        returnData.hasSpell = spellInfo.hasSpell
 
     -- process items
     elseif actionType == "item" then
         -- get item details
-        local itemInfo = self:GetItemDetails(infoID, buttonID)
+        local itemInfo = self:GetItemDetails(infoID)
 
         -- assign data
         returnData.name = itemInfo.finalItemName
@@ -1597,6 +1553,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.blizData = itemInfo.blizData
         returnData.isToy = itemInfo.isToy
         returnData.toyData = itemInfo.toyData
+        returnData.hasItem = itemInfo.hasItem
 
     elseif actionType == "macro" then
         -- get macro details
@@ -1609,6 +1566,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.sourceID = macroInfo.id
         returnData.blizData = macroInfo.blizData
         returnData.macroType = macroInfo.macroType
+        returnData.hasMacro = macroInfo.hasMacro
 
     elseif actionType == "summonpet" then
         -- get pet data
@@ -1619,6 +1577,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.icon = petInfo.blizData.icon
         returnData.blizData = petInfo.blizData
         returnData.sourceID = petInfo.petID
+        returnData.hasPet = petInfo.hasPet
 
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
@@ -1645,6 +1604,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:RefreshMountDB()
     -- get playerID
+    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
     local playerID = self:GetPlayerNameFormatted()
 
     -- clear the existing mount database
@@ -1704,6 +1664,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:ClearMountDB()
     -- get playerID
+    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
     local playerID = self:GetPlayerNameFormatted()
 
     -- clear the existing mount database
@@ -1730,7 +1691,7 @@ function ABSync:GetActionBarData()
     self.db.char.currentBarData = {}
 
     -- get player unique id
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetPlayerNameKey()
     
     -- get action bar details
     for btnName, btnData in pairs(_G) do
@@ -1881,6 +1842,11 @@ function ABSync:SlashCommand(text)
             if self.db.char.isDevMode == true then
                 self:RefreshMountDB()
             end
+        -- elseif arg:lower() == "spec" then
+        --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
+        --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
+        --     local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
+        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or L["unknown"]))
         -- elseif arg:lower() == "test" then
             -- local mountIDs = C_MountJournal.GetMountIDs()
             -- for midx, mountID in ipairs(mountIDs) do
@@ -2248,11 +2214,11 @@ function ABSync:CreateScanFrame()
     scanFrame:AddChild(label)
 
     -- add disabled edit box
-    local input = AceGUI:Create("EditBox")
-    input:SetText(self.db.char.lastScan or L["noscancompleted"])
-    input:SetFullWidth(true)
-    input:SetDisabled(true) -- make it read-only
-    scanFrame:AddChild(input)
+    self.ui.editbox.lastScan = AceGUI:Create("EditBox")
+    self:UpdateShareTab()
+    self.ui.editbox.lastScan:SetFullWidth(true)
+    self.ui.editbox.lastScan:SetDisabled(true) -- make it read-only
+    scanFrame:AddChild(self.ui.editbox.lastScan)
 
     -- add scan button
     local button = AceGUI:Create("Button")
@@ -2261,6 +2227,7 @@ function ABSync:CreateScanFrame()
     button:SetCallback("OnClick", function()
         -- refresh of the shared data is done in this function too
         ABSync:GetActionBarData()
+        ABSync:UpdateShareTab()
     end)
     scanFrame:AddChild(button)
 
@@ -2429,6 +2396,14 @@ function ABSync:CreateLastSyncErrorFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UpdateShareTab
+    Purpose:    Update the share tab last scan edit box with the latest scan date and time.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateShareTab()
+    ABSync.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
+end
+
+--[[---------------------------------------------------------------------------
     Function:   CreateShareFrame
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
@@ -2546,7 +2521,7 @@ function ABSync:CreateSyncFrame(parent)
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- current player ID
-    local currentPlayerID = self:GetPlayerNameFormatted()
+    local currentPlayerID = self:GetPlayerNameKey()
 
     -- create main frame
     local syncFrame = AceGUI:Create("SimpleGroup")
@@ -2671,6 +2646,10 @@ function ABSync:CreateSyncFrame(parent)
     -- return syncFrame
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   CreateDeveloperFrame
+    Purpose:    Create the developer frame for testing and debugging.
+-----------------------------------------------------------------------------]]
 function ABSync:CreateDeveloperFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
@@ -2746,6 +2725,178 @@ function ABSync:CreateDeveloperFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UpdateLookupHistory
+    Purpose:    Update the lookup history display.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateLookupHistory()
+    -- clear the scroll area
+    ABSync.ui.scroll.lookupHistory:ReleaseChildren()
+
+    -- add the updated records
+    self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   InsertLookupHistoryRows
+    Purpose:    Insert rows into the lookup history display.
+    Arguments:  parent  - The parent frame to attach this frame to
+                columns - The columns to display
+    Returns:    None
+-----------------------------------------------------------------------------]]
+function ABSync:InsertLookupHistoryRows(parent, columns)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create row group
+    local rowGroup = AceGUI:Create("SimpleGroup")
+    rowGroup:SetLayout("Flow")
+    rowGroup:SetFullWidth(true)
+    parent:AddChild(rowGroup)
+
+    -- add lookup history rows
+    for _, histRow in ipairs(self.db.char.lookupHistory) do
+        -- print("here1")
+        for _, colDef in ipairs(columns) do
+            local label = AceGUI:Create("Label")
+            local colVal = histRow[colDef.key]
+            if colDef.key == "type" then
+                colVal = ABSync.actionTypeLookup[colVal]
+            end
+            label:SetText(colVal)
+            label:SetRelativeWidth(colDef.width)
+            rowGroup:AddChild(label)
+        end
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateLookupFrame
+    Purpose:    Create the lookup frame for displaying action lookups.
+    Arguments:  parent  - The parent frame to attach this frame to
+    Returns:    None
+-----------------------------------------------------------------------------]]
+function ABSync:CreateLookupFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create main frame
+    local lookupFrame = AceGUI:Create("SimpleGroup")
+    lookupFrame:SetLayout("Flow")
+    lookupFrame:SetFullWidth(true)
+    -- lookupFrame:SetFullHeight(true)
+    parent:AddChild(lookupFrame)
+
+    --[[ top section to perform a lookup ]]
+
+    -- create top section
+    local searchFrame = AceGUI:Create("InlineGroup")
+    searchFrame:SetTitle("Perform a Lookup")
+    searchFrame:SetLayout("Flow")
+    searchFrame:SetRelativeWidth(1)
+    lookupFrame:AddChild(searchFrame)
+
+    -- intro
+    local introLabel = AceGUI:Create("Label")
+    introLabel:SetText(L["actionlookupintro"])
+    introLabel:SetRelativeWidth(1)
+    searchFrame:AddChild(introLabel)
+
+    --[[ edit box group ]]
+
+    -- editbox grouping
+    local editBoxGroup = AceGUI:Create("SimpleGroup")
+    editBoxGroup:SetLayout("Flow")
+    editBoxGroup:SetRelativeWidth(1)
+    searchFrame:AddChild(editBoxGroup)
+
+    -- action id edit box
+    local actionIDGroup = AceGUI:Create("SimpleGroup")
+    actionIDGroup:SetLayout("List")
+    actionIDGroup:SetRelativeWidth(0.1)
+    editBoxGroup:AddChild(actionIDGroup)
+
+    local actionIDBox = AceGUI:Create("EditBox")
+    actionIDBox:SetLabel("Action ID")
+    actionIDBox:SetRelativeWidth(0.95)
+    actionIDBox:SetCallback("OnEnterPressed", function(_, _, value)
+        ABSync:SetLastActionID(value)
+    end)
+    actionIDBox:SetText(ABSync:GetLastActionID())
+    actionIDGroup:AddChild(actionIDBox)
+
+    -- drop down of action types
+    local actionTypeGroup = AceGUI:Create("SimpleGroup")
+    actionTypeGroup:SetLayout("Flow")
+    actionTypeGroup:SetRelativeWidth(0.2)
+    editBoxGroup:AddChild(actionTypeGroup)
+
+    local actionTypeDropDown = AceGUI:Create("Dropdown")
+    actionTypeDropDown:SetLabel("Type")
+    actionTypeDropDown:SetRelativeWidth(0.5)
+    actionTypeDropDown:SetList(ABSync:GetActionTypeValues())
+    actionTypeDropDown:SetValue(ABSync:GetLastActionType())
+    actionTypeDropDown:SetCallback("OnValueChanged", function(_, _, value)
+        ABSync:SetLastActionType(value)
+    end)
+    actionTypeGroup:AddChild(actionTypeDropDown)
+
+    -- padding
+    local padding = AceGUI:Create("SimpleGroup")
+    padding:SetLayout("Flow")
+    padding:SetRelativeWidth(0.05)
+    actionTypeGroup:AddChild(padding)
+
+    -- search button
+    local searchButton = AceGUI:Create("Button")
+    searchButton:SetText(L["lookupbuttonname"])
+    searchButton:SetRelativeWidth(0.45)
+    searchButton:SetCallback("OnClick", function()
+        ABSync:LookupAction()
+    end)
+    actionTypeGroup:AddChild(searchButton)
+
+    --[[ lower section to show lookup history ]]
+
+    -- create section to show last 'user defined count' of lookups
+    local lookupHistoryFrame = AceGUI:Create("InlineGroup")
+    lookupHistoryFrame:SetTitle("Lookup History")
+    lookupHistoryFrame:SetLayout("Fill")
+    lookupHistoryFrame:SetFullWidth(true)
+    lookupHistoryFrame:SetFullHeight(true)
+    lookupFrame:AddChild(lookupHistoryFrame)
+    local lookupHistoryGroup = AceGUI:Create("SimpleGroup")
+    lookupHistoryGroup:SetLayout("Flow")
+    lookupHistoryFrame:AddChild(lookupHistoryGroup)
+
+    -- add header
+    local historyHeader = AceGUI:Create("SimpleGroup")
+    historyHeader:SetLayout("Flow")
+    historyHeader:SetFullWidth(true)
+    lookupHistoryGroup:AddChild(historyHeader)
+    for _, colDefn in ipairs(ABSync.columns.lookupHistory) do
+        local label = AceGUI:Create("Label")
+        label:SetText("|cff00ff00" .. colDefn.name .. "|r")
+        label:SetRelativeWidth(colDefn.width)
+        historyHeader:AddChild(label)
+    end
+
+    -- create a scroll frame to hold the history
+    local scrollContainer = AceGUI:Create("SimpleGroup")
+    scrollContainer:SetLayout("Fill")
+    scrollContainer:SetFullWidth(true)
+    scrollContainer:SetFullHeight(true)
+    lookupHistoryGroup:AddChild(scrollContainer)
+
+    -- add scroll frame to container
+    ABSync.ui.scroll.lookupHistory = AceGUI:Create("ScrollFrame")
+    ABSync.ui.scroll.lookupHistory:SetLayout("List")
+    scrollContainer:AddChild(ABSync.ui.scroll.lookupHistory)
+
+    -- populate the scroll frame
+    self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
@@ -2754,7 +2905,7 @@ function ABSync:ShowUI()
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- get player
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetPlayerNameKey()
 
     -- Get screen size
     local screenWidth = UIParent:GetWidth()
@@ -2805,18 +2956,27 @@ function ABSync:ShowUI()
         if group == "about" then
             local aboutFrame = self:CreateAboutFrame()
             tabGroup:AddChild(aboutFrame)
+            self.db.profile.mytab = "about"
         elseif group == "instructions" then
             local instructionsFrame = self:CreateInstructionsFrame()
             tabGroup:AddChild(instructionsFrame)
+            self.db.profile.mytab = "instructions"
         elseif group == "share" then
             local shareFrame = self:CreateShareFrame(playerID)
             tabGroup:AddChild(shareFrame)
+            self.db.profile.mytab = "share"
         elseif group == "sync" then
             local syncFrame = self:CreateSyncFrame(tabGroup)
+            self.db.profile.mytab = "sync"
         elseif group == "last_sync_errors" then
             local lastSyncErrorFrame = self:CreateLastSyncErrorFrame(tabGroup)
+            self.db.profile.mytab = "last_sync_errors"
         elseif group == "developer" then
             local developerFrame = self:CreateDeveloperFrame(tabGroup)
+            self.db.profile.mytab = "developer"
+        elseif group == "lookup" then
+            local lookupFrame = self:CreateLookupFrame(tabGroup)
+            self.db.profile.mytab = "lookup"
         end
     end)
 
