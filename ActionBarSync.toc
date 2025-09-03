@@ -1,4 +1,4 @@
-## Interface: 110200
+## Interface: 1100055
 ## Title: Action Bar Sync
 ## Notes: Pick which action bars to keep in sync from other characters.
 ## Author: mrbryo
@@ -9,7 +9,7 @@
 ## SavedVariables: ActionBarSyncDB, ActionBarSyncMountDB
 ## SavedVariablesPerCharacter:
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
-## RequiredDeps: LibStub, Ace3
+## OptionalDeps: Ace3
 
 ## Initialize Addon
 initialize.lua

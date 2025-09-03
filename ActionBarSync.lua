@@ -15,9 +15,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ABSync.optionLocName, ABSync.locale
 -- addon access to UI elements
 ABSync.ui = {
     editbox = {},
-    scroll = {},
-    group = {},
-    tooltip = {},
+    scroll = {}
 }
 
 -- addon ui columns
@@ -861,10 +859,6 @@ function ABSync:TriggerBackup(note)
     return backupdttm
 end
 
---[[---------------------------------------------------------------------------
-    Function:   RemoveButtonAction
-    Purpose:    Remove an action from a button.
------------------------------------------------------------------------------]]
 function ABSync:RemoveButtonAction(buttonID)
     PickupAction(tonumber(buttonID))
     ClearCursor()
@@ -883,6 +877,7 @@ function ABSync:MountJournalFilterBackup()
         notCollected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED),
         unusable = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE),
     }
+
 end
 
 --[[---------------------------------------------------------------------------
@@ -966,6 +961,12 @@ function ABSync:UpdateActionBars(backupdttm)
                             current = self.db.char.currentBarData[barName][buttonID],
                             barName = barName,
                             sharedBy = sharedby,
+                            -- buttonID = buttonID,
+                            -- actionType = buttonData.actionType,
+                            -- id = buttonData.sourceID,
+                            -- name = buttonData.name,
+                            -- position = buttonData.barPosn,
+                            -- currentButton = self.db.char.currentBarData[barName][buttonID],
                         })
                         break
                     end
@@ -1013,6 +1014,15 @@ function ABSync:UpdateActionBars(backupdttm)
                 sharedby = diffData.sharedBy,
                 msg = ""
             }
+
+            -- if the button position is populated, remove the item
+            -- the button currently being processed should always be in currentBarData because a sync is required to update action bars...
+            -- check to make sure the buttonID exists in the barName table
+            -- if self.db.char.currentBarData[diffData.barName][diffData.buttonID] then
+            --     -- remove the action bar button
+            --     PickupAction(tonumber(diffData.buttonID))
+            --     ClearCursor()
+            -- end
 
             -- track if something was updated to action bar
             local buttonUpdated = false
@@ -1404,6 +1414,18 @@ end
     Purpose:    Retrieve mount information based on the action ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetMountinfo(mountID)
+    -- defaults
+    -- showDialog = showDialog or false
+
+    -- dialog to show all mount data
+    -- StaticPopupDialogs["ACTIONBARSYNC_MOUNT_INFO"] = {
+    --     text = "",
+    --     button1 = "OK",
+    --     timeout = 0,
+    --     whileDead = true,
+    --     hideOnEscape = true,
+    -- }
+    
     -- first call to get mount information based on the action bar action id
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
 
@@ -1872,6 +1894,24 @@ function ABSync:EventPlayerLogout()
     end
 end
 
+-- function ABSync:PrintMountInfo(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+--     local newCursorTypeTranslated = L["unknown"]
+--     local oldCursorTypeTranslated = L["unknown"]
+
+--     for k, v in pairs(Enum.UICursorType) do
+--         if tonumber(v) == tonumber(newCursorType) then
+--             newCursorTypeTranslated = k
+--             print(("(NEW) Key: %s, Value: %s, Type: %s (%d)"):format(k, v, tostring(newCursorTypeTranslated), tonumber(newCursorType)))
+--         end
+--         if tonumber(v) == tonumber(oldCursorType) then
+--             oldCursorTypeTranslated = k
+--             print(("(OLD) Key: %s, Value: %s, oldCursorType: %s (%d)"):format(k, v, tostring(oldCursorTypeTranslated), tonumber(oldCursorType)))
+--         end
+--     end
+
+--     self:Print(("Cursor Changed - isDefault: %s, newCursorType: %s (%d), oldCursorType: %s (%d), oldCursorVirtualID: %s"):format(tostring(isDefault), tostring(newCursorTypeTranslated), tonumber(newCursorType), tostring(oldCursorTypeTranslated), tonumber(oldCursorType), tonumber(oldCursorVirtualID)))
+-- end
+
 --[[---------------------------------------------------------------------------
     Function:   RegisterEvents
     Purpose:    Register all events for the addon.
@@ -1909,7 +1949,7 @@ function ABSync:RegisterEvents()
             ABSync:InstantiateDB(nil)
 
             -- get action bar data automatically if user has opted in through the settings checkbox
-            if ABSync.db.profile.autoGetActionBarData or ABSync.db.char.lastScan == L["never"] then
+            if ABSync.db.profile.autoGetActionBarData then
                 ABSync:GetActionBarData()
             end
         end
@@ -1969,162 +2009,89 @@ function ABSync:OnDisable()
     ABSync:EventPlayerLogout()
 end
 
---[[---------------------------------------------------------------------------
-    Function:   GetCharacterList
-    Purpose:    Get a list of all characters in the database.
+function ABSync:GetCharacterList()
+    -- Get the list of characters from the database
+    local characterList = {}
 
-    NOT USED
------------------------------------------------------------------------------]]
--- function ABSync:GetCharacterList()
---     -- Get the list of characters from the database
---     local characterList = {}
+    -- loop over the bar characters
+    for charName, charData in pairs(self.db.profiles) do
+        table.insert(characterList, charName)
+    end
 
---     -- loop over the bar characters
---     for charName, charData in pairs(self.db.profiles) do
---         table.insert(characterList, charName)
---     end
+    -- sort the character list
+    table.sort(characterList)
 
---     -- sort the character list
---     table.sort(characterList)
+    -- finally return it
+    return characterList
+end
 
---     -- finally return it
---     return characterList
--- end
-
---[[---------------------------------------------------------------------------
-    Function:   AddSyncRow
-    Purpose:    Add a row to the sync table.
-
-    NOT USED
------------------------------------------------------------------------------]]
--- function ABSync:AddSyncRow(scroll, columnWidth, syncFrom, syncBarName)
---     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
---     local AceGUI = LibStub("AceGUI-3.0")
-
---     -- create the row group
---     local rowGroup = AceGUI:Create("SimpleGroup")
---     rowGroup:SetLayout("Flow")
---     rowGroup:SetFullWidth(true)
-
---     -- create delete checkbox column
---     local deleteCell = AceGUI:Create("CheckBox")
---     deleteCell:SetValue(false)
---     deleteCell:SetCallback("OnValueChanged", function(_, _, value)
---         -- handle delete checkbox logic
---         self:Print(("Delete checkbox for character '%s' for bar '%s' was clicked!"):format(syncFrom, syncBarName))
---     end)
---     deleteCell:SetWidth(columnWidth[1])
---     rowGroup:AddChild(deleteCell)
-
---     -- add label to show character to sync from
---     local characterCell = AceGUI:Create("Label")
---     characterCell:SetText(syncFrom)
---     characterCell:SetRelativeWidth(columnWidth[2])
---     rowGroup:AddChild(characterCell)
-
---     -- add label to show action bar name to sync
---     local barCell = AceGUI:Create("Label")
---     barCell:SetText(syncBarName)
---     barCell:SetRelativeWidth(columnWidth[3])
---     rowGroup:AddChild(barCell)
-
---     -- add the row to the scroll region
---     scroll:AddChild(rowGroup)
--- end
-
-function ABSync:AddAboutLeftHandLine(parent, label, value, disabled, popupEnabled, popupText)
+function ABSync:AddSyncRow(scroll, columnWidth, syncFrom, syncBarName)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- standards for left hand side
-    local labelWidth = 0.25
-    local infoWidth = 0.75
-
     -- create the row group
-    local rowFrame = AceGUI:Create("SimpleGroup")
-    rowFrame:SetLayout("Flow")
-    rowFrame:SetFullWidth(true)
-    parent:AddChild(rowFrame)
+    local rowGroup = AceGUI:Create("SimpleGroup")
+    rowGroup:SetLayout("Flow")
+    rowGroup:SetFullWidth(true)
 
-    -- create the label and add it
-    local labelFrame = AceGUI:Create("InteractiveLabel")
-    labelFrame:SetText(("%s:"):format(label))
-    labelFrame:SetRelativeWidth(labelWidth)
-    if popupEnabled == true then
-        labelFrame:SetCallback("OnEnter", function(widget)
-            ABSync.ui.tooltip[label] = CreateFrame("GameTooltip", "ActionBarSyncTooltip", UIParent, "GameTooltipTemplate")
-            ABSync.ui.tooltip[label]:SetOwner(widget.frame, "ANCHOR_RIGHT")
-            ABSync.ui.tooltip[label]:SetText(popupText, 1, 1, 1)
-            ABSync.ui.tooltip[label]:Show()
-        end)
-        labelFrame:SetCallback("OnLeave", function()
-            ABSync.ui.tooltip[label]:Hide()
-        end)
-    end
-    rowFrame:AddChild(labelFrame)
+    -- create delete checkbox column
+    local deleteCell = AceGUI:Create("CheckBox")
+    deleteCell:SetValue(false)
+    deleteCell:SetCallback("OnValueChanged", function(_, _, value)
+        -- handle delete checkbox logic
+        self:Print(("Delete checkbox for character '%s' for bar '%s' was clicked!"):format(syncFrom, syncBarName))
+    end)
+    deleteCell:SetWidth(columnWidth[1])
+    rowGroup:AddChild(deleteCell)
 
-    -- create the edit box and add it
-    local infoFrame = AceGUI:Create("EditBox")
-    infoFrame:SetText(value)
-    infoFrame:SetRelativeWidth(infoWidth)
-    rowFrame:AddChild(infoFrame)
+    -- add label to show character to sync from
+    local characterCell = AceGUI:Create("Label")
+    characterCell:SetText(syncFrom)
+    characterCell:SetRelativeWidth(columnWidth[2])
+    rowGroup:AddChild(characterCell)
 
-    -- disable edit box
-    infoFrame:SetDisabled(disabled)
+    -- add label to show action bar name to sync
+    local barCell = AceGUI:Create("Label")
+    barCell:SetText(syncBarName)
+    barCell:SetRelativeWidth(columnWidth[3])
+    rowGroup:AddChild(barCell)
+
+    -- add the row to the scroll region
+    scroll:AddChild(rowGroup)
 end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateAboutFrame
     Purpose:    Create the About frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateAboutFrame(parent)
+function ABSync:CreateAboutFrame()
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- create the main about frame
     local aboutFrame = AceGUI:Create("SimpleGroup")
-    aboutFrame:SetLayout("Flow")
-    parent:AddChild(aboutFrame)
+    aboutFrame:SetLayout("List")
 
-    -- left hand side
-    local aboutLeftFrame = AceGUI:Create("SimpleGroup")
-    aboutLeftFrame:SetLayout("Flow")
-    aboutLeftFrame:SetRelativeWidth(0.6)
-    aboutLeftFrame:SetFullHeight(true)
-    aboutFrame:AddChild(aboutLeftFrame)
-
-    -- right hand side
-    local aboutRightFrame = AceGUI:Create("InlineGroup")
-    aboutRightFrame:SetLayout("List")
-    aboutRightFrame:SetTitle("Translators")
-    aboutRightFrame:SetRelativeWidth(0.4)
-    aboutRightFrame:SetFullHeight(true)
-    aboutFrame:AddChild(aboutRightFrame)
-
-    -- add frame for padding left hand
-    local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
-    aboutLeftFramePadding:SetLayout("Flow")
-    aboutLeftFramePadding:SetRelativeWidth(0.95)
-    aboutLeftFrame:AddChild(aboutLeftFramePadding)
-    
     -- author
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Author", C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"), true, false, nil)
-    -- addon version
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Version", C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"), true, false, nil)
-    -- patreon
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Patreon", "https://www.patreon.com/Bryo", false, true, "If you like this addon and want to support me, please consider becoming a patron.")
-    -- buy me a coffee
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Buy Me a Coffee", "https://www.buymeacoffee.com/mrbryo", false, true, "If you like this addon and want to support me, please consider buying me a coffee.")
-    -- issues
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Issues", "https://github.com/mrbryo/ActionBarSync/issues", false, true, "Please report any issues or bugs on the GitHub issues page.")
+    local authorFrame = AceGUI:Create("SimpleGroup")
+    authorFrame:SetLayout("Flow")
+    authorFrame:SetFullWidth(true)
+    aboutFrame:AddChild(authorFrame)
+    local authorLabel = AceGUI:Create("Label")
+    authorLabel:SetText(("Author: %s"):format(C_AddOns.GetAddOnMetadata("ActionBarSync", "Author")))
+    authorLabel:SetFullWidth(true)
+    authorFrame:AddChild(authorLabel)
 
-    -- TODO: look at CurseForge to see if they have a variable for translators
+    -- add note about resizing
+    local resizeNote = AceGUI:Create("Label")
+    resizeNote:SetText("|cffff0000Note:|r Even though window resize functions it doesn't work well. Resize slowly since it seems to redraw it as the cursor moves. I recommend using the default size. Reload the UI to restore it. I don't think its an issue with AceGUI but just a side effect of the WoW UI.")
+    resizeNote:SetFullWidth(true)
+    aboutFrame:AddChild(resizeNote)
+
+    -- return the frame
+    return aboutFrame
 end
 
---[[---------------------------------------------------------------------------
-    Function:   AddInstruction
-    Purpose:    Add an instruction step to the instructions frame.
------------------------------------------------------------------------------]]
 function ABSync:AddInstruction(parent, i, instruct, addSpacer)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
@@ -2232,9 +2199,6 @@ end
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateScanFrame()
-    -- debugging
-    local funcName = "CreateScanFrame"
-
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
@@ -2251,6 +2215,7 @@ function ABSync:CreateScanFrame()
 
     -- add disabled edit box
     self.ui.editbox.lastScan = AceGUI:Create("EditBox")
+    self:UpdateShareTab()
     self.ui.editbox.lastScan:SetFullWidth(true)
     self.ui.editbox.lastScan:SetDisabled(true) -- make it read-only
     scanFrame:AddChild(self.ui.editbox.lastScan)
@@ -2262,8 +2227,7 @@ function ABSync:CreateScanFrame()
     button:SetCallback("OnClick", function()
         -- refresh of the shared data is done in this function too
         ABSync:GetActionBarData()
-        local playerID = ABSync:GetPlayerNameKey()
-        ABSync:UpdateShareTab(playerID, "OnClick")
+        ABSync:UpdateShareTab()
     end)
     scanFrame:AddChild(button)
 
@@ -2432,60 +2396,11 @@ function ABSync:CreateLastSyncErrorFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateShareCheckboxes
-    Purpose:    Create checkboxes for each action bar to select which action bars to share.
------------------------------------------------------------------------------]]
-function ABSync:CreateShareCheckboxes(playerID, funcName)
-    -- for debugging
-    local funcName = "CreateShareCheckboxes"
-
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- get action bar names
-    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
-    
-    -- loop over the action bars and create a checkbox for each one
-    for _, checkboxName in pairs(actionBars) do
-        -- create a checkbox for each action bar
-        local checkBox = AceGUI:Create("CheckBox")
-        checkBox:SetLabel(checkboxName)
-
-        -- determine checkbox value; checkboxName is the name of the action bar
-        local checkboxValue = self:GetBarToShare(checkboxName, playerID)
-        -- self:Print(("(%s) Checkbox '%s' initial value is %s..."):format(funcName, checkboxName, tostring(checkboxValue)))
-
-        -- set the checkbox initial value
-        checkBox:SetValue(checkboxValue)
-        -- checkBox:SetFullWidth(true)
-
-        -- set callback for when checkbox is clicked, only need value
-        checkBox:SetCallback("OnValueChanged", function(data)
-            -- keep for looking at data table values
-            -- for k, v in pairs(data) do
-            --     print(("Checkbox Data Key: %s - Value: %s"):format(k, tostring(v)))
-            -- end
-            -- self:Print(("(%s) Checkbox '%s' now %s..."):format("OnValueChanged", checkboxName, tostring(data.checked)))
-            -- update the profile barsToSync value
-            self:SetBarToShare(checkboxName, data.checked)
-        end)
-
-        -- add the checkbox to the share frame
-        self.ui.group.shareFrame:AddChild(checkBox)
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   UpdateShareTab
     Purpose:    Update the share tab last scan edit box with the latest scan date and time.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateShareTab(playerID, funcName)
-    -- update the data in the lastScan edit box
-    self.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
-
-    -- update the action bar list
-    self.ui.group.shareFrame:ReleaseChildren()
-    self:CreateShareCheckboxes(playerID, funcName)
+function ABSync:UpdateShareTab()
+    ABSync.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
 end
 
 --[[---------------------------------------------------------------------------
@@ -2493,9 +2408,6 @@ end
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateShareFrame(playerID)
-    -- for debugging
-    local funcName = "CreateShareFrame"
-
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
@@ -2509,22 +2421,48 @@ function ABSync:CreateShareFrame(playerID)
     mainShareFrame:AddChild(triggerScanFrame)
 
     -- create share frame
-    self.ui.group.shareFrame = AceGUI:Create("InlineGroup")
-    -- local shareFrame = AceGUI:Create("InlineGroup")
-    self.ui.group.shareFrame:SetTitle("Share")
-    self.ui.group.shareFrame:SetLayout("Flow")
-    mainShareFrame:AddChild(self.ui.group.shareFrame)
+    local shareFrame = AceGUI:Create("InlineGroup")
+    shareFrame:SetTitle("Share")
+    shareFrame:SetLayout("Flow")
+    mainShareFrame:AddChild(shareFrame)
 
     -- add a multiselect for sharing which action bars to share
-    -- self:CreateShareCheckboxes(playerID)
+    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
+    local dataChanged = false
+    for _, checkboxName in pairs(actionBars) do
+        -- create a checkbox for each action bar
+        local checkBox = AceGUI:Create("CheckBox")
+        checkBox:SetLabel(checkboxName)
 
-    -- update data
-    self:UpdateShareTab(playerID, funcName)
+        -- determine checkbox value
+        local checkboxValue = self:GetBarToShare(checkboxName, playerID)
 
-    -- if dataChanged == true then
-    --     -- trigger update for options UI
-    --     LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
-    -- end
+        -- set the checkbox initial value
+        checkBox:SetValue(checkboxValue)
+        -- checkBox:SetFullWidth(true)
+
+        -- set callback for when checkbox is clicked, only need value
+        checkBox:SetCallback("OnValueChanged", function(data)
+            -- keep for looking at data table values
+            -- for k, v in pairs(data) do
+            --     print(("Checkbox Data Key: %s - Value: %s"):format(k, tostring(v)))
+            -- end
+
+            -- update the profile barsToSync value
+            self:SetBarToShare(checkboxName, data.checked)
+
+            -- data has changed so update tracking variable
+            dataChanged = true
+        end)
+
+        -- add the checkbox to the share frame
+        shareFrame:AddChild(checkBox)
+    end
+
+    if dataChanged == true then
+        -- trigger update for options UI
+        LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
+    end
 
     -- finally return the frame
     return mainShareFrame
@@ -2593,10 +2531,9 @@ function ABSync:CreateSyncFrame(parent)
 
     -- create frame for check sync on login
     local loginCheckFrame = AceGUI:Create("InlineGroup")
-    loginCheckFrame:SetTitle("Sync on Login")   -- Sync on Login
+    loginCheckFrame:SetTitle("Sync on Login")
     loginCheckFrame:SetLayout("Flow")
     loginCheckFrame:SetRelativeWidth(0.5)
-    -- loginCheckFrame:SetFullHeight(true)
     syncFrame:AddChild(loginCheckFrame)
 
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
@@ -2611,7 +2548,7 @@ function ABSync:CreateSyncFrame(parent)
 
     -- create checkbox for sync on login
     local loginCheckBox = AceGUI:Create("CheckBox")
-    loginCheckBox:SetLabel("Enable Sync on Login")  -- Enable Sync on Login
+    loginCheckBox:SetLabel("Enable Sync on Login")
     loginCheckBox:SetValue(false)
     loginCheckBox:SetCallback("OnValueChanged", function(_, _, value)
         self.db.profile.checkOnLogon = value
@@ -2630,10 +2567,9 @@ function ABSync:CreateSyncFrame(parent)
 
     -- create frame for manual sync
     local manualSyncFrame = AceGUI:Create("InlineGroup")
-    manualSyncFrame:SetTitle("Manual Sync")  -- Manual Sync
+    manualSyncFrame:SetTitle("Manual Sync")
     manualSyncFrame:SetLayout("Flow")
     manualSyncFrame:SetRelativeWidth(0.5)
-    -- manualSyncFrame:SetFullHeight(true)
     syncFrame:AddChild(manualSyncFrame)
 
     -- create button for manual sync
@@ -3018,7 +2954,8 @@ function ABSync:ShowUI()
 
         -- check which tab is selected
         if group == "about" then
-            local aboutFrame = self:CreateAboutFrame(tabGroup)
+            local aboutFrame = self:CreateAboutFrame()
+            tabGroup:AddChild(aboutFrame)
             self.db.profile.mytab = "about"
         elseif group == "instructions" then
             local instructionsFrame = self:CreateInstructionsFrame()

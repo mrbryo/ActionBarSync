@@ -11,3 +11,6 @@ _G.ABSync = ABSync
 
 -- Option and Localization Name
 ABSync.optionLocName = "ActionBarSync"
+
+-- False for development; true for live.
+ABSync.isLive = false
