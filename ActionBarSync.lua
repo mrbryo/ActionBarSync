@@ -20,12 +20,97 @@ ABSync.ui = {
     tooltip = {},
 }
 
+-- tooltip text
+ABSync.dataRows = {
+    order = {
+        ["about"] = {
+            "ABSyncAboutTooltipAuthor",
+            "ABSyncAboutTooltipVersion",
+            "ABSyncAboutTooltipPatreon",
+            "ABSyncAboutTooltipCoffee",
+            "ABSyncAboutTooltipIssues",
+            "ABSyncAboutTooltipLocalization",
+        }
+    },
+    text = {
+        ["about"] = {
+            ["ABSyncAboutTooltipAuthor"] = {
+                label = "Author",
+                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
+                disable = true,
+                tip = {
+                    disable = true,
+                    text = "",
+                },
+            },
+            ["ABSyncAboutTooltipVersion"] = {
+                label = "Version",
+                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
+                disable = true,
+                tip = {
+                    disable = true,
+                    text = ""
+                },
+            },
+            ["ABSyncAboutTooltipPatreon"] = {
+                label = "Patreon",
+                text = "https://www.patreon.com/Bryo",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "If you like this addon and want to support me, please consider becoming a patron."
+                }
+            },
+            ["ABSyncAboutTooltipCoffee"] = {
+                label = "Buy Me a Coffee",
+                text = "https://www.buymeacoffee.com/mrbryo",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "If you like this addon and want to support me, please consider buying me a beverage.",
+                },
+            },
+            ["ABSyncAboutTooltipIssues"] = {
+                label = "Issues",
+                text = "https://github.com/mrbryo/ActionBarSync/issues",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "Please report any issues or bugs on the GitHub issues page.",
+                },
+            },
+            ["ABSyncAboutTooltipLocalization"] = {
+                label = "Localization",
+                text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "Help translate this addon into your language.",
+                },
+            }
+        }
+    }
+}
+
+-- colors
+ABSync.colors = {
+    white = "|cffffffff",
+    yellow = "|cffffff00",
+    green = "|cff00ff00",
+    blue = "|cff0000ff",
+    purple = "|cffff00ff",
+    red = "|cffff0000",
+    orange = "|cffff7f00",
+    gray = "|cff7f7f7f",
+    label = "|cffffd100"
+}
+
 -- addon ui columns
 ABSync.columns = {
     lookupHistory = {
         { name = "Type", key = "type", width = 0.20 },      -- 20
-        { name = "ID", key = "id", width = 0.10 },          -- 30
-        { name = "Name", key = "name", width = 0.60 },      -- 90
+        { name = "ID", key = "id", width = 0.20 },          -- 40
+        { name = "Name", key = "name", width = 0.50 },      -- 90
         { name = "Has", key = "has", width = 0.10 },        -- 100
     }
 }
@@ -283,7 +368,15 @@ end
     Purpose:    Get the last action ID for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionID()
-    return self.db.char.actionLookup.id
+    -- first get a copy of the value
+    local returnme = self.db.char.actionLookup.id
+
+    -- check for nil
+    if returnme == nil or returnme == "" then
+        returnme = 0
+    end
+
+    return returnme
 end
 
 --[[---------------------------------------------------------------------------
@@ -1368,8 +1461,26 @@ end
     Purpose:    Retrieve pet information based on the pet ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetPetDetails(petID)
+    -- requires a pet GUID
+    local allPetIDs = C_PetJournal.GetOwnedPetIDs()
+
+    -- was a valid pet id found
+    local petFound = false
+
+    -- see if petID is in the list
+    for _, ownedPetID in ipairs(allPetIDs) do
+        if ownedPetID == petID then
+            -- print(("Pet ID %s found!"):format(tostring(petID)))
+            petFound = true
+            break
+        end
+    end
+
     -- get pet information
-    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
+    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable
+    if petFound == true then
+        speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
+    end
 
     -- finally return the data collected
     return {
@@ -2032,7 +2143,11 @@ end
 --     scroll:AddChild(rowGroup)
 -- end
 
-function ABSync:AddAboutLeftHandLine(parent, label, value, disabled, popupEnabled, popupText)
+--[[---------------------------------------------------------------------------
+    Function:   AddAboutLeftHandLine
+    Purpose:    Add a line to the left hand side of the About frame.
+-----------------------------------------------------------------------------]]
+function ABSync:AddAboutLeftHandLine(parent, id)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
@@ -2046,31 +2161,38 @@ function ABSync:AddAboutLeftHandLine(parent, label, value, disabled, popupEnable
     rowFrame:SetFullWidth(true)
     parent:AddChild(rowFrame)
 
+    -- create generic tooltip frame
+    if not _G["ABSyncAboutTooltip"] then
+        CreateFrame("GameTooltip", "ABSyncAboutTooltip", UIParent, "GameTooltipTemplate")
+    end
+
     -- create the label and add it
     local labelFrame = AceGUI:Create("InteractiveLabel")
-    labelFrame:SetText(("%s:"):format(label))
+    labelFrame:SetText(("%s:"):format(ABSync.dataRows.text["about"][id].label))
     labelFrame:SetRelativeWidth(labelWidth)
-    if popupEnabled == true then
+    if ABSync.dataRows.text["about"][id].tip.disable == false then
         labelFrame:SetCallback("OnEnter", function(widget)
-            ABSync.ui.tooltip[label] = CreateFrame("GameTooltip", "ActionBarSyncTooltip", UIParent, "GameTooltipTemplate")
-            ABSync.ui.tooltip[label]:SetOwner(widget.frame, "ANCHOR_RIGHT")
-            ABSync.ui.tooltip[label]:SetText(popupText, 1, 1, 1)
-            ABSync.ui.tooltip[label]:Show()
+            -- only create tooltip if it doesn't exist
+            if ABSyncAboutTooltip then
+                ABSyncAboutTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
+                ABSyncAboutTooltip:SetText(ABSync.dataRows.text["about"][id].tip.text, 1, 1, 1)
+            end
+            ABSyncAboutTooltip:Show()
         end)
         labelFrame:SetCallback("OnLeave", function()
-            ABSync.ui.tooltip[label]:Hide()
+            ABSyncAboutTooltip:Hide()
         end)
     end
     rowFrame:AddChild(labelFrame)
 
     -- create the edit box and add it
     local infoFrame = AceGUI:Create("EditBox")
-    infoFrame:SetText(value)
+    infoFrame:SetText(ABSync.dataRows.text["about"][id].text)
     infoFrame:SetRelativeWidth(infoWidth)
     rowFrame:AddChild(infoFrame)
 
     -- disable edit box
-    infoFrame:SetDisabled(disabled)
+    infoFrame:SetDisabled(ABSync.dataRows.text["about"][id].disable)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2093,6 +2215,18 @@ function ABSync:CreateAboutFrame(parent)
     aboutLeftFrame:SetFullHeight(true)
     aboutFrame:AddChild(aboutLeftFrame)
 
+    -- add frame for padding left hand
+    local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
+    aboutLeftFramePadding:SetLayout("Flow")
+    aboutLeftFramePadding:SetRelativeWidth(0.95)
+    aboutLeftFrame:AddChild(aboutLeftFramePadding)
+
+    -- loop over the ABSync.dataRows.text table and call the function for each iteration
+    for _, id in pairs(ABSync.dataRows.order["about"]) do
+        self:AddAboutLeftHandLine(aboutLeftFramePadding, id)
+    end
+
+    -- TODO: look at CurseForge to see if they have a variable for translators
     -- right hand side
     local aboutRightFrame = AceGUI:Create("InlineGroup")
     aboutRightFrame:SetLayout("List")
@@ -2100,25 +2234,6 @@ function ABSync:CreateAboutFrame(parent)
     aboutRightFrame:SetRelativeWidth(0.4)
     aboutRightFrame:SetFullHeight(true)
     aboutFrame:AddChild(aboutRightFrame)
-
-    -- add frame for padding left hand
-    local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
-    aboutLeftFramePadding:SetLayout("Flow")
-    aboutLeftFramePadding:SetRelativeWidth(0.95)
-    aboutLeftFrame:AddChild(aboutLeftFramePadding)
-    
-    -- author
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Author", C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"), true, false, nil)
-    -- addon version
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Version", C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"), true, false, nil)
-    -- patreon
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Patreon", "https://www.patreon.com/Bryo", false, true, "If you like this addon and want to support me, please consider becoming a patron.")
-    -- buy me a coffee
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Buy Me a Coffee", "https://www.buymeacoffee.com/mrbryo", false, true, "If you like this addon and want to support me, please consider buying me a coffee.")
-    -- issues
-    self:AddAboutLeftHandLine(aboutLeftFramePadding, "Issues", "https://github.com/mrbryo/ActionBarSync/issues", false, true, "Please report any issues or bugs on the GitHub issues page.")
-
-    -- TODO: look at CurseForge to see if they have a variable for translators
 end
 
 --[[---------------------------------------------------------------------------
@@ -2818,19 +2933,105 @@ function ABSync:InsertLookupHistoryRows(parent, columns)
     parent:AddChild(rowGroup)
 
     -- add lookup history rows
-    for _, histRow in ipairs(self.db.char.lookupHistory) do
-        -- print("here1")
-        for _, colDef in ipairs(columns) do
-            local label = AceGUI:Create("Label")
-            local colVal = histRow[colDef.key]
-            if colDef.key == "type" then
-                colVal = ABSync.actionTypeLookup[colVal]
+    if #self.db.char.lookupHistory > 0 then
+        for _, histRow in ipairs(self.db.char.lookupHistory) do
+            -- print("here1")
+            for _, colDef in ipairs(columns) do
+                local label = AceGUI:Create("Label")
+                local colVal = histRow[colDef.key]
+                if colDef.key == "type" then
+                    colVal = ABSync.actionTypeLookup[colVal]
+                end
+                label:SetText(colVal)
+                label:SetRelativeWidth(colDef.width)
+                rowGroup:AddChild(label)
             end
-            label:SetText(colVal)
-            label:SetRelativeWidth(colDef.width)
-            rowGroup:AddChild(label)
         end
     end
+end
+
+function ABSync:CreateLookupQueryFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    local labelWidth = 75
+    local controlWidth = 100
+    local padding = 15
+    
+    -- create top section group with label named "Perform a Lookup"
+    local searchFrame = AceGUI:Create("InlineGroup")
+    searchFrame:SetTitle("Perform a Lookup")
+    searchFrame:SetLayout("List")
+    searchFrame:SetRelativeWidth(1)
+    parent:AddChild(searchFrame)
+    
+    -- create a top row
+    local topRow = AceGUI:Create("SimpleGroup")
+    topRow:SetLayout("Flow")
+    topRow:SetRelativeWidth(1)
+    searchFrame:AddChild(topRow)
+
+    -- intro at top of top section
+    local introLabel = AceGUI:Create("Label")
+    introLabel:SetText(L["actionlookupintro"])
+    introLabel:SetRelativeWidth(1)
+    topRow:AddChild(introLabel)
+
+    -- second row for action id label, edit box and the submit button
+    local secondRow = AceGUI:Create("SimpleGroup")
+    secondRow:SetLayout("Flow")
+    secondRow:SetRelativeWidth(1)
+    secondRow:SetFullHeight(true)
+    searchFrame:AddChild(secondRow)
+
+    -- second row column 1 (column 1 is labels)
+    local secondRowCol1 = AceGUI:Create("Label")
+    secondRowCol1:SetText(("%sAction ID:|r"):format(ABSync.colors.label))
+    secondRowCol1:SetWidth(labelWidth)
+    secondRow:AddChild(secondRowCol1)
+
+    -- second row column 2 (column 2 for controls)
+    local secondRowCol2Padding = AceGUI:Create("SimpleGroup")
+    secondRowCol2Padding:SetWidth(controlWidth + padding)
+    secondRow:AddChild(secondRowCol2Padding)
+    local secondRowCol2 = AceGUI:Create("EditBox")
+    secondRowCol2:SetText(ABSync:GetLastActionID())
+    secondRowCol2:SetWidth(controlWidth)
+    secondRowCol2:SetCallback("OnEnterPressed", function(_, _, value)
+        ABSync:SetLastActionID(value)
+    end)
+    secondRowCol2Padding:AddChild(secondRowCol2)
+
+    -- second row column 3 (column 3 for the button)
+    local secondRowCol3 = AceGUI:Create("Button")
+    secondRowCol3:SetText(L["lookupbuttonname"])
+    secondRowCol3:SetWidth(75)
+    secondRowCol3:SetCallback("OnClick", function()
+        ABSync:LookupAction()
+    end)
+    secondRow:AddChild(secondRowCol3)
+
+    -- third row for action type
+    local thirdRow = AceGUI:Create("SimpleGroup")
+    thirdRow:SetLayout("Flow")
+    thirdRow:SetRelativeWidth(1)
+    searchFrame:AddChild(thirdRow)
+
+    -- third row column 1 for action type label
+    local thirdRowCol1 = AceGUI:Create("Label")
+    thirdRowCol1:SetText(("%sAction Type:|r"):format(ABSync.colors.label))
+    thirdRowCol1:SetWidth(labelWidth)
+    thirdRow:AddChild(thirdRowCol1)
+
+    -- third row column 2 for drop down
+    local thirdRowCol2 = AceGUI:Create("Dropdown")
+    thirdRowCol2:SetWidth(controlWidth)
+    thirdRowCol2:SetList(ABSync:GetActionTypeValues())
+    thirdRowCol2:SetValue(ABSync:GetLastActionType())
+    thirdRowCol2:SetCallback("OnValueChanged", function(_, _, value)
+        ABSync:SetLastActionType(value)
+    end)
+    thirdRow:AddChild(thirdRowCol2)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2843,94 +3044,28 @@ function ABSync:CreateLookupFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- create main frame
+    -- create main frame which fills the parent with type fill
     local lookupFrame = AceGUI:Create("SimpleGroup")
     lookupFrame:SetLayout("Flow")
-    lookupFrame:SetFullWidth(true)
-    -- lookupFrame:SetFullHeight(true)
     parent:AddChild(lookupFrame)
 
-    --[[ top section to perform a lookup ]]
+    -- add query frame
+    self:CreateLookupQueryFrame(lookupFrame)
 
-    -- create top section
-    local searchFrame = AceGUI:Create("InlineGroup")
-    searchFrame:SetTitle("Perform a Lookup")
-    searchFrame:SetLayout("Flow")
-    searchFrame:SetRelativeWidth(1)
-    lookupFrame:AddChild(searchFrame)
+    --[[ create section to show last 'user defined count' of lookups ]]
 
-    -- intro
-    local introLabel = AceGUI:Create("Label")
-    introLabel:SetText(L["actionlookupintro"])
-    introLabel:SetRelativeWidth(1)
-    searchFrame:AddChild(introLabel)
-
-    --[[ edit box group ]]
-
-    -- editbox grouping
-    local editBoxGroup = AceGUI:Create("SimpleGroup")
-    editBoxGroup:SetLayout("Flow")
-    editBoxGroup:SetRelativeWidth(1)
-    searchFrame:AddChild(editBoxGroup)
-
-    -- action id edit box
-    local actionIDGroup = AceGUI:Create("SimpleGroup")
-    actionIDGroup:SetLayout("List")
-    actionIDGroup:SetRelativeWidth(0.1)
-    editBoxGroup:AddChild(actionIDGroup)
-
-    local actionIDBox = AceGUI:Create("EditBox")
-    actionIDBox:SetLabel("Action ID")
-    actionIDBox:SetRelativeWidth(0.95)
-    actionIDBox:SetCallback("OnEnterPressed", function(_, _, value)
-        ABSync:SetLastActionID(value)
-    end)
-    actionIDBox:SetText(ABSync:GetLastActionID())
-    actionIDGroup:AddChild(actionIDBox)
-
-    -- drop down of action types
-    local actionTypeGroup = AceGUI:Create("SimpleGroup")
-    actionTypeGroup:SetLayout("Flow")
-    actionTypeGroup:SetRelativeWidth(0.2)
-    editBoxGroup:AddChild(actionTypeGroup)
-
-    local actionTypeDropDown = AceGUI:Create("Dropdown")
-    actionTypeDropDown:SetLabel("Type")
-    actionTypeDropDown:SetRelativeWidth(0.5)
-    actionTypeDropDown:SetList(ABSync:GetActionTypeValues())
-    actionTypeDropDown:SetValue(ABSync:GetLastActionType())
-    actionTypeDropDown:SetCallback("OnValueChanged", function(_, _, value)
-        ABSync:SetLastActionType(value)
-    end)
-    actionTypeGroup:AddChild(actionTypeDropDown)
-
-    -- padding
-    local padding = AceGUI:Create("SimpleGroup")
-    padding:SetLayout("Flow")
-    padding:SetRelativeWidth(0.05)
-    actionTypeGroup:AddChild(padding)
-
-    -- search button
-    local searchButton = AceGUI:Create("Button")
-    searchButton:SetText(L["lookupbuttonname"])
-    searchButton:SetRelativeWidth(0.45)
-    searchButton:SetCallback("OnClick", function()
-        ABSync:LookupAction()
-    end)
-    actionTypeGroup:AddChild(searchButton)
-
-    --[[ lower section to show lookup history ]]
-
-    -- create section to show last 'user defined count' of lookups
+    -- create lower section group with label named "Lookup History"
     local lookupHistoryFrame = AceGUI:Create("InlineGroup")
     lookupHistoryFrame:SetTitle("Lookup History")
     lookupHistoryFrame:SetLayout("Fill")
-    lookupHistoryFrame:SetFullWidth(true)
+    lookupHistoryFrame:SetRelativeWidth(1)
     lookupHistoryFrame:SetFullHeight(true)
     lookupFrame:AddChild(lookupHistoryFrame)
     local lookupHistoryGroup = AceGUI:Create("SimpleGroup")
     lookupHistoryGroup:SetLayout("Flow")
     lookupHistoryFrame:AddChild(lookupHistoryGroup)
+
+    --[[ lower section to show lookup history ]]
 
     -- add header
     local historyHeader = AceGUI:Create("SimpleGroup")
@@ -2958,6 +3093,9 @@ function ABSync:CreateLookupFrame(parent)
 
     -- populate the scroll frame
     self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
+
+    -- fixes layout sometimes...
+    lookupFrame:DoLayout()
 end
 
 --[[---------------------------------------------------------------------------

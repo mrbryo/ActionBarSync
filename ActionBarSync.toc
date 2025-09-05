@@ -9,7 +9,7 @@
 ## SavedVariables: ActionBarSyncDB, ActionBarSyncMountDB
 ## SavedVariablesPerCharacter:
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
-## RequiredDeps: LibStub, Ace3
+## RequiredDeps: Ace3
 
 ## Initialize Addon
 initialize.lua
