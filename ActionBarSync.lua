@@ -20,78 +20,6 @@ ABSync.ui = {
     tooltip = {},
 }
 
--- tooltip text
-ABSync.dataRows = {
-    order = {
-        ["about"] = {
-            "ABSyncAboutTooltipAuthor",
-            "ABSyncAboutTooltipVersion",
-            "ABSyncAboutTooltipPatreon",
-            "ABSyncAboutTooltipCoffee",
-            "ABSyncAboutTooltipIssues",
-            "ABSyncAboutTooltipLocalization",
-        }
-    },
-    text = {
-        ["about"] = {
-            ["ABSyncAboutTooltipAuthor"] = {
-                label = "Author",
-                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
-                disable = true,
-                tip = {
-                    disable = true,
-                    text = "",
-                },
-            },
-            ["ABSyncAboutTooltipVersion"] = {
-                label = "Version",
-                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
-                disable = true,
-                tip = {
-                    disable = true,
-                    text = ""
-                },
-            },
-            ["ABSyncAboutTooltipPatreon"] = {
-                label = "Patreon",
-                text = "https://www.patreon.com/Bryo",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "If you like this addon and want to support me, please consider becoming a patron."
-                }
-            },
-            ["ABSyncAboutTooltipCoffee"] = {
-                label = "Buy Me a Coffee",
-                text = "https://www.buymeacoffee.com/mrbryo",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "If you like this addon and want to support me, please consider buying me a beverage.",
-                },
-            },
-            ["ABSyncAboutTooltipIssues"] = {
-                label = "Issues",
-                text = "https://github.com/mrbryo/ActionBarSync/issues",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "Please report any issues or bugs on the GitHub issues page.",
-                },
-            },
-            ["ABSyncAboutTooltipLocalization"] = {
-                label = "Localization",
-                text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "Help translate this addon into your language.",
-                },
-            }
-        }
-    }
-}
-
 -- colors
 ABSync.colors = {
     white = "|cffffffff",
@@ -2147,13 +2075,14 @@ end
     Function:   AddAboutLeftHandLine
     Purpose:    Add a line to the left hand side of the About frame.
 -----------------------------------------------------------------------------]]
-function ABSync:AddAboutLeftHandLine(parent, id)
+function ABSync:AddAboutLeftHandLine(parent, data)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
     -- standards for left hand side
     local labelWidth = 0.25
     local infoWidth = 0.75
+    local offset = 0.02
 
     -- create the row group
     local rowFrame = AceGUI:Create("SimpleGroup")
@@ -2161,38 +2090,43 @@ function ABSync:AddAboutLeftHandLine(parent, id)
     rowFrame:SetFullWidth(true)
     parent:AddChild(rowFrame)
 
-    -- create generic tooltip frame
-    if not _G["ABSyncAboutTooltip"] then
-        CreateFrame("GameTooltip", "ABSyncAboutTooltip", UIParent, "GameTooltipTemplate")
-    end
-
     -- create the label and add it
     local labelFrame = AceGUI:Create("InteractiveLabel")
-    labelFrame:SetText(("%s:"):format(ABSync.dataRows.text["about"][id].label))
+    labelFrame:SetText(("%s:"):format(data.label))
     labelFrame:SetRelativeWidth(labelWidth)
-    if ABSync.dataRows.text["about"][id].tip.disable == false then
-        labelFrame:SetCallback("OnEnter", function(widget)
-            -- only create tooltip if it doesn't exist
-            if ABSyncAboutTooltip then
-                ABSyncAboutTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
-                ABSyncAboutTooltip:SetText(ABSync.dataRows.text["about"][id].tip.text, 1, 1, 1)
-            end
-            ABSyncAboutTooltip:Show()
-        end)
-        labelFrame:SetCallback("OnLeave", function()
-            ABSyncAboutTooltip:Hide()
-        end)
-    end
+    
+    -- add the label
     rowFrame:AddChild(labelFrame)
 
     -- create the edit box and add it
     local infoFrame = AceGUI:Create("EditBox")
-    infoFrame:SetText(ABSync.dataRows.text["about"][id].text)
+    infoFrame:SetText(data.text)
     infoFrame:SetRelativeWidth(infoWidth)
     rowFrame:AddChild(infoFrame)
 
+    -- create info box and add it
+    if data.tip.disable == false then
+        -- create row grouping
+        local infoRow = AceGUI:Create("SimpleGroup")
+        infoRow:SetLayout("Flow")
+        infoRow:SetFullWidth(true)
+        rowFrame:AddChild(infoRow)
+
+        -- create empty label
+        local emptyLabel = AceGUI:Create("Label")
+        emptyLabel:SetText("")
+        emptyLabel:SetRelativeWidth(labelWidth + offset)
+        infoRow:AddChild(emptyLabel)
+
+        -- create info label
+        local infoBox = AceGUI:Create("Label")
+        infoBox:SetText(data.tip.text)
+        infoBox:SetRelativeWidth(infoWidth - offset)
+        infoRow:AddChild(infoBox)
+    end
+
     -- disable edit box
-    infoFrame:SetDisabled(ABSync.dataRows.text["about"][id].disable)
+    infoFrame:SetDisabled(data.disable)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2202,6 +2136,74 @@ end
 function ABSync:CreateAboutFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
+
+    -- tooltip text
+    data = {
+        order = {
+            "author",
+            "version",
+            "patreon",
+            "coffee",
+            "issues",
+            "localization",
+        },
+        text = {
+            ["author"] = {
+                label = "Author",
+                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
+                disable = true,
+                tip = {
+                    disable = true,
+                    text = "",
+                },
+            },
+            ["version"] = {
+                label = "Version",
+                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
+                disable = true,
+                tip = {
+                    disable = true,
+                    text = ""
+                },
+            },
+            ["patreon"] = {
+                label = "Patreon",
+                text = "https://www.patreon.com/Bryo",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "If you like this addon and want to support me, please consider becoming a patron."
+                }
+            },
+            ["coffee"] = {
+                label = "Buy Me a Coffee",
+                text = "https://www.buymeacoffee.com/mrbryo",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "For an alternate support option, please consider buying me a beverage.",
+                },
+            },
+            ["issues"] = {
+                label = "Issues",
+                text = "https://github.com/mrbryo/ActionBarSync/issues",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "Please report any issues or bugs here.",
+                },
+            },
+            ["localization"] = {
+                label = "Localization",
+                text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
+                disable = false,
+                tip = {
+                    disable = false,
+                    text = "Help translate this addon into your language.",
+                },
+            }
+        }
+    }
 
     -- create the main about frame
     local aboutFrame = AceGUI:Create("SimpleGroup")
@@ -2222,8 +2224,8 @@ function ABSync:CreateAboutFrame(parent)
     aboutLeftFrame:AddChild(aboutLeftFramePadding)
 
     -- loop over the ABSync.dataRows.text table and call the function for each iteration
-    for _, id in pairs(ABSync.dataRows.order["about"]) do
-        self:AddAboutLeftHandLine(aboutLeftFramePadding, id)
+    for _, id in pairs(data.order) do
+        self:AddAboutLeftHandLine(aboutLeftFramePadding, data.text[id])
     end
 
     -- TODO: look at CurseForge to see if they have a variable for translators
