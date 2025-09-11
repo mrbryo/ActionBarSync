@@ -3451,3 +3451,235 @@ function ABSync:ShowUI()
     -- display the frame
     frame:Show()
 end
+
+-- [[ Replace all AceGUI Code with Standard UI Code ]]
+
+-- Replace AceGUI:Create("Frame") with:
+local function CreateMainFrame()
+    local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(800, 600)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    
+    -- Set title
+    frame.title = frame:CreateFontString(nil, "OVERLAY")
+    frame.title:SetFontObject("GameFontHighlight")
+    frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
+    frame.title:SetText("Action Bar Sync")
+    
+    return frame
+end
+
+-- Replace AceGUI TabGroup with standard tab buttons.
+local function CreateTabSystem(parent)
+    local tabFrame = CreateFrame("Frame", nil, parent)
+    tabFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -30)
+    tabFrame:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -10, -30)
+    tabFrame:SetHeight(30)
+    
+    local tabs = {}
+    local tabButtons = {}
+    
+    -- Create tab data
+    local tabData = {
+        {name = "About", key = "about"},
+        {name = "Instructions", key = "instructions"},
+        {name = "Share", key = "share"},
+        {name = "Sync", key = "sync"},
+        {name = "Lookup", key = "lookup"},
+        {name = "Backup", key = "backup"}
+    }
+    
+    -- Create tab buttons
+    for i, tab in ipairs(tabData) do
+        local button = CreateFrame("Button", nil, tabFrame, "CharacterFrameTabButtonTemplate")
+        button:SetID(i)
+        button:SetText(tab.name)
+        button:SetScript("OnClick", function(self)
+            PanelTemplates_SetTab(tabFrame, self:GetID())
+            ShowTabContent(tab.key)
+        end)
+        
+        if i == 1 then
+            button:SetPoint("BOTTOMLEFT", tabFrame, "BOTTOMLEFT", 0, 0)
+        else
+            button:SetPoint("LEFT", tabButtons[i-1], "RIGHT", -15, 0)
+        end
+        
+        tabButtons[i] = button
+    end
+    
+    -- Initialize first tab
+    PanelTemplates_SetNumTabs(tabFrame, #tabData)
+    PanelTemplates_SetTab(tabFrame, 1)
+    
+    return tabFrame, tabButtons
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateContentFrame
+    Purpose:    Create a scrollable content frame for tab content.
+    Arguments:  parent - The parent frame to attach this frame to
+    Returns:    The created ScrollFrame and its child Frame for content.
+-----------------------------------------------------------------------------]]
+local function CreateContentFrame(parent)
+    local contentFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -70)
+    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -30, 10)
+    
+    local content = CreateFrame("Frame", nil, contentFrame)
+    content:SetSize(contentFrame:GetWidth(), 1) -- Height will be calculated
+    contentFrame:SetScrollChild(content)
+    
+    return contentFrame, content
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateStandardButton
+    Purpose:    Replace AceGUI buttons with standard buttons.
+    Arguments:  parent   - The parent frame to attach this frame to
+                text     - The button text
+                width    - The width of the button
+                onClick  - Callback function when the button is clicked
+    Returns:    The created Button frame.
+
+Usage example:
+
+    local scanButton = CreateStandardButton(shareFrame, "Scan Now", 100, function()
+        ABSync:GetActionBarData()
+        -- Update UI
+    end)
+    scanButton:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 10, -10)
+-----------------------------------------------------------------------------]]
+local function CreateStandardButton(parent, text, width, onClick)
+    local button = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
+    button:SetSize(width or 120, 22)
+    button:SetText(text)
+    button:SetScript("OnClick", onClick)
+    return button
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateEditBox
+    Purpose:    Replace AceGUI edit boxes with standard edit boxes.
+    Arguments:  parent   - The parent frame to attach this frame to
+                width    - The width of the edit box
+                height   - The height of the edit box
+                readOnly - Boolean to set if the edit box is read-only
+    Returns:    The created EditBox frame.
+
+Usage example:
+
+    local lastScanBox = CreateEditBox(scanFrame, 250, 20, true)
+    lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
+    lastScanBox:SetText(self.db.char.lastScan or "Never")
+-----------------------------------------------------------------------------]]
+local function CreateEditBox(parent, width, height, readOnly)
+    local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    editBox:SetSize(width or 200, height or 20)
+    editBox:SetAutoFocus(false)
+    
+    if readOnly then
+        editBox:SetEnabled(false)
+    end
+    
+    return editBox
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateCheckBox
+    Purpose:    Replace AceGUI checkboxes with standard check buttons.
+    Arguments:  parent       - The parent frame to attach this frame to
+                text         - The label text for the checkbox
+                initialValue - The initial checked state (true/false)
+                onChanged    - Callback function when the checkbox state changes
+    Returns:    The created CheckButton frame.
+
+Usage example:
+
+----------------------------------------------------------------------------]]
+local function CreateCheckBox(parent, text, initialValue, onChanged)
+    local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
+    checkbox.Text:SetText(text)
+    checkbox:SetChecked(initialValue)
+    
+    checkbox:SetScript("OnClick", function(self)
+        local checked = self:GetChecked()
+        if onChanged then
+            onChanged(checked)
+        end
+    end)
+    
+    return checkbox
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateDropdown
+    Purpose:    Replace AceGUI dropdowns with standard dropdown menus.
+    Arguments:  parent          - The parent frame to attach this frame to
+                items           - A table of items for the dropdown (key-value pairs)
+                initialValue    - The initial selected value
+                onSelectionChanged - Callback function when the selection changes
+    Returns:    The created Dropdown frame.
+    
+Usage example:
+
+    local actionTypeDropdown = CreateDropdown(lookupFrame, 
+        ABSync:GetActionTypeValues(),
+        ABSync:GetLastActionType(),
+        function(value)
+            ABSync:SetLastActionType(value)
+        end
+    )
+-----------------------------------------------------------------------------]]
+local function CreateDropdown(parent, items, initialValue, onSelectionChanged)
+    local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
+    
+    local function DropdownInitialize(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        for key, value in pairs(items) do
+            info.text = value
+            info.value = key
+            info.func = function(self)
+                UIDropDownMenu_SetSelectedValue(dropdown, self.value)
+                if onSelectionChanged then
+                    onSelectionChanged(self.value)
+                end
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    
+    UIDropDownMenu_Initialize(dropdown, DropdownInitialize)
+    UIDropDownMenu_SetSelectedValue(dropdown, initialValue)
+    
+    return dropdown
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateInlineGroup
+    Purpose:    Replace AceGUI inline groups with standard frames with a title.
+    Arguments:  parent - The parent frame to attach this frame to
+                title  - The title text for the group
+                width  - The width of the group
+                height - The height of the group
+    Returns:    The created Frame.
+-----------------------------------------------------------------------------]]
+local function CreateInlineGroup(parent, title, width, height)
+    local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    frame:SetSize(width or 200, height or 100)
+    
+    -- Add title
+    if title then
+        local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        titleText:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -5)
+        titleText:SetText(title)
+        titleText:SetTextColor(1, 0.82, 0) -- Gold color
+    end
+    
+    return frame
+end
