@@ -3477,6 +3477,10 @@ function ABSync:CreateMainFrame()
     return frame
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   CreateMainFrame
+    Purpose:    Create the main frame for the addon UI.
+-----------------------------------------------------------------------------]]
 function ABSync:CreateMainFrame()   
     -- Get screen size
     local screenWidth = UIParent:GetWidth()
@@ -3517,8 +3521,9 @@ end
 -- Replace AceGUI TabGroup with standard tab buttons.
 function ABSync:CreateTabSystem(parent)
     local tabFrame = CreateFrame("Frame", nil, parent)
-    tabFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -30)
-    tabFrame:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -10, -30)
+    -- Position tabs at the bottom of the frame like Collections Journal
+    tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
+    tabFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, -5)
     tabFrame:SetHeight(30)
     
     local tabs = {}
@@ -3535,24 +3540,37 @@ function ABSync:CreateTabSystem(parent)
         end
     end
     
-    -- Create tab buttons using Collections UI style template
+    -- Create tab buttons using PanelTabButtonTemplate like Collections addon
     for i, tab in ipairs(tabData) do
-        -- Use PanelTopTabButtonTemplate for Collections UI style tabs
-        local button = CreateFrame("Button", nil, tabFrame, "PanelTopTabButtonTemplate")
+        -- Use PanelTabButtonTemplate for authentic Collections UI styling
+        local button = CreateFrame("Button", nil, tabFrame, "PanelTabButtonTemplate")
         button:SetID(i)
         button:SetText(tab.name)
         
-        -- Set up the tab using PanelTemplates functions
+        -- Use PanelTemplates functions for proper tab behavior
         PanelTemplates_TabResize(button, 0)
         
         button:SetScript("OnClick", function(self)
-            -- Use PanelTemplates to handle tab selection
+            -- Use PanelTemplates to handle tab selection properly
             PanelTemplates_SetTab(tabFrame, self:GetID())
+            
+            -- Update visual states for all tabs
+            for j, btn in ipairs(tabButtons) do
+                if j == self:GetID() then
+                    -- Active tab
+                    PanelTemplates_SelectTab(btn)
+                else
+                    -- Inactive tab
+                    PanelTemplates_DeselectTab(btn)
+                end
+            end
+            
             ABSync:ShowTabContent(tab.key)
         end)
         
+        -- Position tabs horizontally with proper spacing for Collections style
         if i == 1 then
-            button:SetPoint("BOTTOMLEFT", tabFrame, "BOTTOMLEFT", 0, 0)
+            button:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 11, 2)
         else
             button:SetPoint("LEFT", tabButtons[i-1], "RIGHT", -15, 0)
         end
@@ -3564,8 +3582,13 @@ function ABSync:CreateTabSystem(parent)
     PanelTemplates_SetNumTabs(tabFrame, #tabData)
     PanelTemplates_SetTab(tabFrame, 1)
     
-    -- Store reference to tab data for later use
-    tabFrame.tabData = tabData
+    -- Initialize first tab as selected using PanelTemplates
+    if tabButtons[1] then
+        PanelTemplates_SelectTab(tabButtons[1])
+        for j = 2, #tabButtons do
+            PanelTemplates_DeselectTab(tabButtons[j])
+        end
+    end
     
     return tabFrame, tabButtons
 end
