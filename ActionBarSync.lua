@@ -3245,20 +3245,12 @@ function ABSync:CreateRestoreFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- create a container for the action bar selection
-    local actionBarSelectContainer = AceGUI:Create("InlineGroup")
-    actionBarSelectContainer:SetTitle("Restore")
-    actionBarSelectContainer:SetLayout("List")
-    actionBarSelectContainer:SetRelativeWidth(0.5)
-    actionBarSelectContainer:SetFullHeight(true)
-    parent:AddChild(actionBarSelectContainer)
-
     -- create drop down based on selected backup, initially it will have a fake value
     local actionBarSelection = AceGUI:Create("Dropdown")
     actionBarSelection:SetLabel("Select an Action Bar to Restore")
     actionBarSelection:AddItem("none", "None")
     actionBarSelection:SetValue("none")
-    actionBarSelectContainer:AddChild(actionBarSelection)
+    parent:AddChild(actionBarSelection)
     ABSync.ui.dropdown.currentBackupActionBars = actionBarSelection
 end
 
@@ -3270,18 +3262,10 @@ function ABSync:CreateBackupListFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
-    -- create a container for the scroll region
-    local backupScrollContainer = AceGUI:Create("InlineGroup")
-    backupScrollContainer:SetTitle("Backups")
-    backupScrollContainer:SetLayout("Fill")
-    backupScrollContainer:SetRelativeWidth(0.5)
-    backupScrollContainer:SetFullHeight(true)
-    parent:AddChild(backupScrollContainer)
-
     -- Create a scroll container for the spreadsheet
     local backupScroll = AceGUI:Create("ScrollFrame")
     backupScroll:SetLayout("List")
-    backupScrollContainer:AddChild(backupScroll)
+    parent:AddChild(backupScroll)
 
     -- add the available backups
     local trackInserts = 0
@@ -3341,12 +3325,35 @@ function ABSync:CreateBackupFrame(parent)
     infoFrame:AddChild(infoLabel)
     backupFrame:AddChild(infoFrame)
 
+    -- group for the backup list group and the restore group
+    local backupAndRestoreGroup = AceGUI:Create("SimpleGroup")
+    backupAndRestoreGroup:SetLayout("Flow")
+    backupAndRestoreGroup:SetRelativeWidth(1)
+    backupAndRestoreGroup:SetFullHeight(true)
+    backupFrame:AddChild(backupAndRestoreGroup)
+
+    -- create a container for the scroll region
+    local backupScrollContainer = AceGUI:Create("InlineGroup")
+    backupScrollContainer:SetTitle("Backups")
+    backupScrollContainer:SetLayout("Fill")
+    backupScrollContainer:SetRelativeWidth(0.5)
+    backupScrollContainer:SetFullHeight(true)
+    backupAndRestoreGroup:AddChild(backupScrollContainer)
+
     -- create listing of backups; scrollable area with columns: Date/Time, Note
-    self:CreateBackupListFrame(backupFrame)
+    self:CreateBackupListFrame(backupScrollContainer)
+
+    -- create a container for the action bar selection
+    local actionBarSelectContainer = AceGUI:Create("InlineGroup")
+    actionBarSelectContainer:SetTitle("Restore")
+    actionBarSelectContainer:SetLayout("List")
+    actionBarSelectContainer:SetRelativeWidth(0.5)
+    actionBarSelectContainer:SetFullHeight(true)
+    backupAndRestoreGroup:AddChild(actionBarSelectContainer)
 
     -- create frame for selecting which action bars to restore
-    self:CreateRestoreFrame(backupFrame)
-
+    self:CreateRestoreFrame(actionBarSelectContainer)
+    backupAndRestoreGroup:DoLayout()
 end
 
 --[[---------------------------------------------------------------------------
