@@ -3683,3 +3683,4 @@ local function CreateInlineGroup(parent, title, width, height)
     
     return frame
 end
+
