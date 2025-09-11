@@ -17,7 +17,7 @@ ABSync.ui = {
     editbox = {},
     scroll = {},
     group = {},
-    tooltip = {},
+    dropdown = {},
 }
 
 -- colors
@@ -71,9 +71,10 @@ ABSync.profiletype = {
 }
 
 -- lookup macro types
-ABSync.MacroType = {}
-ABSync.MacroType.general = "general"
-ABSync.MacroType.character = "character"
+ABSync.MacroType = {
+    general = "general",
+    character = "character",
+}
 
 -- ui tabs
 ABSync.uitabs = {
@@ -84,6 +85,7 @@ ABSync.uitabs = {
         ["sync"] = "Sync",
         ["last_sync_errors"] = "Last Sync Errors",
         ["lookup"] = "Lookup",
+        ["backup"] = "Backup/Restore",
         ["developer"] = "Developer",
     },
     ["order"] = {
@@ -93,6 +95,7 @@ ABSync.uitabs = {
         "sync",
         "last_sync_errors",
         "lookup",
+        "backup",
         "developer",
     }
 }
@@ -207,6 +210,11 @@ function ABSync:InstantiateDB(barName)
     -- character last sync error date/time, represents the date/time of the errors captured
     if not self.db.char.lastSyncErrorDttm then
         self.db.char.lastSyncErrorDttm = L["never"]
+    end
+
+    -- character last share scan error data
+    if not self.db.char.lastShareScanData then
+        self.db.char.scanErrors = {}
     end
 
     -- character specific action lookup data
@@ -344,15 +352,6 @@ end
     Purpose:    Insert a new entry into the lookup history and only keeping the max records set by the user.
 -----------------------------------------------------------------------------]]
 function ABSync:InsertLookupHistory(info)
-    -- reduce down to N records based on user setting
-    -- local tmpTable = {}
-    -- for i = 1, (self.db.char.lookupHistoryMaxRecords - 1) do
-    --     table.insert(tmpTable, self.db.char.lookupHistory[i])
-    --     if #tmpTable >= self.db.profile.lookupHistorySize then
-    --         break
-    --     end
-    -- end
-
     -- insert the record
     table.insert(self.db.char.lookupHistory, 1, info)
 
@@ -366,33 +365,16 @@ function ABSync:InsertLookupHistory(info)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   LookupAction
-    Purpose:    Look up the action based on the last entered action type and ID.
+    Function:   GetActionData
+    Purpose:    Get the action data for a specific action ID and type.
 -----------------------------------------------------------------------------]]
-function ABSync:LookupAction()
-    -- get the action type
-    local actionType = self:GetLastActionType()
-    
-    -- get the action ID
-    local actionID = self:GetLastActionID()
-
-    --@debug@
-    -- "Looking up Action - Type: %s - ID: %s"
-    if self.db.char.isDevMode == true then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
-    --@end-debug@
-
-    -- instantiate variable to store final message
-    local dialogMessage = ""
-
-    -- instantiate lookup storage
+function ABSync:GetActionData(actionID, actionType)
+    -- store results
     local lookupInfo = {
-        type = actionType,
-        id = actionID,
         name = L["unknown"],
         has = L["no"]
     }
 
-    -- perform lookup based on type
     if actionType == "spell" then
         -- get spell details: data, name, hasSpell
         local spellInfo = self:GetSpellDetails(actionID)
@@ -435,6 +417,41 @@ function ABSync:LookupAction()
         lookupInfo.has = mountJournalIndex and "Yes" or "No"
     end
 
+    -- finally return results
+    return lookupInfo
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   LookupAction
+    Purpose:    Look up the action based on the last entered action type and ID.
+-----------------------------------------------------------------------------]]
+function ABSync:LookupAction()
+    -- get the action type
+    local actionType = self:GetLastActionType()
+    
+    -- get the action ID
+    local actionID = self:GetLastActionID()
+
+    --@debug@
+    -- "Looking up Action - Type: %s - ID: %s"
+    if self.db.char.isDevMode == true then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
+    --@end-debug@
+
+    -- instantiate lookup storage
+    local lookupInfo = {
+        type = actionType,
+        id = actionID,
+        name = L["unknown"],
+        has = L["no"]
+    }
+
+    -- perform lookup based on type
+    local actionData = self:GetActionData(actionID, actionType)
+    if actionData then
+        lookupInfo.name = actionData.name
+        lookupInfo.has = actionData.has
+    end
+
     -- insert record to lookupHistory
     self:InsertLookupHistory(lookupInfo)
 
@@ -453,27 +470,22 @@ function ABSync:GetActionBarsCount(source)
 
     -- point to correct db branch based on source
     if source == self.profiletype["profile"] then
-        -- print("Using profile database")
         tmpdb = self.db.profile
 
     -- always get global if source doesn't match a valid type
     else
-        -- print("Using global database")
         tmpdb = self.db.global
     end
 
     -- if actionBars variable exist then continue
     if tmpdb.actionBars then
-        -- print("here1")
         -- if actionBars is not a table then return 0
         if tostring(type(tmpdb.actionBars)) == "table" then
-            -- print("here2")
             count = #tmpdb.actionBars
         end
     end
 
     -- finally return the count
-    -- print("here3")
     return tonumber(count)
 end
 
@@ -493,13 +505,9 @@ function ABSync:GetActionBarNames(source)
         -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
         table.insert(barNames, L["noscancompleted"])
 
-        -- finally return bar name
+        -- finally return bar names
         return barNames
     else
-        -- loop over actionBars and rebuild table to figure this out
-        -- for k, v in pairs(self.db.global.actionBars) do
-        --     table.insert(barNames, v)
-        -- end
         return self.db.global.actionBars
     end
 end
@@ -529,7 +537,7 @@ end
 --[[---------------------------------------------------------------------------
     Function:   SetLastSyncedOnChar
     Purpose:    Set the last synced time for the action bars to update the Last Synced field in the options for the current character.
-       TODO:    Accept a timestamp parameter, parse it into the format show in the date command in this function.
+       TODO:    Format a base data value instead of a formatted value. Format it when needed later.
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastSyncedOnChar()
     self.db.char.lastSynced = date("%Y-%m-%d %H:%M:%S")
@@ -542,6 +550,39 @@ end
 function ABSync:GetPlayerNameFormatted()
     local unitName, unitServer = UnitFullName("player")
     return unitName .. " - " .. unitServer
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   FormatDateString
+    Purpose:    Convert a date string from YYYYMMDDHHMISS format to YYYY, Mon DD HH:MI:SS format.
+-----------------------------------------------------------------------------]]
+function ABSync:FormatDateString(dateString)
+    -- validate input
+    if not dateString or type(dateString) ~= "string" or string.len(dateString) ~= 14 then
+        return "Invalid Date"
+    end
+    
+    -- extract components from YYYYMMDDHHMISS
+    local year = string.sub(dateString, 1, 4)
+    local month = tonumber(string.sub(dateString, 5, 6))
+    local day = string.sub(dateString, 7, 8)
+    local hour = string.sub(dateString, 9, 10)
+    local minute = string.sub(dateString, 11, 12)
+    local second = string.sub(dateString, 13, 14)
+    
+    -- month names
+    local monthNames = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    }
+    
+    -- validate month
+    if month < 1 or month > 12 then
+        return "Invalid Date"
+    end
+    
+    -- format and return the readable date string
+    return string.format("%s, %s %s %s:%s:%s", year, monthNames[month], day, hour, minute, second)
 end
 
 --[[---------------------------------------------------------------------------
@@ -725,6 +766,8 @@ function ABSync:SetBarToSync(key, value)
     if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
+
+-- NEXT: check BeginSync and make sure backup is what it should be. Need additional UI tab to allow user to see backup history and to be able to restore from backup.
 
 --[[---------------------------------------------------------------------------
     Function:   BeginSync
@@ -1026,7 +1069,7 @@ function ABSync:UpdateActionBars(backupdttm)
             -- instantiate standard error fields
             local err = {
                 barName = diffData.barName,
-                barPos = diffData.shared.barPosn,
+                barPosn = diffData.shared.barPosn,
                 buttonID = diffData.shared.actionID,
                 type = diffData.shared.actionType,
                 name = diffData.shared.name,
@@ -1034,6 +1077,10 @@ function ABSync:UpdateActionBars(backupdttm)
                 sharedby = diffData.sharedBy,
                 msg = ""
             }
+
+            --@debug@
+            if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
+            --@end-debug@
 
             -- track if something was updated to action bar
             local buttonUpdated = false
@@ -1049,11 +1096,9 @@ function ABSync:UpdateActionBars(backupdttm)
                 buttonUpdated = true
 
             elseif err.type == "spell" then
-                -- see if character has spell
-                local hasSpell = self:CharacterHasSpell(err.id)
 
                 -- report error if player does not have the spell
-                if hasSpell == false then
+                if diffData.shared.hasSpell == L["no"] then
                     -- update message to show character doesn't have the spell
                     err["msg"] = L["unavailable"]
 
@@ -1076,10 +1121,8 @@ function ABSync:UpdateActionBars(backupdttm)
                     err["msg"] = L["notfound"]
                     table.insert(errors, err)
                 end
+
             elseif err.type == "item" then
-                --@debug@
-                -- if self.db.char.isDevMode == true then self:Print((L["updateactionbars_debug_item_name"]):format(err.id, err.name)) end
-                --@end-debug@
 
                 -- does player have the item
                 local itemCount = self:GetItemCount(err.id)
@@ -1183,7 +1226,10 @@ function ABSync:UpdateActionBars(backupdttm)
 
             -- proper response if action type is not recognized
             else
-                -- TODO: unknown type response
+                -- add error about unknown item type
+                err["msg"] = L["unknownitemtype"]
+                table.insert(errors, err)
+                print("Unknown Item Type: " .. tostring(err.type))
             end
 
             -- remove if not found and button has an action
@@ -1535,6 +1581,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         name = L["unknown"],
         icon = -1,
         sourceID = -1,
+        unknownActionType = false,
 
         -- location in the action bar: 1-12
         barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1,
@@ -1609,6 +1656,16 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.mountID = mountInfo.mountID
         returnData.displayIDs = mountInfo.displayIDs
         returnData.extraInfo = mountInfo.extraInfo
+
+    -- action button is empty
+    elseif actionType == nil then
+        -- leave as unknown since no action is assigned to the button
+    else
+        -- actually unknown, this addon doesn't know what to do with it!
+        -- add unknown action type property
+        returnData.unknownActionType = true
+        -- Localized: Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...
+        self:Print((L["unknown_action_type"]):format(btnName, tostring(actionType)))
     end
 
     -- finally return the data
@@ -1709,6 +1766,12 @@ function ABSync:GetActionBarData()
 
     -- get player unique id
     local playerID = self:GetPlayerNameKey()
+
+    -- track scan errors
+    local errs = {
+        lastScan = self.db.char.lastActionBarScanDttm,
+        data = {}
+    }
     
     -- get action bar details
     for btnName, btnData in pairs(_G) do
@@ -2454,7 +2517,7 @@ function ABSync:CreateLastSyncErrorFrame(parent)
     -- columns
     local columns = {
         { name = "Bar Name", key = "barName", width = 0.10},        -- 10
-        { name = "Bar Pos", key = "barPos", width = 0.05},          -- 15
+        { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
         { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
         { name = "Action Type", key = "type", width = 0.10},        -- 30
         { name = "Action Name", key = "name", width = 0.25},        -- 55
@@ -2510,9 +2573,20 @@ function ABSync:CreateLastSyncErrorFrame(parent)
     -- end
     --@end-debug@
 
-    -- get count of syncErrors
-    local syncErrorCount = #self.db.char.syncErrors
-
+    -- verify if we a last sync error
+    local errorsExist = false
+    if not self.db.char then
+        errorsExist = false
+    else
+        local lastDateTime = self.db.char.lastSyncErrorDttm or L["never"]
+        if lastDateTime ~= nil and lastDateTime ~= L["never"] then
+            errorsExist = true
+        end
+    end
+    --@debug@
+    if self.db.char.isDevMode == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
+    --@end-debug@
+    
     -- loop over sync errors
     --[[ 
         errorRcd contains the following properties:
@@ -2533,7 +2607,7 @@ function ABSync:CreateLastSyncErrorFrame(parent)
             sharedby        the player who shared the action
             buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
     ]]
-    if syncErrorCount > 0 then
+    if errorsExist == true then
         for _, errorRcd in ipairs(self.db.char.syncErrors) do
             -- print("here1")
             -- continue to next row if key doesn't match
@@ -2785,6 +2859,9 @@ function ABSync:CreateSyncFrame(parent)
     scrollContainer:AddChild(scrollFrame)
 
     -- loop over data and add checkboxes per character and action bar combo where they are enabled
+    -- track if anything was added or not
+    local sharedActionBarsAdded = false
+
     -- primary loop is actionBars as it's sorted
     for _, barName in ipairs(self.db.global.actionBars) do
         
@@ -2808,9 +2885,18 @@ function ABSync:CreateSyncFrame(parent)
                 -- create a checkbox if data is found
                 if foundData == true then
                     scrollFrame:AddChild(self:CreateSyncCheckbox(barName, playerID, currentPlayerID))
+                    sharedActionBarsAdded = true
                 end
             end
         end
+    end
+
+    -- if no shared action bars were added, then add a label to indicate that
+    if sharedActionBarsAdded == false then
+        local noDataLabel = AceGUI:Create("Label")
+        noDataLabel:SetText("No Shared Action Bars Found")
+        noDataLabel:SetFullWidth(true)
+        scrollFrame:AddChild(noDataLabel)
     end
 
     -- set values from db
@@ -2952,12 +3038,18 @@ function ABSync:InsertLookupHistoryRows(parent, columns)
     end
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   CreateLookupQueryFrame
+    Purpose:    Create the lookup query frame for performing action lookups.
+    Arguments:  parent  - The parent frame to attach this frame to
+    Returns:    None
+]]
 function ABSync:CreateLookupQueryFrame(parent)
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
     local labelWidth = 75
-    local controlWidth = 100
+    local controlWidth = 200
     local padding = 15
     
     -- create top section group with label named "Perform a Lookup"
@@ -3101,6 +3193,163 @@ function ABSync:CreateLookupFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   ClearBackupActionBarDropdown
+    Purpose:    Clear the action bar selection dropdown.
+-----------------------------------------------------------------------------]]
+function ABSync:ClearBackupActionBarDropdown()
+    if ABSync.ui.dropdown.currentBackupActionBars then
+        local data = {}
+        data["none"] = "None"
+        ABSync.ui.dropdown.currentBackupActionBars:SetList(data)
+        ABSync.ui.dropdown.currentBackupActionBars:SetValue("none")
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   LoadBackupActionBars
+    Purpose:    Load the action bars from a selected backup into the action bar selection dropdown.
+-----------------------------------------------------------------------------]]
+function ABSync:LoadBackupActionBars(backupKey)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- find the backup record
+    local found = false
+    for _, backupRow in ipairs(self.db.char.backup) do
+        if backupRow.dttm == backupKey then
+            -- loop over the action bars in the backup record and create a checkbox for each one
+            local newData = {}
+            for actionBarName, _ in pairs(backupRow.data) do
+                newData[actionBarName] = actionBarName
+            end
+            -- update list
+            ABSync.ui.dropdown.currentBackupActionBars:SetList(newData)
+            ABSync.ui.dropdown.currentBackupActionBars:SetValue("")
+            -- mark found
+            found = true
+            -- exit loop
+            break
+        end
+    end
+    -- if no records found then reset table with a single "None" value
+    if found == false then
+        self:ClearBackupActionBarDropdow()
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateRestoreFrame
+    Purpose:    Create the restore frame for selecting which action bars to restore and a button to trigger it.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateRestoreFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create a container for the action bar selection
+    local actionBarSelectContainer = AceGUI:Create("InlineGroup")
+    actionBarSelectContainer:SetTitle("Restore")
+    actionBarSelectContainer:SetLayout("List")
+    actionBarSelectContainer:SetRelativeWidth(0.5)
+    actionBarSelectContainer:SetFullHeight(true)
+    parent:AddChild(actionBarSelectContainer)
+
+    -- create drop down based on selected backup, initially it will have a fake value
+    local actionBarSelection = AceGUI:Create("Dropdown")
+    actionBarSelection:SetLabel("Select an Action Bar to Restore")
+    actionBarSelection:AddItem("none", "None")
+    actionBarSelection:SetValue("none")
+    actionBarSelectContainer:AddChild(actionBarSelection)
+    ABSync.ui.dropdown.currentBackupActionBars = actionBarSelection
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateBackupListFrame
+    Purpose:    Create the backup list frame for displaying available backups.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateBackupListFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create a container for the scroll region
+    local backupScrollContainer = AceGUI:Create("InlineGroup")
+    backupScrollContainer:SetTitle("Backups")
+    backupScrollContainer:SetLayout("Fill")
+    backupScrollContainer:SetRelativeWidth(0.5)
+    backupScrollContainer:SetFullHeight(true)
+    parent:AddChild(backupScrollContainer)
+
+    -- Create a scroll container for the spreadsheet
+    local backupScroll = AceGUI:Create("ScrollFrame")
+    backupScroll:SetLayout("List")
+    backupScrollContainer:AddChild(backupScroll)
+
+    -- add the available backups
+    local trackInserts = 0
+    for _, backupRow in ipairs(self.db.char.backup) do
+        local checkbox = AceGUI:Create("CheckBox")
+        checkbox:SetLabel(self:FormatDateString(backupRow.dttm))
+        checkbox:SetValue(false)
+        checkbox:SetDescription(backupRow.note)
+        checkbox:SetFullWidth(true)
+        checkbox:SetCallback("OnValueChanged", function(_, _, value)
+            -- clear all other checkboxes
+            for _, child in ipairs(backupScroll.children) do
+                if child ~= checkbox and child.type == "CheckBox" then
+                    child:SetValue(false)
+                end
+            end
+            -- if checked, load the action bars for this backup into the action bar selection scroll region
+            if value == true then
+                ABSync:LoadBackupActionBars(backupRow.dttm)
+            else
+                ABSync:ClearBackupActionBarDropdow()
+            end
+        end)
+        backupScroll:AddChild(checkbox)
+        trackInserts = trackInserts + 1
+    end
+
+    -- insert empty records if no records inserted
+    if trackInserts == 0 then
+        local noDataLabel = AceGUI:Create("Label")
+        noDataLabel:SetText("No Backups Found")
+        noDataLabel:SetFullWidth(true)
+        backupScroll:AddChild(noDataLabel)
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateBackupFrame
+    Purpose:    Create the backup frame for displaying and restoring backups.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateBackupFrame(parent)
+    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
+    local AceGUI = LibStub("AceGUI-3.0")
+
+    -- create backup top level frame, child to the tab
+    local backupFrame = AceGUI:Create("SimpleGroup")
+    backupFrame:SetLayout("Flow")
+    parent:AddChild(backupFrame)
+
+    -- add info label
+    local infoFrame = AceGUI:Create("InlineGroup")
+    infoFrame:SetTitle("Directions")
+    infoFrame:SetLayout("Fill")
+    infoFrame:SetFullWidth(true)
+    local infoLabel = AceGUI:Create("Label")
+    infoLabel:SetText("Backups are stored per character. Select which backup by date and time and then which action bars to restore. Then click the 'Restore Selected Backup' button.")
+    infoFrame:AddChild(infoLabel)
+    backupFrame:AddChild(infoFrame)
+
+    -- create listing of backups; scrollable area with columns: Date/Time, Note
+    self:CreateBackupListFrame(backupFrame)
+
+    -- create frame for selecting which action bars to restore
+    self:CreateRestoreFrame(backupFrame)
+
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
@@ -3180,11 +3429,14 @@ function ABSync:ShowUI()
         elseif group == "lookup" then
             local lookupFrame = self:CreateLookupFrame(tabGroup)
             self.db.profile.mytab = "lookup"
+        elseif group == "backup" then
+            local backupFrame = self:CreateBackupFrame(tabGroup)
+            self.db.profile.mytab = "backup"
         end
     end)
 
     -- set the tab
-    tabGroup:SelectTab(self.db.profile.mytab)
+    tabGroup:SelectTab(self.db.profile.mytab or "instructions")
 
     -- finally add the tab group
     frame:AddChild(tabGroup)

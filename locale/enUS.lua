@@ -141,6 +141,8 @@ L["updateactionbars_spell_not_found"] = "(%s) Spell with ID %s for button %s not
 L["updateactionbars_user_doesnot_have_item"] = "(%s) User does not have item '%s' with ID '%s' in their bags."
 L["yes"] = "Yes"
 L["actionbarsync_mount_issue_text"] = "%d out of %d mount issues occurred. The functionality from Blizzard to assign mounts to an action bar requires those mounts to be visible in the Mount Journal. The issues this addon has encountered could be caused by the current Mount Journal filters. Either reset the filters to default or click the button 'Reset Mount Journal Filters' (only makes collected and usable mounts visible) and try the sync again."
-L["charactermacro"] = "Character specific macro's can't be shared. To share a macro, it must be moved/copied to the General Macro tab's in the macro interface (original)."
+L["charactermacro"] = "Character specific macro's can't be shared. To share a macro, it must be moved or copied to the General Macro tab in the macro interface."
 L["notapplicable"] = "Not Applicable"
+L["unknownitemtype"] = "Unknown Item Type"
+L["unknown_action_type"] = "Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping..."
 --@end-do-not-package@
