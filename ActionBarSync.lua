@@ -3366,7 +3366,89 @@ function ABSync:ShowUI()
 
     -- get player
     local playerID = self:GetPlayerNameKey()
+    
+    -- create main frame
+    local mainFrame = ABSync:CreateMainFrame()
 
+    -- create tab group
+    local tabGroup, tabButtons = ABSync:CreateTabSystem(mainFrame)
+
+    -- create content area
+    local contentScrollFrame, contentFrame = ABSync:CreateContentFrame(mainFrame)
+    ABSync.ui.contentFrame = contentFrame
+
+    -- show initial tab
+    self:ShowTabContent("instructions")
+
+
+
+    -- adjust content based on selected tab
+    -- tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
+    --     -- clear all children
+    --     tabGroup:ReleaseChildren()
+
+    --     -- check which tab is selected
+    --     if group == "about" then
+    --         local aboutFrame = self:CreateAboutFrame(tabGroup)
+    --         self.db.profile.mytab = "about"
+    --     elseif group == "instructions" then
+    --         local instructionsFrame = self:CreateInstructionsFrame()
+    --         tabGroup:AddChild(instructionsFrame)
+    --         self.db.profile.mytab = "instructions"
+    --     elseif group == "share" then
+    --         local shareFrame = self:CreateShareFrame(playerID)
+    --         tabGroup:AddChild(shareFrame)
+    --         self.db.profile.mytab = "share"
+    --     elseif group == "sync" then
+    --         local syncFrame = self:CreateSyncFrame(tabGroup)
+    --         self.db.profile.mytab = "sync"
+    --     elseif group == "last_sync_errors" then
+    --         local lastSyncErrorFrame = self:CreateLastSyncErrorFrame(tabGroup)
+    --         self.db.profile.mytab = "last_sync_errors"
+    --     elseif group == "developer" then
+    --         local developerFrame = self:CreateDeveloperFrame(tabGroup)
+    --         self.db.profile.mytab = "developer"
+    --     elseif group == "lookup" then
+    --         local lookupFrame = self:CreateLookupFrame(tabGroup)
+    --         self.db.profile.mytab = "lookup"
+    --     elseif group == "backup" then
+    --         local backupFrame = self:CreateBackupFrame(tabGroup)
+    --         self.db.profile.mytab = "backup"
+    --     end
+    -- end)
+
+    -- set the tab
+    -- tabGroup:SelectTab(self.db.profile.mytab or "instructions")
+
+    -- finally add the tab group
+    -- frame:AddChild(tabGroup)
+
+    -- display the frame
+    mainFrame:Show()
+end
+
+function ABSync:ShowTabContent(tabKey)
+    -- Clear content frame
+    for i = 1, ABSync.ui.contentFrame:GetNumChildren() do
+        local child = select(i, ABSync.ui.contentFrame:GetChildren())
+        child:Hide()
+        child:SetParent(nil)
+    end
+    
+    if tabKey == "about" then
+        self:CreateAboutFrameStandard(ABSync.ui.contentFrame)
+    elseif tabKey == "instructions" then
+        self:CreateInstructionsFrameStandard(ABSync.ui.contentFrame)
+    elseif tabKey == "share" then
+        self:CreateShareFrameStandard(ABSync.ui.contentFrame)
+    -- ... etc for other tabs
+    end
+end
+
+-- [[ Replace all AceGUI Code with Standard UI Code ]]
+
+-- Replace AceGUI:Create("Frame") with:
+function ABSync:CreateMainFrame()    
     -- Get screen size
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
@@ -3376,88 +3458,9 @@ function ABSync:ShowUI()
     -- set initial sizes
     local frameWidth = screenWidth * 0.6
     local frameHeight = screenHeight * 0.6
-    
-    --[[ Create the main frame]]
 
-    local frame = AceGUI:Create("Frame")
-    frame:SetTitle("Action Bar Sync")
-    -- TODO: format the dttm or store a formatted value instead...
-    frame:SetStatusText(("Last Synced to UI: %s"):format(self.db.char.lastSynced or "-"))
-    frame:SetLayout("Fill")
-    frame:SetWidth(frameWidth)
-    frame:SetHeight(frameHeight)
-    local dialogFrame = frame.frame
-    dialogFrame:SetFrameStrata("DIALOG")
-    dialogFrame:SetFrameLevel(1)
-
-    -- create tab table
-    local tabs = {}
-    for _, tabkey in ipairs(ABSync.uitabs.order) do
-        local tabname = ABSync.uitabs.tabs[tabkey]
-        -- print(("Tab: %s, Key: %s"):format(tabname, tabkey))
-
-        -- if developer mode disabled, skip the developer tab, otherwise add the tab
-        if tabkey ~= "developer" or (tabkey == "developer" and self.db.char.isDevMode == true) then
-            table.insert(tabs, { text = tabname, value = tabkey })
-        end
-    end
-
-    -- create tab group
-    local tabGroup = AceGUI:Create("TabGroup")
-    tabGroup:SetLayout("Fill")
-    tabGroup:SetTabs(tabs)
-
-    -- adjust content based on selected tab
-    tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
-        -- clear all children
-        tabGroup:ReleaseChildren()
-
-        -- check which tab is selected
-        if group == "about" then
-            local aboutFrame = self:CreateAboutFrame(tabGroup)
-            self.db.profile.mytab = "about"
-        elseif group == "instructions" then
-            local instructionsFrame = self:CreateInstructionsFrame()
-            tabGroup:AddChild(instructionsFrame)
-            self.db.profile.mytab = "instructions"
-        elseif group == "share" then
-            local shareFrame = self:CreateShareFrame(playerID)
-            tabGroup:AddChild(shareFrame)
-            self.db.profile.mytab = "share"
-        elseif group == "sync" then
-            local syncFrame = self:CreateSyncFrame(tabGroup)
-            self.db.profile.mytab = "sync"
-        elseif group == "last_sync_errors" then
-            local lastSyncErrorFrame = self:CreateLastSyncErrorFrame(tabGroup)
-            self.db.profile.mytab = "last_sync_errors"
-        elseif group == "developer" then
-            local developerFrame = self:CreateDeveloperFrame(tabGroup)
-            self.db.profile.mytab = "developer"
-        elseif group == "lookup" then
-            local lookupFrame = self:CreateLookupFrame(tabGroup)
-            self.db.profile.mytab = "lookup"
-        elseif group == "backup" then
-            local backupFrame = self:CreateBackupFrame(tabGroup)
-            self.db.profile.mytab = "backup"
-        end
-    end)
-
-    -- set the tab
-    tabGroup:SelectTab(self.db.profile.mytab or "instructions")
-
-    -- finally add the tab group
-    frame:AddChild(tabGroup)
-
-    -- display the frame
-    frame:Show()
-end
-
--- [[ Replace all AceGUI Code with Standard UI Code ]]
-
--- Replace AceGUI:Create("Frame") with:
-local function CreateMainFrame()
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(800, 600)
+    frame:SetSize(frameWidth, frameHeight)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -3474,8 +3477,45 @@ local function CreateMainFrame()
     return frame
 end
 
+function ABSync:CreateMainFrame()   
+    -- Get screen size
+    local screenWidth = UIParent:GetWidth()
+    local screenHeight = UIParent:GetHeight()
+
+    -- set initial sizes
+    local frameWidth = screenWidth * 0.6
+    local frameHeight = screenHeight * 0.6
+    
+    -- Use PortraitFrameTemplate which is more reliable in modern WoW
+    local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
+    frame:SetSize(frameWidth, frameHeight)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    
+    -- Set the title using the PortraitFrame style
+    if frame.TitleText then
+        frame.TitleText:SetText("Action Bar Sync")
+    else
+        -- Create title manually if TitleText doesn't exist
+        frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+        frame.title:SetPoint("TOP", frame, "TOP", 0, -5)
+        frame.title:SetText("Action Bar Sync")
+    end
+    
+    -- Set the portrait icon
+    if frame.portrait then
+        SetPortraitToTexture(frame.portrait, "Interface\\Icons\\inv_misc_book_11")
+    end
+    
+    return frame
+end
+
 -- Replace AceGUI TabGroup with standard tab buttons.
-local function CreateTabSystem(parent)
+function ABSync:CreateTabSystem(parent)
     local tabFrame = CreateFrame("Frame", nil, parent)
     tabFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -30)
     tabFrame:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -10, -30)
@@ -3484,24 +3524,31 @@ local function CreateTabSystem(parent)
     local tabs = {}
     local tabButtons = {}
     
-    -- Create tab data
-    local tabData = {
-        {name = "About", key = "about"},
-        {name = "Instructions", key = "instructions"},
-        {name = "Share", key = "share"},
-        {name = "Sync", key = "sync"},
-        {name = "Lookup", key = "lookup"},
-        {name = "Backup", key = "backup"}
-    }
+    -- create tab data
+    local tabData = {}
+    for _, tabkey in ipairs(ABSync.uitabs.order) do
+        local tabname = ABSync.uitabs.tabs[tabkey]
+        
+        -- if developer mode disabled, skip the developer tab, otherwise add the tab
+        if tabkey ~= "developer" or (tabkey == "developer" and self.db.char.isDevMode == true) then
+            table.insert(tabData, { name = tabname, key = tabkey })
+        end
+    end
     
-    -- Create tab buttons
+    -- Create tab buttons using Collections UI style template
     for i, tab in ipairs(tabData) do
-        local button = CreateFrame("Button", nil, tabFrame, "CharacterFrameTabButtonTemplate")
+        -- Use PanelTopTabButtonTemplate for Collections UI style tabs
+        local button = CreateFrame("Button", nil, tabFrame, "PanelTopTabButtonTemplate")
         button:SetID(i)
         button:SetText(tab.name)
+        
+        -- Set up the tab using PanelTemplates functions
+        PanelTemplates_TabResize(button, 0)
+        
         button:SetScript("OnClick", function(self)
+            -- Use PanelTemplates to handle tab selection
             PanelTemplates_SetTab(tabFrame, self:GetID())
-            ShowTabContent(tab.key)
+            ABSync:ShowTabContent(tab.key)
         end)
         
         if i == 1 then
@@ -3513,9 +3560,12 @@ local function CreateTabSystem(parent)
         tabButtons[i] = button
     end
     
-    -- Initialize first tab
+    -- Set up the tab frame with PanelTemplates
     PanelTemplates_SetNumTabs(tabFrame, #tabData)
     PanelTemplates_SetTab(tabFrame, 1)
+    
+    -- Store reference to tab data for later use
+    tabFrame.tabData = tabData
     
     return tabFrame, tabButtons
 end
@@ -3526,10 +3576,12 @@ end
     Arguments:  parent - The parent frame to attach this frame to
     Returns:    The created ScrollFrame and its child Frame for content.
 -----------------------------------------------------------------------------]]
-local function CreateContentFrame(parent)
+function ABSync:CreateContentFrame(parent)
     local contentFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -70)
-    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -30, 10)
+    -- Adjust positioning since tabs are now at the bottom
+    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -40)
+    -- Leave space for the tabs at the bottom
+    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -30, 35)
     
     local content = CreateFrame("Frame", nil, contentFrame)
     content:SetSize(contentFrame:GetWidth(), 1) -- Height will be calculated
@@ -3555,7 +3607,7 @@ Usage example:
     end)
     scanButton:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 10, -10)
 -----------------------------------------------------------------------------]]
-local function CreateStandardButton(parent, text, width, onClick)
+function ABSync:CreateStandardButton(parent, text, width, onClick)
     local button = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
     button:SetSize(width or 120, 22)
     button:SetText(text)
@@ -3578,7 +3630,7 @@ Usage example:
     lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
     lastScanBox:SetText(self.db.char.lastScan or "Never")
 -----------------------------------------------------------------------------]]
-local function CreateEditBox(parent, width, height, readOnly)
+function ABSync:CreateEditBox(parent, width, height, readOnly)
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetSize(width or 200, height or 20)
     editBox:SetAutoFocus(false)
@@ -3602,7 +3654,7 @@ end
 Usage example:
 
 ----------------------------------------------------------------------------]]
-local function CreateCheckBox(parent, text, initialValue, onChanged)
+function ABSync:CreateCheckBox(parent, text, initialValue, onChanged)
     local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
     checkbox.Text:SetText(text)
     checkbox:SetChecked(initialValue)
@@ -3636,7 +3688,7 @@ Usage example:
         end
     )
 -----------------------------------------------------------------------------]]
-local function CreateDropdown(parent, items, initialValue, onSelectionChanged)
+function ABSync:CreateDropdown(parent, items, initialValue, onSelectionChanged)
     local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
     
     local function DropdownInitialize(self, level)
@@ -3669,7 +3721,7 @@ end
                 height - The height of the group
     Returns:    The created Frame.
 -----------------------------------------------------------------------------]]
-local function CreateInlineGroup(parent, title, width, height)
+function ABSync:CreateInlineGroup(parent, title, width, height)
     local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
     frame:SetSize(width or 200, height or 100)
     
