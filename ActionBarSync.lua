@@ -80,7 +80,7 @@ ABSync.MacroType = {
 ABSync.uitabs = {
     ["tabs"] = {
         ["about"] = "About",
-        ["instructions"] = "Instructions",
+        ["introduction"] = "Introduction",
         ["share"] = "Share",
         ["sync"] = "Sync",
         ["last_sync_errors"] = "Last Sync Errors",
@@ -90,14 +90,17 @@ ABSync.uitabs = {
     },
     ["order"] = {
         "about",
-        "instructions",
+        "introduction",
         "share",
         "sync",
         "last_sync_errors",
         "lookup",
         "backup",
         "developer",
-    }
+    },
+    ["buttons"] = {},
+    ["buttonref"] = {},
+    ["tabframe"] = {},
 }
 
 -- initialize the mount db
@@ -2333,77 +2336,158 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateInstructionsFrame
-    Purpose:    Create the Instructions frame for the addon.
+    Purpose:    Create the Introduction frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateInstructionsFrame()
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
+function ABSync:CreateIntroductionFrame(parent)
     -- get instructions
     local instructions = {
         "Open the options and set the correct profile. I suggest to leave the default which is for your current character.",
-        "On the 'Share' tab, click the 'Scan Now' button. An initial scan is required for the addon to function.",
-        "Optional, on the 'Share' tab, select which action bars to share.",
-        "On the 'Sync' tab, select the shared action bars from other characters to update this character's action bars.",
-        "On the 'Sync' tab, once the previous step is done, click the 'Sync Now' button to sync your action bars. If you want your bars auto synced, enable the 'Auto Sync on Login' option.",
+        "On the |cff00ff00Share|r tab, click the |cff00ff00Scan Now|r button. An initial scan is required for the addon to function.",
+        "Optional, on the |cff00ff00Share|r tab, select which action bars to share.",
+        "On the |cff00ff00Sync|r tab, select the shared action bars from other characters to update this character's action bars.",
+        "On the |cff00ff00Sync|r tab, once the previous step is done, click the |cff00ff00Sync Now|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00Auto Sync on Login|r option.",
         "Done!",
     }
 
     -- FAQ
-    -- Example:
-    -- "Q: What does this addon do?\nA: This addon syncs action bars between characters."
     local faq = {
         "New addon so nothing yet. This is a placeholder.",
     }
 
-    -- create instructions frame
-    local instructionsFrame = AceGUI:Create("SimpleGroup")
-    instructionsFrame:SetLayout("Fill")
+    -- set label height
+    local labelHeight = 30
+    local labelCount = 2
 
-    -- add scroll frame for instructions
-    local instructionsScroll = AceGUI:Create("ScrollFrame")
-    instructionsScroll:SetLayout("List")
-    instructionsScroll:SetFullWidth(true)
-    instructionsFrame:AddChild(instructionsScroll)
+    -- create main instructions frame
+    local instructionsFrame = CreateFrame("Frame", nil, parent)
+    instructionsFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
-    -- loop over instructions
+    -- create title for instructions frame
+    local title = instructionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", instructionsFrame, "TOPLEFT", 10, -10)
+    title:SetPoint("TOPRIGHT", instructionsFrame, "TOPRIGHT", -10, -10)
+    title:SetHeight(labelHeight)
+    title:SetJustifyH("CENTER")
+    title:SetText("Instructions")
+
+    -- create the scroll frame inset frame, parent to the instructions scrolling area
+    local instructionsInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
+    instructionsInsetFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
+    instructionsInsetFrame:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, 0)
+    instructionsInsetFrame:SetHeight((instructionsFrame:GetHeight() - (labelHeight * labelCount)) * 0.5)
+
+    -- create scroll frame for instructions
+    local instructionsScroll = CreateFrame("ScrollFrame", nil, instructionsInsetFrame, "UIPanelScrollFrameTemplate")
+    instructionsScroll:SetPoint("TOPLEFT", instructionsInsetFrame, "TOPLEFT", 5, -5)
+    instructionsScroll:SetPoint("BOTTOMRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", -27, 5)
+
+    -- create content frame for the scroll area
+    local instructionsScrollContent = CreateFrame("Frame", nil, instructionsScroll)
+    instructionsScrollContent:SetWidth(instructionsScroll:GetWidth() - 20)
+    -- TODO: Set Height based on content dynamically!
+    instructionsScrollContent:SetHeight(instructionsInsetFrame:GetHeight() - 10)
+    instructionsScroll:SetScrollChild(instructionsScrollContent)
+
+    -- create faq title
+    local faqTitle = instructionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    faqTitle:SetPoint("TOPLEFT", instructionsInsetFrame, "BOTTOMLEFT", 0, 0)
+    faqTitle:SetPoint("TOPRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", 0, 0)
+    faqTitle:SetHeight(labelHeight)
+    faqTitle:SetJustifyH("CENTER")
+    faqTitle:SetText("Frequently Asked Questions")
+
+    -- create faq content frame
+    local faqInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
+    faqInsetFrame:SetWidth(instructionsScrollContent:GetWidth())
+    faqInsetFrame:SetPoint("TOPLEFT", faqTitle, "BOTTOMLEFT", 0, 0)
+    faqInsetFrame:SetPoint("TOPRIGHT", faqTitle, "BOTTOMRIGHT", 0, 0)
+    faqInsetFrame:SetPoint("BOTTOM", instructionsFrame, "BOTTOM", 0, 15)
+
+    -- create faq scroll frame
+    local faqScroll = CreateFrame("ScrollFrame", nil, faqInsetFrame, "UIPanelScrollFrameTemplate")
+    faqScroll:SetPoint("TOPLEFT", faqInsetFrame, "TOPLEFT", 5, -5)
+    faqScroll:SetPoint("BOTTOMRIGHT", faqInsetFrame, "BOTTOMRIGHT", -27, 5)
+
+    -- create faq content frame
+    local faqScrollContent = CreateFrame("Frame", nil, faqScroll)
+    faqScrollContent:SetWidth(faqScroll:GetWidth() - 20)
+    faqScrollContent:SetHeight(faqScroll:GetHeight() - 10)
+    faqScroll:SetScrollChild(faqScrollContent)
+
+    -- track current Y position for vertical layout
+    local currentY = -10
+    local spacing = 20
+
+    -- Add instruction steps
     for i, instruct in ipairs(instructions) do
-        self:AddInstruction(instructionsScroll, i, instruct, true)
+        -- create instruction label
+        local stepLabel = instructionsScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        stepLabel:SetPoint("TOPLEFT", instructionsScrollContent, "TOPLEFT", 10, currentY)
+        stepLabel:SetPoint("TOPRIGHT", instructionsScrollContent, "TOPRIGHT", -10, currentY)
+        stepLabel:SetText(string.format("%d. %s", i, instruct))
+        stepLabel:SetJustifyH("LEFT")
+        stepLabel:SetWordWrap(true)
 
-        -- add other interface widgets as needed based on index
+        -- calculate height needed for wrapped text
+        local textHeight = stepLabel:GetStringHeight()
+        currentY = currentY - textHeight - spacing
+
+        -- add special button for step 1
         if i == 1 then
-            -- add button to open options for this addon
-            local step1Button = AceGUI:Create("Button")
+            local step1Button = CreateFrame("Button", nil, instructionsScrollContent, "GameMenuButtonTemplate")
+            step1Button:SetSize(150, 22)
+            step1Button:SetPoint("TOPLEFT", stepLabel, "BOTTOMLEFT", 15, -10)
             step1Button:SetText("Open Options")
-            step1Button:SetWidth(150)
-            step1Button:SetCallback("OnClick", function()
+            step1Button:SetScript("OnClick", function()
                 LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
             end)
-            instructionsScroll:AddChild(step1Button)
-            local step1spacer = AceGUI:Create("Label")
-            step1spacer:SetText(" ")
-            step1spacer:SetFullWidth(true)
-            instructionsScroll:AddChild(step1spacer)
+            
+            currentY = currentY - 20 -- Account for button height
         end
     end
 
-    -- FAQ Frame
-    local faqFrame = AceGUI:Create("InlineGroup")
-    faqFrame:SetTitle("FAQ")
-    faqFrame:SetLayout("List")
-    faqFrame:SetFullWidth(true)
+    -- update height of content scroll frame for instructions
+    instructionsScrollContent:SetHeight(math.abs(currentY) + 10)
 
-    -- add FAQ content
-    local faqLabel = AceGUI:Create("Label")
-    faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")
-    -- faqLabel:SetText("Q: What does this addon do?\nA: This addon syncs action bars between characters.")
-    faqLabel:SetFullWidth(true)
-    faqFrame:AddChild(faqLabel)
+    -- reset currentY for FAQ section
+    currentY = -10
 
-    -- add the FAQ frame to the instructions scroll
-    instructionsScroll:AddChild(faqFrame)
+    -- loop over faq entries
+    for i, faqentry in ipairs(faq) do
+        -- create instruction label
+        local stepLabel = faqScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        stepLabel:SetPoint("TOPLEFT", faqScrollContent, "TOPLEFT", 10, currentY)
+        stepLabel:SetPoint("TOPRIGHT", faqScrollContent, "TOPRIGHT", -10, currentY)
+        stepLabel:SetText(string.format("%d. %s", i, faqentry))
+        stepLabel:SetJustifyH("LEFT")
+        stepLabel:SetWordWrap(true)
 
-    -- finally return the frame
+        -- calculate height needed for wrapped text
+        local textHeight = stepLabel:GetStringHeight()
+        currentY = currentY - textHeight - spacing
+    end
+
+    -- Add FAQ section
+    -- local faqFrame = self:CreateInlineGroup(instructionsContent, instructionsContent:GetWidth() - 20, 100)
+    -- faqFrame:SetPoint("TOPLEFT", instructionsContent, "TOPLEFT", 10, currentY)
+
+    -- Add FAQ content
+    -- local faqLabel = faqFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    -- faqLabel:SetPoint("TOPLEFT", faqFrame, "TOPLEFT", 15, -25)
+    -- faqLabel:SetPoint("TOPRIGHT", faqFrame, "TOPRIGHT", -15, -25)
+    -- faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")
+    -- faqLabel:SetJustifyH("LEFT")
+    -- faqLabel:SetWordWrap(true)
+
+    -- Update FAQ frame height based on content
+    -- local faqHeight = faqLabel:GetStringHeight() + 40
+    -- faqFrame:SetHeight(faqHeight)
+    -- currentY = currentY - faqHeight - 20
+
+    -- Set the content frame height to accommodate all content
+    -- instructionsContent:SetHeight(math.abs(currentY) + 20)
+
     return instructionsFrame
 end
 
@@ -3371,15 +3455,18 @@ function ABSync:ShowUI()
     local mainFrame = ABSync:CreateMainFrame()
 
     -- create tab group
-    local tabGroup, tabButtons = ABSync:CreateTabSystem(mainFrame)
+    -- local tabGroup, tabButtons = 
+    ABSync:CreateTabSystem(mainFrame)
 
     -- create content area
-    local contentScrollFrame, contentFrame = ABSync:CreateContentFrame(mainFrame)
+    local contentFrame = ABSync:CreateContentFrame(mainFrame)
     ABSync.ui.contentFrame = contentFrame
 
     -- show initial tab
-    self:ShowTabContent("instructions")
-
+    local tabkey = self.db.profile.mytab or "introduction"
+    self:ShowTabContent(tabkey)
+    local buttonID = ABSync.uitabs["buttonref"][tabkey]
+    PanelTemplates_SetTab(ABSync.uitabs["tabframe"], buttonID)
 
 
     -- adjust content based on selected tab
@@ -3427,6 +3514,10 @@ function ABSync:ShowUI()
     mainFrame:Show()
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   ShowTabContent
+    Purpose:    Show the content for the selected tab.
+-----------------------------------------------------------------------------]]
 function ABSync:ShowTabContent(tabKey)
     -- Clear content frame
     for i = 1, ABSync.ui.contentFrame:GetNumChildren() do
@@ -3435,47 +3526,21 @@ function ABSync:ShowTabContent(tabKey)
         child:SetParent(nil)
     end
     
+    -- switch to the selected tab
     if tabKey == "about" then
-        self:CreateAboutFrameStandard(ABSync.ui.contentFrame)
-    elseif tabKey == "instructions" then
-        self:CreateInstructionsFrameStandard(ABSync.ui.contentFrame)
+        self.db.profile.mytab = "about"
+        self:CreateAboutFrame(ABSync.ui.contentFrame)
+    elseif tabKey == "introduction" then
+        self.db.profile.mytab = "introduction"
+        self:CreateIntroductionFrame(ABSync.ui.contentFrame)
     elseif tabKey == "share" then
-        self:CreateShareFrameStandard(ABSync.ui.contentFrame)
-    -- ... etc for other tabs
+        self.db.profile.mytab = "share"
+        local shareFrame = self:CreateShareFrame(playerID)
+        tabGroup:AddChild(shareFrame)
     end
 end
 
 -- [[ Replace all AceGUI Code with Standard UI Code ]]
-
--- Replace AceGUI:Create("Frame") with:
-function ABSync:CreateMainFrame()    
-    -- Get screen size
-    local screenWidth = UIParent:GetWidth()
-    local screenHeight = UIParent:GetHeight()
-
-    -- print(("Screen Size: %d x %d"):format(screenWidth, screenHeight))
-
-    -- set initial sizes
-    local frameWidth = screenWidth * 0.6
-    local frameHeight = screenHeight * 0.6
-
-    local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(frameWidth, frameHeight)
-    frame:SetPoint("CENTER")
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    
-    -- Set title
-    frame.title = frame:CreateFontString(nil, "OVERLAY")
-    frame.title:SetFontObject("GameFontHighlight")
-    frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
-    frame.title:SetText("Action Bar Sync")
-    
-    return frame
-end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateMainFrame
@@ -3499,27 +3564,20 @@ function ABSync:CreateMainFrame()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("HIGH")
+    frame:SetTitle("Action Bar Sync")
+    frame:SetPortraitToAsset("Interface\\Icons\\inv_misc_coinbag_special")
     
-    -- Set the title using the PortraitFrame style
-    if frame.TitleText then
-        frame.TitleText:SetText("Action Bar Sync")
-    else
-        -- Create title manually if TitleText doesn't exist
-        frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-        frame.title:SetPoint("TOP", frame, "TOP", 0, -5)
-        frame.title:SetText("Action Bar Sync")
-    end
-    
-    -- Set the portrait icon
-    if frame.portrait then
-        SetPortraitToTexture(frame.portrait, "Interface\\Icons\\inv_misc_book_11")
-    end
-    
+    -- finally return the frame
     return frame
 end
 
--- Replace AceGUI TabGroup with standard tab buttons.
+--[[---------------------------------------------------------------------------
+    Function:   CreateTabSystem
+    Purpose:    Create a tab system at the bottom of the main frame.
+-----------------------------------------------------------------------------]]
 function ABSync:CreateTabSystem(parent)
+    -- create a frame to hold the tabs
     local tabFrame = CreateFrame("Frame", nil, parent)
     -- Position tabs at the bottom of the frame like Collections Journal
     tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
@@ -3575,22 +3633,31 @@ function ABSync:CreateTabSystem(parent)
             button:SetPoint("LEFT", tabButtons[i-1], "RIGHT", -15, 0)
         end
         
+        -- add button to table
         tabButtons[i] = button
+
+        -- add translation keys to addon global
+        ABSync.uitabs["buttonref"][tab.key] = i
     end
     
     -- Set up the tab frame with PanelTemplates
     PanelTemplates_SetNumTabs(tabFrame, #tabData)
     PanelTemplates_SetTab(tabFrame, 1)
     
-    -- Initialize first tab as selected using PanelTemplates
-    if tabButtons[1] then
+    -- initialize first tab to users last, if not set to introduction
+    local initialTab = ABSync.uitabs["buttonref"][self.db.profile.mytab or "introduction"]
+    if tabButtons[initialTab] then
         PanelTemplates_SelectTab(tabButtons[1])
         for j = 2, #tabButtons do
             PanelTemplates_DeselectTab(tabButtons[j])
         end
     end
     
-    return tabFrame, tabButtons
+    -- assign tab frame to addon global
+    ABSync.uitabs["tabframe"] = tabFrame
+
+    -- assign buttons to addon global
+    ABSync.uitabs["buttons"] = tabButtons
 end
 
 --[[---------------------------------------------------------------------------
@@ -3600,17 +3667,13 @@ end
     Returns:    The created ScrollFrame and its child Frame for content.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateContentFrame(parent)
-    local contentFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    -- Adjust positioning since tabs are now at the bottom
-    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -40)
-    -- Leave space for the tabs at the bottom
-    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -30, 35)
-    
-    local content = CreateFrame("Frame", nil, contentFrame)
-    content:SetSize(contentFrame:GetWidth(), 1) -- Height will be calculated
-    contentFrame:SetScrollChild(content)
-    
-    return contentFrame, content
+    -- create a frame to hold the content
+    local contentFrame = CreateFrame("Frame", nil, parent)
+    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
+    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+
+    -- return the created frame
+    return contentFrame
 end
 
 --[[---------------------------------------------------------------------------
@@ -3744,17 +3807,9 @@ end
                 height - The height of the group
     Returns:    The created Frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateInlineGroup(parent, title, width, height)
+function ABSync:CreateInlineGroup(parent, width, height)
     local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
     frame:SetSize(width or 200, height or 100)
-    
-    -- Add title
-    if title then
-        local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        titleText:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -5)
-        titleText:SetText(title)
-        titleText:SetTextColor(1, 0.82, 0) -- Gold color
-    end
     
     return frame
 end
