@@ -2200,21 +2200,27 @@ end
     Purpose:    Create the About frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateAboutFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
+    -- create main frame
+    local aboutFrame = CreateFrame("Frame", nil, parent)
+    aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -10)
+    aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
 
     -- tooltip text
     data = {
         order = {
             "author",
             "version",
+            "supportnote",
             "patreon",
             "coffee",
+            "issuenote",
             "issues",
+            "localeauthors",
             "localization",
         },
         text = {
             ["author"] = {
+                type = "data",
                 label = "Author",
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
                 disable = true,
@@ -2224,6 +2230,7 @@ function ABSync:CreateAboutFrame(parent)
                 },
             },
             ["version"] = {
+                type = "data",
                 label = "Version",
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
                 disable = true,
@@ -2232,7 +2239,12 @@ function ABSync:CreateAboutFrame(parent)
                     text = ""
                 },
             },
+            ["supportnote"] = {
+                type = "note",
+                text = "If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!",
+            },
             ["patreon"] = {
+                type = "data",
                 label = "Patreon",
                 text = "https://www.patreon.com/Bryo",
                 disable = false,
@@ -2242,24 +2254,27 @@ function ABSync:CreateAboutFrame(parent)
                 }
             },
             ["coffee"] = {
+                type = "data",
                 label = "Buy Me a Coffee",
                 text = "https://www.buymeacoffee.com/mrbryo",
                 disable = false,
-                tip = {
-                    disable = false,
-                    text = "For an alternate support option, please consider buying me a beverage.",
-                },
+            },
+            ["issuenote"] = {
+                type = "note",
+                text = "If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits.",
             },
             ["issues"] = {
+                type = "data",
                 label = "Issues",
                 text = "https://github.com/mrbryo/ActionBarSync/issues",
                 disable = false,
-                tip = {
-                    disable = false,
-                    text = "Please report any issues or bugs here.",
-                },
+            },
+            ["localeauthors"] = {
+                type = "note",
+                text = "Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above.",
             },
             ["localization"] = {
+                type = "data",
                 label = "Localization",
                 text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
                 disable = false,
@@ -2271,67 +2286,259 @@ function ABSync:CreateAboutFrame(parent)
         }
     }
 
-    -- create the main about frame
-    local aboutFrame = AceGUI:Create("SimpleGroup")
-    aboutFrame:SetLayout("Flow")
-    parent:AddChild(aboutFrame)
+    -- localizations by data structure
+    local localeAuthors = {
+        {
+            name = L["English"],
+            people = {
+                "mrbryo",
+            }
+        },
+        {
+            name = L["German"],
+            people = {}
+        },
+        {
+            name = L["Spanish (Spain)"],
+            people = {}
+        },
+        {
+            name = L["Spanish (Mexico)"],
+            people = {}
+        },
+        {
+            name = L["French"],
+            people = {}
+        },
+        {
+            name = L["Italian"],
+            people = {}
+        },
+        {
+            name = L["Korean"],
+            people = {}
+        },
+        {
+            name = L["Portuguese (Brazil)"],
+            people = {}
+        },
+        {
+            name = L["Russian"],
+            people = {}
+        },
+        {
+            name = L["Chinese (Simplified)"],
+            people = {}
+        },
+        {
+            name = L["Chinese (Traditional)"],
+            people = {}
+        },
+    }
+
+    --@debug@
+    if self.db.char.isDevMode == true then
+        table.insert(localeAuthors, { 
+            name = L["English"],
+            people = {
+                "Bryo",
+                "Johnny",
+                "Raffi",
+                "Mordra",
+                "Khalan",
+                "Evilbunny",
+                "Hyesung",
+                "Guilherme",
+                "Dmitry",
+                "Xiaojun",
+                "Yuchen",
+            }
+        })
+    end
+    --@end-debug@
+
+    -- start under the portrait unless i have a header which shifts to the right of the portrait
+    local topOffset = -50
+
+    -- tracking y offset
+    local currentY = -15 
+
+    -- spacing between lines
+    local spacing = 15
+
+    -- standard label dimensions
+    local labelWidth = 120
+
+    -- spacing between columns
+    local columnSpacing = 10
+
+    -- create title for about frame
+    local title = aboutFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", aboutFrame, "TOPLEFT", 0, 0)
+    title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", 0, 0)
+    title:SetHeight(30)
+    title:SetJustifyH("CENTER")
+    title:SetText("About")
 
     -- left hand side
-    local aboutLeftFrame = AceGUI:Create("SimpleGroup")
-    aboutLeftFrame:SetLayout("Flow")
-    aboutLeftFrame:SetRelativeWidth(0.6)
-    aboutLeftFrame:SetFullHeight(true)
-    aboutFrame:AddChild(aboutLeftFrame)
+    local leftFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
+    leftFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
+    leftFrame:SetWidth(aboutFrame:GetWidth() * 0.6 - 20)
+    leftFrame:SetPoint("BOTTOM", aboutFrame, "BOTTOM", 0, 0)
 
-    -- add frame for padding left hand
-    local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
-    aboutLeftFramePadding:SetLayout("Flow")
-    aboutLeftFramePadding:SetRelativeWidth(0.95)
-    aboutLeftFrame:AddChild(aboutLeftFramePadding)
-
-    -- loop over the ABSync.dataRows.text table and call the function for each iteration
+    -- loop over the data and build the ui
     for _, id in pairs(data.order) do
-        self:AddAboutLeftHandLine(aboutLeftFramePadding, data.text[id])
+        -- based on the order table get the data based on the id
+        local rowData = data.text[id]
+
+        -- instantiate label
+        local label = leftFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+
+        -- check type to proceed
+        if rowData.type == "note" then
+            currentY = currentY - 5
+            
+            -- insert horizontal rule
+            local horizontalRule = leftFrame:CreateTexture(nil, "ARTWORK")
+            horizontalRule:SetTexture("Interface\\Common\\UI-TooltipDivider-Transparent")
+            horizontalRule:SetHeight(10)
+            horizontalRule:SetPoint("TOPLEFT", leftFrame, "TOPLEFT", spacing, currentY)
+            horizontalRule:SetPoint("RIGHT", leftFrame, "RIGHT", -spacing, 0)
+
+            -- add note
+            label:SetPoint("TOPLEFT", horizontalRule, "BOTTOMLEFT", 0, -spacing)
+            label:SetPoint("TOPRIGHT", horizontalRule, "BOTTOMRIGHT", 0, -spacing)
+            label:SetJustifyH("LEFT")
+            label:SetWordWrap(true)
+            label:SetText(rowData.text)
+        
+            -- update y offset
+            currentY = currentY - (label:GetStringHeight() + horizontalRule:GetHeight() + 30)
+        elseif rowData.type == "data" then
+            -- column 1 is a label
+            label:SetPoint("TOPLEFT", leftFrame, "TOPLEFT", spacing, currentY)
+            label:SetWidth(labelWidth)
+            label:SetJustifyH("LEFT")
+            label:SetText(rowData.label .. ":")
+            
+            -- column 2 is an edit box
+            local editBox = self:CreateEditBox(leftFrame, editBoxWidth, label:GetHeight(), rowData.disable)
+            editBox:SetPoint("LEFT", label, "RIGHT", columnSpacing, 0)
+            editBox:SetPoint("RIGHT", leftFrame, "RIGHT", spacing * -1, 0)
+            editBox:SetText(rowData.text)
+        
+            -- update y offset
+            currentY = currentY - (label:GetStringHeight() + spacing)
+        end
     end
 
-    -- TODO: look at CurseForge to see if they have a variable for translators
-    -- right hand side
-    local aboutRightFrame = AceGUI:Create("InlineGroup")
-    aboutRightFrame:SetLayout("List")
-    aboutRightFrame:SetTitle("Translators")
-    aboutRightFrame:SetRelativeWidth(0.4)
-    aboutRightFrame:SetFullHeight(true)
-    aboutFrame:AddChild(aboutRightFrame)
-end
+    -- reset y offset
+    currentY = -15
 
---[[---------------------------------------------------------------------------
-    Function:   AddInstruction
-    Purpose:    Add an instruction step to the instructions frame.
------------------------------------------------------------------------------]]
-function ABSync:AddInstruction(parent, i, instruct, addSpacer)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
+    -- right hand side label
+    local rightLabel = aboutFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    rightLabel:SetPoint("TOPLEFT", leftFrame, "TOPRIGHT", 10, 0)
+    rightLabel:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", 0, 0)
+    rightLabel:SetHeight(30)
+    rightLabel:SetJustifyH("LEFT")
+    rightLabel:SetText("Translators")
 
-    -- check addSpacer
-    if not addSpacer or addSpacer == nil then
-        addSpacer = false
+    -- right hand side frame
+    local rightFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
+    rightFrame:SetPoint("TOPLEFT", rightLabel, "BOTTOMLEFT", 0, 0)
+    rightFrame:SetPoint("BOTTOMRIGHT", aboutFrame, "BOTTOMRIGHT", 0, 0)
+
+    -- add scroll frame to right hand side
+    local rightScrollFrame = CreateFrame("ScrollFrame", nil, rightFrame, "UIPanelScrollFrameTemplate")
+    rightScrollFrame:SetPoint("TOPLEFT", rightFrame, "TOPLEFT", 0, 0)
+    rightScrollFrame:SetPoint("BOTTOMRIGHT", rightFrame, "BOTTOMRIGHT", -25, 0)
+
+    -- add scroll content frame
+    local rightScrollContentFrame = CreateFrame("Frame", nil, rightScrollFrame)
+    rightScrollContentFrame:SetSize(rightScrollFrame:GetWidth() - 20, rightFrame:GetHeight() - 10)
+    rightScrollFrame:SetScrollChild(rightScrollContentFrame)
+
+    -- thank you
+    local thankYou = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    thankYou:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -spacing)
+    thankYou:SetPoint("TOPRIGHT", rightScrollContentFrame, "TOPRIGHT", -spacing, -spacing)
+    thankYou:SetJustifyH("LEFT")
+    thankYou:SetText("Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!")
+    thankYou:SetWordWrap(true)
+
+    -- reset y offset
+    currentY = -15
+
+    -- add translators
+    for _, localeData in pairs(localeAuthors) do
+        -- locale name
+        local localeLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        localeLabel:SetPoint("TOPLEFT", thankYou, "BOTTOMLEFT", 0, currentY)
+        localeLabel:SetJustifyH("LEFT")
+        localeLabel:SetText(ABSync.colors.orange .. localeData.name .. ":|r")
+        
+        -- update y offset
+        currentY = currentY - (localeLabel:GetHeight() + 5)
+
+        -- loop over people and build string
+        local personText = ""
+        local personFound = false
+        for idx, person in pairs(localeData.people) do
+            if idx > 1 then
+                personText = personText .. ", "
+            end
+            personText = personText .. person
+            personFound = true
+        end
+
+        -- if no translators, show none found
+        if personFound == false then
+            personText = "None"
+        end
+
+        -- create label
+        local personLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        personLabel:SetPoint("TOPLEFT", localeLabel, "TOPRIGHT", spacing, 0)
+        personLabel:SetPoint("RIGHT", rightScrollContentFrame, "RIGHT", -spacing, 0)
+        personLabel:SetJustifyH("LEFT")
+        personLabel:SetWordWrap(true)
+        personLabel:SetText(personText)
+
+        -- add extra spacing between locales
+        currentY = currentY - personLabel:GetHeight()
     end
 
-    -- instantiate label
-    local step = AceGUI:Create("Label")
+    -- -- create the main about frame
+    -- local aboutFrame = AceGUI:Create("SimpleGroup")
+    -- aboutFrame:SetLayout("Flow")
+    -- parent:AddChild(aboutFrame)
 
-    -- add the index as the instruction number and then the text
-    step:SetText(("%d. %s"):format(i, instruct))
-    step:SetFullWidth(true)
-    parent:AddChild(step)
+    -- -- left hand side
+    -- local aboutLeftFrame = AceGUI:Create("SimpleGroup")
+    -- aboutLeftFrame:SetLayout("Flow")
+    -- aboutLeftFrame:SetRelativeWidth(0.6)
+    -- aboutLeftFrame:SetFullHeight(true)
+    -- aboutFrame:AddChild(aboutLeftFrame)
 
-    -- add the spacer after the text
-    if addSpacer == true then
-        local spacer = AceGUI:Create("Label")
-        spacer:SetText(" ")
-        spacer:SetFullWidth(true)
-        parent:AddChild(spacer)
-    end
+    -- -- add frame for padding left hand
+    -- local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
+    -- aboutLeftFramePadding:SetLayout("Flow")
+    -- aboutLeftFramePadding:SetRelativeWidth(0.95)
+    -- aboutLeftFrame:AddChild(aboutLeftFramePadding)
+
+    -- -- loop over the ABSync.dataRows.text table and call the function for each iteration
+    -- for _, id in pairs(data.order) do
+    --     self:AddAboutLeftHandLine(aboutLeftFramePadding, data.text[id])
+    -- end
+
+    -- -- TODO: look at CurseForge to see if they have a variable for translators
+    -- -- right hand side
+    -- local aboutRightFrame = AceGUI:Create("InlineGroup")
+    -- aboutRightFrame:SetLayout("List")
+    -- aboutRightFrame:SetTitle("Translators")
+    -- aboutRightFrame:SetRelativeWidth(0.4)
+    -- aboutRightFrame:SetFullHeight(true)
+    -- aboutFrame:AddChild(aboutRightFrame)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2364,7 +2571,7 @@ function ABSync:CreateIntroductionFrame(parent)
     instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
     -- create title for instructions frame
-    local title = instructionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local title = instructionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", instructionsFrame, "TOPLEFT", 10, -10)
     title:SetPoint("TOPRIGHT", instructionsFrame, "TOPRIGHT", -10, -10)
     title:SetHeight(labelHeight)
@@ -3723,6 +3930,7 @@ function ABSync:CreateEditBox(parent, width, height, readOnly)
     
     if readOnly then
         editBox:SetEnabled(false)
+        editBox:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
     end
     
     return editBox
