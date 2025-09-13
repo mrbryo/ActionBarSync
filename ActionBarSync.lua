@@ -14,6 +14,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ABSync.optionLocName, ABSync.locale
 
 -- addon access to UI elements
 ABSync.ui = {
+    label = {},
     editbox = {},
     scroll = {},
     group = {},
@@ -81,8 +82,7 @@ ABSync.uitabs = {
     ["tabs"] = {
         ["about"] = "About",
         ["introduction"] = "Introduction",
-        ["share"] = "Share",
-        ["sync"] = "Sync",
+        ["sharesync"] = "Share/Sync",
         ["last_sync_errors"] = "Last Sync Errors",
         ["lookup"] = "Lookup",
         ["backup"] = "Backup/Restore",
@@ -91,8 +91,7 @@ ABSync.uitabs = {
     ["order"] = {
         "about",
         "introduction",
-        "share",
-        "sync",
+        "sharesync",
         "last_sync_errors",
         "lookup",
         "backup",
@@ -557,21 +556,39 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   FormatDateString
-    Purpose:    Convert a date string from YYYYMMDDHHMISS format to YYYY, Mon DD HH:MI:SS format.
+    Purpose:    Convert a date string from YYYYMMDDHHMISS or YYYY-MM-DD HH:MI:SS format to YYYY, Mon DD HH:MI:SS format.
 -----------------------------------------------------------------------------]]
 function ABSync:FormatDateString(dateString)
     -- validate input
-    if not dateString or type(dateString) ~= "string" or string.len(dateString) ~= 14 then
+    if not dateString or type(dateString) ~= "string" then
         return "Invalid Date"
     end
     
-    -- extract components from YYYYMMDDHHMISS
-    local year = string.sub(dateString, 1, 4)
-    local month = tonumber(string.sub(dateString, 5, 6))
-    local day = string.sub(dateString, 7, 8)
-    local hour = string.sub(dateString, 9, 10)
-    local minute = string.sub(dateString, 11, 12)
-    local second = string.sub(dateString, 13, 14)
+    local year, month, day, hour, minute, second
+    
+    -- Check for YYYY-MM-DD HH:MI:SS format (19 characters with spaces and dashes)
+    if string.len(dateString) == 19 and string.match(dateString, "^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$") then
+        -- Extract components from YYYY-MM-DD HH:MI:SS
+        year = string.sub(dateString, 1, 4)
+        month = tonumber(string.sub(dateString, 6, 7))
+        day = string.sub(dateString, 9, 10)
+        hour = string.sub(dateString, 12, 13)
+        minute = string.sub(dateString, 15, 16)
+        second = string.sub(dateString, 18, 19)
+        
+    -- Check for YYYYMMDDHHMISS format (14 characters, all digits)
+    elseif string.len(dateString) == 14 and string.match(dateString, "^%d%d%d%d%d%d%d%d%d%d%d%d%d%d$") then
+        -- Extract components from YYYYMMDDHHMISS
+        year = string.sub(dateString, 1, 4)
+        month = tonumber(string.sub(dateString, 5, 6))
+        day = string.sub(dateString, 7, 8)
+        hour = string.sub(dateString, 9, 10)
+        minute = string.sub(dateString, 11, 12)
+        second = string.sub(dateString, 13, 14)
+        
+    else
+        return "Invalid Date"
+    end
     
     -- month names
     local monthNames = {
@@ -2699,47 +2716,72 @@ function ABSync:CreateIntroductionFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UpdateLastScanLabel
+    Purpose:    Update the last scan label with the latest scan date/time.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateLastScanLabel()
+    self.ui.label.lastScan:SetText(self:FormatDateString(self.db.char.lastScan))
+end
+
+--[[---------------------------------------------------------------------------
     Function:   CreateScanFrame
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateScanFrame()
+function ABSync:CreateScanFrameContent(parent)
     -- debugging
-    local funcName = "CreateScanFrame"
+    local funcName = "CreateScanFrameContent"
 
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
+    -- add additional y offset to add spacing below the portrait art
+    local offsetY = 10
 
-    -- create group
-    local scanFrame = AceGUI:Create("InlineGroup")
-    scanFrame:SetTitle("Scan Bars")
-    scanFrame:SetLayout("List")
+    -- track content height
+    local contentHeight = 0
 
     -- add label
-    local label = AceGUI:Create("Label")
-    label:SetText("Last Scan on this Character")
-    label:SetFullWidth(true)
-    scanFrame:AddChild(label)
+    local scanTitle = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    scanTitle:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    scanTitle:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    scanTitle:SetJustifyH("LEFT")
+    scanTitle:SetText("Scan")
+    contentHeight = contentHeight + scanTitle:GetHeight()
 
-    -- add disabled edit box
-    self.ui.editbox.lastScan = AceGUI:Create("EditBox")
-    self.ui.editbox.lastScan:SetFullWidth(true)
-    self.ui.editbox.lastScan:SetDisabled(true) -- make it read-only
-    scanFrame:AddChild(self.ui.editbox.lastScan)
+    -- add inset frame
+    local scanInsetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    scanInsetFrame:SetPoint("TOPLEFT", scanTitle, "BOTTOMLEFT", 0, 0)
+    scanInsetFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
-    -- add scan button
-    local button = AceGUI:Create("Button")
-    button:SetText("Scan Now")
-    button:SetFullWidth(true)
-    button:SetCallback("OnClick", function()
-        -- refresh of the shared data is done in this function too
+    -- last scan title
+    local lastScanTitle = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    lastScanTitle:SetPoint("TOPLEFT", scanInsetFrame, "TOPLEFT", 10, -offsetY)
+    lastScanTitle:SetJustifyH("LEFT")
+    lastScanTitle:SetText(("%s%s:|r"):format(self.colors.orange, L["Last Scan on this Character"]))
+    contentHeight = contentHeight + lastScanTitle:GetHeight() + offsetY
+    print(funcName .. " - contentHeight after lastScanTitle: " .. tostring(contentHeight))
+
+    -- last scan date/time label
+    self.ui.label.lastScan = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    self.ui.label.lastScan:SetPoint("TOPLEFT", lastScanTitle, "BOTTOMLEFT", 0, -offsetY)
+    self.ui.label.lastScan:SetJustifyH("LEFT")
+    self:UpdateLastScanLabel()
+    contentHeight = contentHeight + self.ui.label.lastScan:GetHeight() + offsetY
+    print(funcName .. " - contentHeight after lastScan: " .. tostring(contentHeight))
+
+    -- scan button
+    local scanButton = self:CreateStandardButton(scanInsetFrame, "Scan Now", 100, function()
         ABSync:GetActionBarData()
-        local playerID = ABSync:GetPlayerNameKey()
-        ABSync:UpdateShareTab(playerID, "OnClick")
+        ABSync:UpdateLastScanLabel()
+        ABSync:UpdateShareCheckboxes(shareFrame)
     end)
-    scanFrame:AddChild(button)
+    scanButton:SetPoint("TOPLEFT", self.ui.label.lastScan, "BOTTOMLEFT", 0, -offsetY)
+    contentHeight = contentHeight + scanButton:GetHeight() + offsetY
+    print(funcName .. " - contentHeight after scanButton: " .. tostring(contentHeight))
 
-    -- return the frame
-    return scanFrame
+    -- add in offsetY for padding below last item
+    contentHeight = contentHeight + offsetY
+    print(funcName .. " - final contentHeight: " .. tostring(contentHeight))
+
+    -- return the height of all the items
+    return contentHeight
 end
 
 --[[---------------------------------------------------------------------------
@@ -2917,43 +2959,29 @@ end
     Function:   CreateShareCheckboxes
     Purpose:    Create checkboxes for each action bar to select which action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareCheckboxes(playerID, funcName)
+function ABSync:CreateShareCheckboxes(parent)
     -- for debugging
     local funcName = "CreateShareCheckboxes"
 
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
+    -- get the player ID for the current profile
+    local playerID = self:GetPlayerNameKey()
 
     -- get action bar names
     local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
+
+    -- track y offset
+    local offsetY = 10
     
     -- loop over the action bars and create a checkbox for each one
     for _, checkboxName in pairs(actionBars) do
         -- create a checkbox for each action bar
-        local checkBox = AceGUI:Create("CheckBox")
-        checkBox:SetLabel(checkboxName)
-
-        -- determine checkbox value; checkboxName is the name of the action bar
-        local checkboxValue = self:GetBarToShare(checkboxName, playerID)
-        -- self:Print(("(%s) Checkbox '%s' initial value is %s..."):format(funcName, checkboxName, tostring(checkboxValue)))
-
-        -- set the checkbox initial value
-        checkBox:SetValue(checkboxValue)
-        -- checkBox:SetFullWidth(true)
-
-        -- set callback for when checkbox is clicked, only need value
-        checkBox:SetCallback("OnValueChanged", function(data)
-            -- keep for looking at data table values
-            -- for k, v in pairs(data) do
-            --     print(("Checkbox Data Key: %s - Value: %s"):format(k, tostring(v)))
-            -- end
-            -- self:Print(("(%s) Checkbox '%s' now %s..."):format("OnValueChanged", checkboxName, tostring(data.checked)))
-            -- update the profile barsToSync value
-            self:SetBarToShare(checkboxName, data.checked)
+        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, playerID), function(checked)
+            ABSync:SetBarToShare(checkboxName, checked)
         end)
 
-        -- add the checkbox to the share frame
-        self.ui.group.shareFrame:AddChild(checkBox)
+        -- position the checkbox
+        checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -offsetY)
+        offsetY = offsetY + (checkBox:GetHeight())
     end
 end
 
@@ -2970,43 +2998,76 @@ function ABSync:UpdateShareTab(playerID, funcName)
     self:CreateShareCheckboxes(playerID, funcName)
 end
 
+function ABSync:CreateShareFrameContent(parent, padding)
+    -- title
+    local shareTitle = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    shareTitle:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    shareTitle:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    shareTitle:SetJustifyH("LEFT")
+    shareTitle:SetText("Share")
+
+    -- create inset frame
+    local shareFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    shareFrame:SetPoint("TOPLEFT", shareTitle, "BOTTOMLEFT", 0, 0)
+    shareFrame:SetPoint("TOPRIGHT", shareTitle, "BOTTOMRIGHT", 0, 0)
+    shareFrame:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)
+
+    -- create scroll frame
+    local shareScroll = CreateFrame("ScrollFrame", nil, shareFrame, "UIPanelScrollFrameTemplate")
+    shareScroll:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 5, -5)
+    shareScroll:SetPoint("BOTTOMRIGHT", shareFrame, "BOTTOMRIGHT", -27, 5)
+
+    -- create scroll content frame
+    local shareScrollContent = CreateFrame("Frame", nil, shareScroll)
+    shareScrollContent:SetWidth(shareScroll:GetWidth() - 20)
+    shareScrollContent:SetHeight(shareScroll:GetHeight() - 10)
+    shareScroll:SetScrollChild(shareScrollContent)
+
+    -- initial add of checkboxes
+    self:CreateShareCheckboxes(shareScrollContent)
+end
+
 --[[---------------------------------------------------------------------------
-    Function:   CreateShareFrame
+    Function:   CreateShareSyncFrame
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareFrame(playerID)
+function ABSync:CreateShareSyncFrame(playerID, parent)
     -- for debugging
-    local funcName = "CreateShareFrame"
+    local funcName = "CreateShareSyncFrame"
 
     -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
     local AceGUI = LibStub("AceGUI-3.0")
 
+    -- standard variables
+    local padding = 10
+
     -- create main frame
-    local mainShareFrame = AceGUI:Create("SimpleGroup")
-    mainShareFrame:SetLayout("List")
-    mainShareFrame:SetFullWidth(true)
+    local mainShareFrame = CreateFrame("Frame", nil, parent)
+    mainShareFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
+    mainShareFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, padding)
+
+    -- create title for share frame
+    local title = mainShareFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", mainShareFrame, "TOPLEFT", 0, 0)
+    title:SetPoint("TOPRIGHT", mainShareFrame, "TOPRIGHT", 0, 0)
+    title:SetHeight(30)
+    title:SetJustifyH("CENTER")
+    title:SetText("Share & Sync")
 
     -- create the scan frame
-    local triggerScanFrame = self:CreateScanFrame()
-    mainShareFrame:AddChild(triggerScanFrame)
+    local scanFrame = CreateFrame("Frame", nil, mainShareFrame)
+    scanFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -padding)
+    scanFrame:SetWidth(200)
+    scanFrame:SetHeight(self:CreateScanFrameContent(scanFrame, padding))
 
-    -- create share frame
-    self.ui.group.shareFrame = AceGUI:Create("InlineGroup")
-    -- local shareFrame = AceGUI:Create("InlineGroup")
-    self.ui.group.shareFrame:SetTitle("Share")
-    self.ui.group.shareFrame:SetLayout("Flow")
-    mainShareFrame:AddChild(self.ui.group.shareFrame)
-
-    -- add a multiselect for sharing which action bars to share
-    -- self:CreateShareCheckboxes(playerID)
-
-    -- update data
-    self:UpdateShareTab(playerID, funcName)
-
-    -- if dataChanged == true then
-    --     -- trigger update for options UI
-    --     LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
-    -- end
+    -- create the share frame
+    local shareFrame = CreateFrame("Frame", nil, mainShareFrame)
+    shareFrame:SetPoint("TOPLEFT", scanFrame, "BOTTOMLEFT", 0, -padding)
+    shareFrame:SetPoint("TOPRIGHT", scanFrame, "BOTTOMRIGHT", 0, -padding)
+    shareFrame:SetPoint("BOTTOM", mainShareFrame, "BOTTOM", 0, 0)
+    self:CreateShareFrameContent(shareFrame, padding)
+    
+    -- self:CreateShareCheckboxes(shareFrame)
 
     -- finally return the frame
     return mainShareFrame
@@ -3662,7 +3723,6 @@ function ABSync:ShowUI()
     local mainFrame = ABSync:CreateMainFrame()
 
     -- create tab group
-    -- local tabGroup, tabButtons = 
     ABSync:CreateTabSystem(mainFrame)
 
     -- create content area
@@ -3740,10 +3800,9 @@ function ABSync:ShowTabContent(tabKey)
     elseif tabKey == "introduction" then
         self.db.profile.mytab = "introduction"
         self:CreateIntroductionFrame(ABSync.ui.contentFrame)
-    elseif tabKey == "share" then
-        self.db.profile.mytab = "share"
-        local shareFrame = self:CreateShareFrame(playerID)
-        tabGroup:AddChild(shareFrame)
+    elseif tabKey == "sharesync" then
+        self.db.profile.mytab = "sharesync"
+        self:CreateShareSyncFrame(playerID, ABSync.ui.contentFrame)
     end
 end
 
@@ -3874,10 +3933,23 @@ end
     Returns:    The created ScrollFrame and its child Frame for content.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateContentFrame(parent)
+    -- add footer
+    local footer = CreateFrame("Frame", nil, parent)
+    footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+    footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    footer:SetHeight(30)
+
+    -- create close button
+    local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
+        parent:Hide()
+    end)
+    local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
+    closeButton:SetPoint("RIGHT", footer, "RIGHT", -buttonOffset, 0)
+
     -- create a frame to hold the content
     local contentFrame = CreateFrame("Frame", nil, parent)
     contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
-    contentFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
 
     -- return the created frame
     return contentFrame
@@ -3937,7 +4009,7 @@ function ABSync:CreateEditBox(parent, width, height, readOnly)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateCheckBox
+    Function:   CreateCheckbox
     Purpose:    Replace AceGUI checkboxes with standard check buttons.
     Arguments:  parent       - The parent frame to attach this frame to
                 text         - The label text for the checkbox
@@ -3948,11 +4020,17 @@ end
 Usage example:
 
 ----------------------------------------------------------------------------]]
-function ABSync:CreateCheckBox(parent, text, initialValue, onChanged)
-    local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
+function ABSync:CreateCheckbox(parent, text, initialValue, onChanged)
+    -- create checkbox
+    local checkbox = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
+
+    -- set its label
     checkbox.Text:SetText(text)
+
+    -- set if its checked or not
     checkbox:SetChecked(initialValue)
-    
+
+    -- set the OnClick event function to the onChanged parameter function
     checkbox:SetScript("OnClick", function(self)
         local checked = self:GetChecked()
         if onChanged then
@@ -3960,6 +4038,7 @@ function ABSync:CreateCheckBox(parent, text, initialValue, onChanged)
         end
     end)
     
+    -- finally return the checkbox object
     return checkbox
 end
 

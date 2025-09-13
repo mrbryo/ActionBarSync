@@ -156,4 +156,5 @@ L["Portuguese (Brazil)"] = "Portuguese (Brazil)"
 L["Russian"] = "Russian"
 L["Chinese (Simplified)"] = "Chinese (Simplified)"
 L["Chinese (Traditional)"] = "Chinese (Traditional)"
+L["Last Scan on this Character"] = "Last Scan on this Character"
 --@end-do-not-package@
