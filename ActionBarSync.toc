@@ -29,5 +29,10 @@ locale\zhTW.lua
 ## Main
 ActionBarSync.lua
 
+## UI Tabs
+tabs\About.lua
+tabs\Introduction.lua
+tabs\ShareSync.lua
+
 ## Libraries
-StandardFunctions.lua
+libs\StandardFunctions.lua

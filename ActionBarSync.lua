@@ -11,6 +11,7 @@ local ABSync = _G.ABSync
 -- enable localization
 ABSync.localeSilent = false
 local L = LibStub("AceLocale-3.0"):GetLocale(ABSync.optionLocName, ABSync.localeSilent)
+ABSync.localeData = L
 
 -- addon access to UI elements
 ABSync.ui = {
@@ -22,16 +23,24 @@ ABSync.ui = {
 }
 
 -- colors
-ABSync.colors = {
-    white = "|cffffffff",
-    yellow = "|cffffff00",
-    green = "|cff00ff00",
-    blue = "|cff0000ff",
-    purple = "|cffff00ff",
-    red = "|cffff0000",
-    orange = "|cffff7f00",
-    gray = "|cff7f7f7f",
-    label = "|cffffd100"
+ABSync.constants = {
+    colors = {
+        white = "|cffffffff",
+        yellow = "|cffffff00",
+        green = "|cff00ff00",
+        blue = "|cff0000ff",
+        purple = "|cffff00ff",
+        red = "|cffff0000",
+        orange = "|cffff7f00",
+        gray = "|cff7f7f7f",
+        label = "|cffffd100"
+    },
+    ui = {
+        checkbox = {
+            size = 16,
+            padding = 5
+        }
+    }
 }
 
 -- addon ui columns
@@ -2213,509 +2222,6 @@ function ABSync:AddAboutLeftHandLine(parent, data)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateAboutFrame
-    Purpose:    Create the About frame for the addon.
------------------------------------------------------------------------------]]
-function ABSync:CreateAboutFrame(parent)
-    -- create main frame
-    local aboutFrame = CreateFrame("Frame", nil, parent)
-    aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -10)
-    aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
-
-    -- tooltip text
-    data = {
-        order = {
-            "author",
-            "version",
-            "supportnote",
-            "patreon",
-            "coffee",
-            "issuenote",
-            "issues",
-            "localeauthors",
-            "localization",
-        },
-        text = {
-            ["author"] = {
-                type = "data",
-                label = "Author",
-                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
-                disable = true,
-                tip = {
-                    disable = true,
-                    text = "",
-                },
-            },
-            ["version"] = {
-                type = "data",
-                label = "Version",
-                text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
-                disable = true,
-                tip = {
-                    disable = true,
-                    text = ""
-                },
-            },
-            ["supportnote"] = {
-                type = "note",
-                text = "If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!",
-            },
-            ["patreon"] = {
-                type = "data",
-                label = "Patreon",
-                text = "https://www.patreon.com/Bryo",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "If you like this addon and want to support me, please consider becoming a patron."
-                }
-            },
-            ["coffee"] = {
-                type = "data",
-                label = "Buy Me a Coffee",
-                text = "https://www.buymeacoffee.com/mrbryo",
-                disable = false,
-            },
-            ["issuenote"] = {
-                type = "note",
-                text = "If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits.",
-            },
-            ["issues"] = {
-                type = "data",
-                label = "Issues",
-                text = "https://github.com/mrbryo/ActionBarSync/issues",
-                disable = false,
-            },
-            ["localeauthors"] = {
-                type = "note",
-                text = "Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above.",
-            },
-            ["localization"] = {
-                type = "data",
-                label = "Localization",
-                text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
-                disable = false,
-                tip = {
-                    disable = false,
-                    text = "Help translate this addon into your language.",
-                },
-            }
-        }
-    }
-
-    -- localizations by data structure
-    local localeAuthors = {
-        {
-            name = L["English"],
-            people = {
-                "mrbryo",
-            }
-        },
-        {
-            name = L["German"],
-            people = {}
-        },
-        {
-            name = L["Spanish (Spain)"],
-            people = {}
-        },
-        {
-            name = L["Spanish (Mexico)"],
-            people = {}
-        },
-        {
-            name = L["French"],
-            people = {}
-        },
-        {
-            name = L["Italian"],
-            people = {}
-        },
-        {
-            name = L["Korean"],
-            people = {}
-        },
-        {
-            name = L["Portuguese (Brazil)"],
-            people = {}
-        },
-        {
-            name = L["Russian"],
-            people = {}
-        },
-        {
-            name = L["Chinese (Simplified)"],
-            people = {}
-        },
-        {
-            name = L["Chinese (Traditional)"],
-            people = {}
-        },
-    }
-
-    --@debug@
-    if self.db.char.isDevMode == true then
-        table.insert(localeAuthors, { 
-            name = L["English"],
-            people = {
-                "Bryo",
-                "Johnny",
-                "Raffi",
-                "Mordra",
-                "Khalan",
-                "Evilbunny",
-                "Hyesung",
-                "Guilherme",
-                "Dmitry",
-                "Xiaojun",
-                "Yuchen",
-            }
-        })
-    end
-    --@end-debug@
-
-    -- start under the portrait unless i have a header which shifts to the right of the portrait
-    local topOffset = -50
-
-    -- tracking y offset
-    local currentY = -15 
-
-    -- spacing between lines
-    local spacing = 15
-
-    -- standard label dimensions
-    local labelWidth = 120
-
-    -- spacing between columns
-    local columnSpacing = 10
-
-    -- create title for about frame
-    local title = aboutFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", aboutFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", 0, 0)
-    title:SetHeight(30)
-    title:SetJustifyH("CENTER")
-    title:SetText("About")
-
-    -- left hand side
-    local leftFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
-    leftFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
-    leftFrame:SetWidth(aboutFrame:GetWidth() * 0.6 - 20)
-    leftFrame:SetPoint("BOTTOM", aboutFrame, "BOTTOM", 0, 0)
-
-    -- loop over the data and build the ui
-    for _, id in pairs(data.order) do
-        -- based on the order table get the data based on the id
-        local rowData = data.text[id]
-
-        -- instantiate label
-        local label = leftFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-
-        -- check type to proceed
-        if rowData.type == "note" then
-            currentY = currentY - 5
-            
-            -- insert horizontal rule
-            local horizontalRule = leftFrame:CreateTexture(nil, "ARTWORK")
-            horizontalRule:SetTexture("Interface\\Common\\UI-TooltipDivider-Transparent")
-            horizontalRule:SetHeight(10)
-            horizontalRule:SetPoint("TOPLEFT", leftFrame, "TOPLEFT", spacing, currentY)
-            horizontalRule:SetPoint("RIGHT", leftFrame, "RIGHT", -spacing, 0)
-
-            -- add note
-            label:SetPoint("TOPLEFT", horizontalRule, "BOTTOMLEFT", 0, -spacing)
-            label:SetPoint("TOPRIGHT", horizontalRule, "BOTTOMRIGHT", 0, -spacing)
-            label:SetJustifyH("LEFT")
-            label:SetWordWrap(true)
-            label:SetText(rowData.text)
-        
-            -- update y offset
-            currentY = currentY - (label:GetStringHeight() + horizontalRule:GetHeight() + 30)
-        elseif rowData.type == "data" then
-            -- column 1 is a label
-            label:SetPoint("TOPLEFT", leftFrame, "TOPLEFT", spacing, currentY)
-            label:SetWidth(labelWidth)
-            label:SetJustifyH("LEFT")
-            label:SetText(rowData.label .. ":")
-            
-            -- column 2 is an edit box
-            local editBox = self:CreateEditBox(leftFrame, editBoxWidth, label:GetHeight(), rowData.disable)
-            editBox:SetPoint("LEFT", label, "RIGHT", columnSpacing, 0)
-            editBox:SetPoint("RIGHT", leftFrame, "RIGHT", spacing * -1, 0)
-            editBox:SetText(rowData.text)
-        
-            -- update y offset
-            currentY = currentY - (label:GetStringHeight() + spacing)
-        end
-    end
-
-    -- reset y offset
-    currentY = -15
-
-    -- right hand side label
-    local rightLabel = aboutFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    rightLabel:SetPoint("TOPLEFT", leftFrame, "TOPRIGHT", 10, 0)
-    rightLabel:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", 0, 0)
-    rightLabel:SetHeight(30)
-    rightLabel:SetJustifyH("LEFT")
-    rightLabel:SetText("Translators")
-
-    -- right hand side frame
-    local rightFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
-    rightFrame:SetPoint("TOPLEFT", rightLabel, "BOTTOMLEFT", 0, 0)
-    rightFrame:SetPoint("BOTTOMRIGHT", aboutFrame, "BOTTOMRIGHT", 0, 0)
-
-    -- add scroll frame to right hand side
-    local rightScrollFrame = CreateFrame("ScrollFrame", nil, rightFrame, "UIPanelScrollFrameTemplate")
-    rightScrollFrame:SetPoint("TOPLEFT", rightFrame, "TOPLEFT", 0, 0)
-    rightScrollFrame:SetPoint("BOTTOMRIGHT", rightFrame, "BOTTOMRIGHT", -25, 0)
-
-    -- add scroll content frame
-    local rightScrollContentFrame = CreateFrame("Frame", nil, rightScrollFrame)
-    rightScrollContentFrame:SetSize(rightScrollFrame:GetWidth() - 20, rightFrame:GetHeight() - 10)
-    rightScrollFrame:SetScrollChild(rightScrollContentFrame)
-
-    -- thank you
-    local thankYou = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    thankYou:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -spacing)
-    thankYou:SetPoint("TOPRIGHT", rightScrollContentFrame, "TOPRIGHT", -spacing, -spacing)
-    thankYou:SetJustifyH("LEFT")
-    thankYou:SetText("Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!")
-    thankYou:SetWordWrap(true)
-
-    -- reset y offset
-    currentY = -15
-
-    -- add translators
-    for _, localeData in pairs(localeAuthors) do
-        -- locale name
-        local localeLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        localeLabel:SetPoint("TOPLEFT", thankYou, "BOTTOMLEFT", 0, currentY)
-        localeLabel:SetJustifyH("LEFT")
-        localeLabel:SetText(ABSync.colors.orange .. localeData.name .. ":|r")
-        
-        -- update y offset
-        currentY = currentY - (localeLabel:GetHeight() + 5)
-
-        -- loop over people and build string
-        local personText = ""
-        local personFound = false
-        for idx, person in pairs(localeData.people) do
-            if idx > 1 then
-                personText = personText .. ", "
-            end
-            personText = personText .. person
-            personFound = true
-        end
-
-        -- if no translators, show none found
-        if personFound == false then
-            personText = "None"
-        end
-
-        -- create label
-        local personLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        personLabel:SetPoint("TOPLEFT", localeLabel, "TOPRIGHT", spacing, 0)
-        personLabel:SetPoint("RIGHT", rightScrollContentFrame, "RIGHT", -spacing, 0)
-        personLabel:SetJustifyH("LEFT")
-        personLabel:SetWordWrap(true)
-        personLabel:SetText(personText)
-
-        -- add extra spacing between locales
-        currentY = currentY - personLabel:GetHeight()
-    end
-
-    -- -- create the main about frame
-    -- local aboutFrame = AceGUI:Create("SimpleGroup")
-    -- aboutFrame:SetLayout("Flow")
-    -- parent:AddChild(aboutFrame)
-
-    -- -- left hand side
-    -- local aboutLeftFrame = AceGUI:Create("SimpleGroup")
-    -- aboutLeftFrame:SetLayout("Flow")
-    -- aboutLeftFrame:SetRelativeWidth(0.6)
-    -- aboutLeftFrame:SetFullHeight(true)
-    -- aboutFrame:AddChild(aboutLeftFrame)
-
-    -- -- add frame for padding left hand
-    -- local aboutLeftFramePadding = AceGUI:Create("SimpleGroup")
-    -- aboutLeftFramePadding:SetLayout("Flow")
-    -- aboutLeftFramePadding:SetRelativeWidth(0.95)
-    -- aboutLeftFrame:AddChild(aboutLeftFramePadding)
-
-    -- -- loop over the ABSync.dataRows.text table and call the function for each iteration
-    -- for _, id in pairs(data.order) do
-    --     self:AddAboutLeftHandLine(aboutLeftFramePadding, data.text[id])
-    -- end
-
-    -- -- TODO: look at CurseForge to see if they have a variable for translators
-    -- -- right hand side
-    -- local aboutRightFrame = AceGUI:Create("InlineGroup")
-    -- aboutRightFrame:SetLayout("List")
-    -- aboutRightFrame:SetTitle("Translators")
-    -- aboutRightFrame:SetRelativeWidth(0.4)
-    -- aboutRightFrame:SetFullHeight(true)
-    -- aboutFrame:AddChild(aboutRightFrame)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateInstructionsFrame
-    Purpose:    Create the Introduction frame for the addon.
------------------------------------------------------------------------------]]
-function ABSync:CreateIntroductionFrame(parent)
-    -- get instructions
-    local instructions = {
-        "Open the options and set the correct profile. I suggest to leave the default which is for your current character.",
-        "On the |cff00ff00Share|r tab, click the |cff00ff00Scan Now|r button. An initial scan is required for the addon to function.",
-        "Optional, on the |cff00ff00Share|r tab, select which action bars to share.",
-        "On the |cff00ff00Sync|r tab, select the shared action bars from other characters to update this character's action bars.",
-        "On the |cff00ff00Sync|r tab, once the previous step is done, click the |cff00ff00Sync Now|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00Auto Sync on Login|r option.",
-        "Done!",
-    }
-
-    -- FAQ
-    local faq = {
-        "New addon so nothing yet. This is a placeholder.",
-    }
-
-    -- set label height
-    local labelHeight = 30
-    local labelCount = 2
-
-    -- create main instructions frame
-    local instructionsFrame = CreateFrame("Frame", nil, parent)
-    instructionsFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-    -- create title for instructions frame
-    local title = instructionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", instructionsFrame, "TOPLEFT", 10, -10)
-    title:SetPoint("TOPRIGHT", instructionsFrame, "TOPRIGHT", -10, -10)
-    title:SetHeight(labelHeight)
-    title:SetJustifyH("CENTER")
-    title:SetText("Instructions")
-
-    -- create the scroll frame inset frame, parent to the instructions scrolling area
-    local instructionsInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
-    instructionsInsetFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
-    instructionsInsetFrame:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, 0)
-    instructionsInsetFrame:SetHeight((instructionsFrame:GetHeight() - (labelHeight * labelCount)) * 0.5)
-
-    -- create scroll frame for instructions
-    local instructionsScroll = CreateFrame("ScrollFrame", nil, instructionsInsetFrame, "UIPanelScrollFrameTemplate")
-    instructionsScroll:SetPoint("TOPLEFT", instructionsInsetFrame, "TOPLEFT", 5, -5)
-    instructionsScroll:SetPoint("BOTTOMRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", -27, 5)
-
-    -- create content frame for the scroll area
-    local instructionsScrollContent = CreateFrame("Frame", nil, instructionsScroll)
-    instructionsScrollContent:SetWidth(instructionsScroll:GetWidth() - 20)
-    -- TODO: Set Height based on content dynamically!
-    instructionsScrollContent:SetHeight(instructionsInsetFrame:GetHeight() - 10)
-    instructionsScroll:SetScrollChild(instructionsScrollContent)
-
-    -- create faq title
-    local faqTitle = instructionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    faqTitle:SetPoint("TOPLEFT", instructionsInsetFrame, "BOTTOMLEFT", 0, 0)
-    faqTitle:SetPoint("TOPRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", 0, 0)
-    faqTitle:SetHeight(labelHeight)
-    faqTitle:SetJustifyH("CENTER")
-    faqTitle:SetText("Frequently Asked Questions")
-
-    -- create faq content frame
-    local faqInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
-    faqInsetFrame:SetWidth(instructionsScrollContent:GetWidth())
-    faqInsetFrame:SetPoint("TOPLEFT", faqTitle, "BOTTOMLEFT", 0, 0)
-    faqInsetFrame:SetPoint("TOPRIGHT", faqTitle, "BOTTOMRIGHT", 0, 0)
-    faqInsetFrame:SetPoint("BOTTOM", instructionsFrame, "BOTTOM", 0, 15)
-
-    -- create faq scroll frame
-    local faqScroll = CreateFrame("ScrollFrame", nil, faqInsetFrame, "UIPanelScrollFrameTemplate")
-    faqScroll:SetPoint("TOPLEFT", faqInsetFrame, "TOPLEFT", 5, -5)
-    faqScroll:SetPoint("BOTTOMRIGHT", faqInsetFrame, "BOTTOMRIGHT", -27, 5)
-
-    -- create faq content frame
-    local faqScrollContent = CreateFrame("Frame", nil, faqScroll)
-    faqScrollContent:SetWidth(faqScroll:GetWidth() - 20)
-    faqScrollContent:SetHeight(faqScroll:GetHeight() - 10)
-    faqScroll:SetScrollChild(faqScrollContent)
-
-    -- track current Y position for vertical layout
-    local currentY = -10
-    local spacing = 20
-
-    -- Add instruction steps
-    for i, instruct in ipairs(instructions) do
-        -- create instruction label
-        local stepLabel = instructionsScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        stepLabel:SetPoint("TOPLEFT", instructionsScrollContent, "TOPLEFT", 10, currentY)
-        stepLabel:SetPoint("TOPRIGHT", instructionsScrollContent, "TOPRIGHT", -10, currentY)
-        stepLabel:SetText(string.format("%d. %s", i, instruct))
-        stepLabel:SetJustifyH("LEFT")
-        stepLabel:SetWordWrap(true)
-
-        -- calculate height needed for wrapped text
-        local textHeight = stepLabel:GetStringHeight()
-        currentY = currentY - textHeight - spacing
-
-        -- add special button for step 1
-        if i == 1 then
-            local step1Button = CreateFrame("Button", nil, instructionsScrollContent, "GameMenuButtonTemplate")
-            step1Button:SetSize(150, 22)
-            step1Button:SetPoint("TOPLEFT", stepLabel, "BOTTOMLEFT", 15, -10)
-            step1Button:SetText("Open Options")
-            step1Button:SetScript("OnClick", function()
-                LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
-            end)
-            
-            currentY = currentY - 20 -- Account for button height
-        end
-    end
-
-    -- update height of content scroll frame for instructions
-    instructionsScrollContent:SetHeight(math.abs(currentY) + 10)
-
-    -- reset currentY for FAQ section
-    currentY = -10
-
-    -- loop over faq entries
-    for i, faqentry in ipairs(faq) do
-        -- create instruction label
-        local stepLabel = faqScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        stepLabel:SetPoint("TOPLEFT", faqScrollContent, "TOPLEFT", 10, currentY)
-        stepLabel:SetPoint("TOPRIGHT", faqScrollContent, "TOPRIGHT", -10, currentY)
-        stepLabel:SetText(string.format("%d. %s", i, faqentry))
-        stepLabel:SetJustifyH("LEFT")
-        stepLabel:SetWordWrap(true)
-
-        -- calculate height needed for wrapped text
-        local textHeight = stepLabel:GetStringHeight()
-        currentY = currentY - textHeight - spacing
-    end
-
-    -- Add FAQ section
-    -- local faqFrame = self:CreateInlineGroup(instructionsContent, instructionsContent:GetWidth() - 20, 100)
-    -- faqFrame:SetPoint("TOPLEFT", instructionsContent, "TOPLEFT", 10, currentY)
-
-    -- Add FAQ content
-    -- local faqLabel = faqFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    -- faqLabel:SetPoint("TOPLEFT", faqFrame, "TOPLEFT", 15, -25)
-    -- faqLabel:SetPoint("TOPRIGHT", faqFrame, "TOPRIGHT", -15, -25)
-    -- faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")
-    -- faqLabel:SetJustifyH("LEFT")
-    -- faqLabel:SetWordWrap(true)
-
-    -- Update FAQ frame height based on content
-    -- local faqHeight = faqLabel:GetStringHeight() + 40
-    -- faqFrame:SetHeight(faqHeight)
-    -- currentY = currentY - faqHeight - 20
-
-    -- Set the content frame height to accommodate all content
-    -- instructionsContent:SetHeight(math.abs(currentY) + 20)
-
-    return instructionsFrame
-end
-
---[[---------------------------------------------------------------------------
     Function:   UpdateLastScanLabel
     Purpose:    Update the last scan label with the latest scan date/time.
 -----------------------------------------------------------------------------]]
@@ -2724,7 +2230,7 @@ function ABSync:UpdateLastScanLabel()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateScanFrame
+    Function:   CreateScanFrameContent
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateScanFrameContent(parent)
@@ -2738,25 +2244,24 @@ function ABSync:CreateScanFrameContent(parent)
     local contentHeight = 0
 
     -- add label
-    local scanTitle = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    scanTitle:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    scanTitle:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    scanTitle:SetJustifyH("LEFT")
-    scanTitle:SetText("Scan")
-    contentHeight = contentHeight + scanTitle:GetHeight()
+    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    regionLabel:SetJustifyH("LEFT")
+    regionLabel:SetText("Scan")
+    contentHeight = contentHeight + regionLabel:GetHeight()
 
     -- add inset frame
     local scanInsetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    scanInsetFrame:SetPoint("TOPLEFT", scanTitle, "BOTTOMLEFT", 0, 0)
+    scanInsetFrame:SetPoint("TOPLEFT", regionLabel, "BOTTOMLEFT", 0, 0)
     scanInsetFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
     -- last scan title
     local lastScanTitle = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     lastScanTitle:SetPoint("TOPLEFT", scanInsetFrame, "TOPLEFT", 10, -offsetY)
     lastScanTitle:SetJustifyH("LEFT")
-    lastScanTitle:SetText(("%s%s:|r"):format(self.colors.orange, L["Last Scan on this Character"]))
+    lastScanTitle:SetText(("%s%s:|r"):format(ABSync.constants.colors.orange, L["Last Scan on this Character"]))
     contentHeight = contentHeight + lastScanTitle:GetHeight() + offsetY
-    print(funcName .. " - contentHeight after lastScanTitle: " .. tostring(contentHeight))
 
     -- last scan date/time label
     self.ui.label.lastScan = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -2764,7 +2269,6 @@ function ABSync:CreateScanFrameContent(parent)
     self.ui.label.lastScan:SetJustifyH("LEFT")
     self:UpdateLastScanLabel()
     contentHeight = contentHeight + self.ui.label.lastScan:GetHeight() + offsetY
-    print(funcName .. " - contentHeight after lastScan: " .. tostring(contentHeight))
 
     -- scan button
     local scanButton = self:CreateStandardButton(scanInsetFrame, "Scan Now", 100, function()
@@ -2774,11 +2278,9 @@ function ABSync:CreateScanFrameContent(parent)
     end)
     scanButton:SetPoint("TOPLEFT", self.ui.label.lastScan, "BOTTOMLEFT", 0, -offsetY)
     contentHeight = contentHeight + scanButton:GetHeight() + offsetY
-    print(funcName .. " - contentHeight after scanButton: " .. tostring(contentHeight))
 
     -- add in offsetY for padding below last item
     contentHeight = contentHeight + offsetY
-    print(funcName .. " - final contentHeight: " .. tostring(contentHeight))
 
     -- return the height of all the items
     return contentHeight
@@ -2989,89 +2491,14 @@ end
     Function:   UpdateShareTab
     Purpose:    Update the share tab last scan edit box with the latest scan date and time.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateShareTab(playerID, funcName)
-    -- update the data in the lastScan edit box
-    self.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
+-- function ABSync:UpdateShareTab(playerID, funcName)
+--     -- update the data in the lastScan edit box
+--     self.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
 
-    -- update the action bar list
-    self.ui.group.shareFrame:ReleaseChildren()
-    self:CreateShareCheckboxes(playerID, funcName)
-end
-
-function ABSync:CreateShareFrameContent(parent, padding)
-    -- title
-    local shareTitle = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    shareTitle:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    shareTitle:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    shareTitle:SetJustifyH("LEFT")
-    shareTitle:SetText("Share")
-
-    -- create inset frame
-    local shareFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    shareFrame:SetPoint("TOPLEFT", shareTitle, "BOTTOMLEFT", 0, 0)
-    shareFrame:SetPoint("TOPRIGHT", shareTitle, "BOTTOMRIGHT", 0, 0)
-    shareFrame:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)
-
-    -- create scroll frame
-    local shareScroll = CreateFrame("ScrollFrame", nil, shareFrame, "UIPanelScrollFrameTemplate")
-    shareScroll:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 5, -5)
-    shareScroll:SetPoint("BOTTOMRIGHT", shareFrame, "BOTTOMRIGHT", -27, 5)
-
-    -- create scroll content frame
-    local shareScrollContent = CreateFrame("Frame", nil, shareScroll)
-    shareScrollContent:SetWidth(shareScroll:GetWidth() - 20)
-    shareScrollContent:SetHeight(shareScroll:GetHeight() - 10)
-    shareScroll:SetScrollChild(shareScrollContent)
-
-    -- initial add of checkboxes
-    self:CreateShareCheckboxes(shareScrollContent)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateShareSyncFrame
-    Purpose:    Create the share frame for selecting action bars to share.
------------------------------------------------------------------------------]]
-function ABSync:CreateShareSyncFrame(playerID, parent)
-    -- for debugging
-    local funcName = "CreateShareSyncFrame"
-
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- standard variables
-    local padding = 10
-
-    -- create main frame
-    local mainShareFrame = CreateFrame("Frame", nil, parent)
-    mainShareFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    mainShareFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, padding)
-
-    -- create title for share frame
-    local title = mainShareFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", mainShareFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", mainShareFrame, "TOPRIGHT", 0, 0)
-    title:SetHeight(30)
-    title:SetJustifyH("CENTER")
-    title:SetText("Share & Sync")
-
-    -- create the scan frame
-    local scanFrame = CreateFrame("Frame", nil, mainShareFrame)
-    scanFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -padding)
-    scanFrame:SetWidth(200)
-    scanFrame:SetHeight(self:CreateScanFrameContent(scanFrame, padding))
-
-    -- create the share frame
-    local shareFrame = CreateFrame("Frame", nil, mainShareFrame)
-    shareFrame:SetPoint("TOPLEFT", scanFrame, "BOTTOMLEFT", 0, -padding)
-    shareFrame:SetPoint("TOPRIGHT", scanFrame, "BOTTOMRIGHT", 0, -padding)
-    shareFrame:SetPoint("BOTTOM", mainShareFrame, "BOTTOM", 0, 0)
-    self:CreateShareFrameContent(shareFrame, padding)
-    
-    -- self:CreateShareCheckboxes(shareFrame)
-
-    -- finally return the frame
-    return mainShareFrame
-end
+--     -- update the action bar list
+--     self.ui.group.shareFrame:ReleaseChildren()
+--     self:CreateShareCheckboxes(playerID, funcName)
+-- end
 
 --[[---------------------------------------------------------------------------
     Function:   SyncOnValueChanged
@@ -3085,184 +2512,29 @@ function ABSync:SyncOnValueChanged(value, barName, playerID)
     end
 end
 
+function ABSync:GetCheckboxOffsetY(checkbox)
+    return ABSync.constants.ui.checkbox.size + ABSync.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
+end
+
 --[[---------------------------------------------------------------------------
     Function:   CreateSyncCheckbox
     Purpose:    Create a checkbox for syncing action bars.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateSyncCheckbox(barName, playerID, currentPlayerID)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
+function ABSync:CreateSyncCheckbox(parent, barName, playerID, currentPlayerID, padding, offsetY)
+    -- set barName to green and playerID to orange
+    local label = self.constants.colors.green .. barName .. "|r from |cffffa500" .. playerID .. "|r"
+
+    -- change color to all gray because syncing to yourself as same spec is not allowed
+    if playerID == currentPlayerID then
+        label = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
+    end
 
     -- create a checkbox
-    local checkBox = AceGUI:Create("CheckBox")
-    
-    -- set barName to green and playerID to orange
-    local label = "|cff00ff00" .. barName .. "|r from |cffffa500" .. playerID .. "|r"
-    if playerID == currentPlayerID then
-        label = ("%s from %s"):format(barName, playerID)
-    end
-    checkBox:SetLabel(label)
-    checkBox:SetFullWidth(true)
-    
-    -- if they equal then it sets the value to true, otherwise, false
-    checkBox:SetValue(self:GetBarToSync(barName, playerID))
-    checkBox:SetCallback("OnValueChanged", function(_, _, value)
-        local playerID = playerID
-        local barName = barName
-        ABSync:SyncOnValueChanged(value, barName, playerID)
+    local checkBox = self:CreateCheckbox(parent, label, self:GetBarToSync(barName, playerID), function(checked)
+        ABSync:SyncOnValueChanged(checked, barName, playerID)
     end)
-    checkBox:SetDisabled(playerID == currentPlayerID)
-
-    -- finally return a new checkbox
-    return checkBox
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateSyncFrame
-    Purpose:    Create the sync frame for selecting action bars to sync.
------------------------------------------------------------------------------]]
-function ABSync:CreateSyncFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- current player ID
-    local currentPlayerID = self:GetPlayerNameKey()
-
-    -- create main frame
-    local syncFrame = AceGUI:Create("SimpleGroup")
-    syncFrame:SetLayout("Flow")
-    syncFrame:SetFullWidth(true)
-    parent:AddChild(syncFrame)
-
-    -- create frame for check sync on login
-    local loginCheckFrame = AceGUI:Create("InlineGroup")
-    loginCheckFrame:SetTitle("Sync on Login")   -- Sync on Login
-    loginCheckFrame:SetLayout("Flow")
-    loginCheckFrame:SetRelativeWidth(0.5)
-    -- loginCheckFrame:SetFullHeight(true)
-    syncFrame:AddChild(loginCheckFrame)
-
-    -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    local autoMountFilterReset = AceGUI:Create("CheckBox")
-    autoMountFilterReset:SetLabel("Automatically Reset Mount Journal Filters")
-    autoMountFilterReset:SetValue(self.db.profile.autoResetMountFilters)
-    autoMountFilterReset:SetWidth(275)
-    autoMountFilterReset:SetDisabled(self.db.profile.checkOnLogon == false)
-    autoMountFilterReset:SetCallback("OnValueChanged", function(_, _, value)
-        self.db.profile.autoResetMountFilters = value
-    end)
-
-    -- create checkbox for sync on login
-    local loginCheckBox = AceGUI:Create("CheckBox")
-    loginCheckBox:SetLabel("Enable Sync on Login")  -- Enable Sync on Login
-    loginCheckBox:SetValue(false)
-    loginCheckBox:SetCallback("OnValueChanged", function(_, _, value)
-        self.db.profile.checkOnLogon = value
-        if value == true then
-            autoMountFilterReset:SetDisabled(false)
-        else
-            autoMountFilterReset:SetDisabled(true)
-        end
-    end)
-
-    -- add checkbox to login check frame
-    loginCheckFrame:AddChild(loginCheckBox)
-
-    -- add checkbox to login check frame; want it to follow loginCheckBox even through its made first
-    loginCheckFrame:AddChild(autoMountFilterReset)
-
-    -- create frame for manual sync
-    local manualSyncFrame = AceGUI:Create("InlineGroup")
-    manualSyncFrame:SetTitle("Manual Sync")  -- Manual Sync
-    manualSyncFrame:SetLayout("Flow")
-    manualSyncFrame:SetRelativeWidth(0.5)
-    -- manualSyncFrame:SetFullHeight(true)
-    syncFrame:AddChild(manualSyncFrame)
-
-    -- create button for manual sync
-    local manualSyncButton = AceGUI:Create("Button")
-    manualSyncButton:SetText("Sync Now")
-    manualSyncButton:SetWidth(100)
-    manualSyncButton:SetCallback("OnClick", function()
-        self:BeginSync()
-    end)
-    manualSyncFrame:AddChild(manualSyncButton)
-
-    -- create button for manual mount filter reset
-    local manualMountFilterResetButton = AceGUI:Create("Button")
-    manualMountFilterResetButton:SetText("Reset Mount Filters")
-    manualMountFilterResetButton:SetWidth(160)
-    manualMountFilterResetButton:SetCallback("OnClick", function()
-        self:MountJournalFilterReset()
-    end)
-    manualSyncFrame:AddChild(manualMountFilterResetButton)
-
-    -- create frame for listing who can be synced from and their bars
-    local scrollContainer = AceGUI:Create("InlineGroup")
-    scrollContainer:SetTitle("Sync From?")
-    scrollContainer:SetLayout("Fill")
-    scrollContainer:SetFullWidth(true)
-    scrollContainer:SetFullHeight(true)
-    syncFrame:AddChild(scrollContainer)
-    
-    -- create scroll frame
-    local scrollFrame = AceGUI:Create("ScrollFrame")
-    scrollFrame:SetLayout("List")
-    scrollContainer:AddChild(scrollFrame)
-
-    -- loop over data and add checkboxes per character and action bar combo where they are enabled
-    -- track if anything was added or not
-    local sharedActionBarsAdded = false
-
-    -- primary loop is actionBars as it's sorted
-    for _, barName in ipairs(self.db.global.actionBars) do
-        
-        -- verify bar exists in global.barsToSync
-        if self.db.global.barsToSync[barName] ~= nil then
-            
-            -- loop over the barName in global.barsToSync
-            for playerID, buttonData in pairs(self.db.global.barsToSync[barName]) do
-                -- to see if enabled the buttonData must be a table and have at least 1 record
-                -- count variable
-                local foundData = false
-                
-                -- make sure buttonData is a table
-                if type(buttonData) == "table" then
-                    -- next returns the first key in the table or nill if the table is empty
-                    if next(buttonData) then
-                        foundData = true
-                    end
-                end
-
-                -- create a checkbox if data is found
-                if foundData == true then
-                    scrollFrame:AddChild(self:CreateSyncCheckbox(barName, playerID, currentPlayerID))
-                    sharedActionBarsAdded = true
-                end
-            end
-        end
-    end
-
-    -- if no shared action bars were added, then add a label to indicate that
-    if sharedActionBarsAdded == false then
-        local noDataLabel = AceGUI:Create("Label")
-        noDataLabel:SetText("No Shared Action Bars Found")
-        noDataLabel:SetFullWidth(true)
-        scrollFrame:AddChild(noDataLabel)
-    end
-
-    -- set values from db
-    loginCheckBox:SetValue(self.db.profile.checkOnLogon)
-
-    -- --@debug@
-    -- -- for adding 20 rows of fake data
-    -- for i = 1, 20 do
-    --     scrollFrame:AddChild(self:CreateSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
-    -- end
-    -- --@end-debug@
-
-    -- finally return frame
-    -- return syncFrame
+    checkBox:Disable(playerID == currentPlayerID)
+    checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -offsetY)
 end
 
 --[[---------------------------------------------------------------------------
@@ -3432,7 +2704,7 @@ function ABSync:CreateLookupQueryFrame(parent)
 
     -- second row column 1 (column 1 is labels)
     local secondRowCol1 = AceGUI:Create("Label")
-    secondRowCol1:SetText(("%sAction ID:|r"):format(ABSync.colors.label))
+    secondRowCol1:SetText(("%sAction ID:|r"):format(ABSync.constants.colors.label))
     secondRowCol1:SetWidth(labelWidth)
     secondRow:AddChild(secondRowCol1)
 
@@ -3465,7 +2737,7 @@ function ABSync:CreateLookupQueryFrame(parent)
 
     -- third row column 1 for action type label
     local thirdRowCol1 = AceGUI:Create("Label")
-    thirdRowCol1:SetText(("%sAction Type:|r"):format(ABSync.colors.label))
+    thirdRowCol1:SetText(("%sAction Type:|r"):format(ABSync.constants.colors.label))
     thirdRowCol1:SetWidth(labelWidth)
     thirdRow:AddChild(thirdRowCol1)
 
@@ -3796,12 +3068,15 @@ function ABSync:ShowTabContent(tabKey)
     -- switch to the selected tab
     if tabKey == "about" then
         self.db.profile.mytab = "about"
+        -- tabs\About.lua
         self:CreateAboutFrame(ABSync.ui.contentFrame)
     elseif tabKey == "introduction" then
         self.db.profile.mytab = "introduction"
+        -- tabs\Introduction.lua
         self:CreateIntroductionFrame(ABSync.ui.contentFrame)
     elseif tabKey == "sharesync" then
         self.db.profile.mytab = "sharesync"
+        -- tabs\ShareSync.lua
         self:CreateShareSyncFrame(playerID, ABSync.ui.contentFrame)
     end
 end
@@ -3818,8 +3093,8 @@ function ABSync:CreateMainFrame()
     local screenHeight = UIParent:GetHeight()
 
     -- set initial sizes
-    local frameWidth = screenWidth * 0.6
-    local frameHeight = screenHeight * 0.6
+    local frameWidth = screenWidth * 0.4
+    local frameHeight = screenHeight * 0.4
     
     -- Use PortraitFrameTemplate which is more reliable in modern WoW
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
@@ -3937,14 +3212,14 @@ function ABSync:CreateContentFrame(parent)
     local footer = CreateFrame("Frame", nil, parent)
     footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
     footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    footer:SetHeight(30)
+    footer:SetHeight(40)
 
     -- create close button
     local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
         parent:Hide()
     end)
     local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
-    closeButton:SetPoint("RIGHT", footer, "RIGHT", -buttonOffset, 0)
+    closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
 
     -- create a frame to hold the content
     local contentFrame = CreateFrame("Frame", nil, parent)
