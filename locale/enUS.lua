@@ -157,4 +157,5 @@ L["Russian"] = "Russian"
 L["Chinese (Simplified)"] = "Chinese (Simplified)"
 L["Chinese (Traditional)"] = "Chinese (Traditional)"
 L["Last Scan on this Character"] = "Last Scan on this Character"
+L["Last Sync on this Character"] = "Last Sync on this Character"
 --@end-do-not-package@

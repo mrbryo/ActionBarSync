@@ -1,34 +1,37 @@
 --[[---------------------------------------------------------------------------
-    Function:   CreateSyncFromFrameContent
-    Purpose:    Create the sync from frame for selecting action bars to sync from other characters.
+    Function:   CreateSyncCheckbox
+    Purpose:    Create a checkbox for syncing action bars.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateSyncFromFrameContent(parent, padding)
+function ABSync:CreateSyncCheckbox(parent, barName, playerID, currentPlayerID, padding, offsetY)
+    -- set barName to green and playerID to orange
+    local label = self.constants.colors.green .. barName .. "|r from |cffffa500" .. playerID .. "|r"
+
+    -- change color to all gray because syncing to yourself as same spec is not allowed
+    if playerID == currentPlayerID then
+        label = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
+    end
+
+    -- create a checkbox
+    local checkbox = self:CreateCheckbox(parent, label, self:GetBarToSync(barName, playerID), function(checked)
+        ABSync:SyncOnValueChanged(checked, barName, playerID)
+    end)
+
+    -- print(("CreateSyncCheckbox: playerID: %s, currentPlayerID: %s"):format(playerID, currentPlayerID))
+    if playerID == currentPlayerID then
+        checkbox:Disable()
+    end
+    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -offsetY - 5)
+
+    return checkbox
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   UpdateShareRegion
+    Purpose:    Update the share region with checkboxes for each action bar and character combo that has data.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateShareRegion()
     -- current player ID
     local currentPlayerID = self:GetPlayerNameKey()
-
-    -- add label for sync frame
-    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Sync From")
-
-    -- create inset frame for syncing from other characters
-    local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    insetFrame:SetPoint("TOPLEFT", regionLabel, "BOTTOMLEFT", 0, 0)
-    insetFrame:SetPoint("TOPRIGHT", regionLabel, "BOTTOMRIGHT", 0, 0)
-    insetFrame:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)
-
-    -- create frame for listing who can be synced from and their bars
-    local scrollContainer = CreateFrame("ScrollFrame", nil, insetFrame, "UIPanelScrollFrameTemplate")
-    scrollContainer:SetPoint("TOPLEFT", insetFrame, "TOPLEFT", 5, -5)
-    scrollContainer:SetPoint("BOTTOMRIGHT", insetFrame, "BOTTOMRIGHT", -27, 5)
-    
-    -- create scroll content frame
-    local scrollContent = CreateFrame("Frame", nil, scrollContainer)
-    scrollContent:SetWidth(scrollContainer:GetWidth() - 20)
-    scrollContent:SetHeight(scrollContainer:GetHeight() - 10)
-    scrollContainer:SetScrollChild(scrollContent)
 
     -- loop over data and add checkboxes per character and action bar combo where they are enabled
     -- track if anything was added or not
@@ -36,6 +39,9 @@ function ABSync:CreateSyncFromFrameContent(parent, padding)
 
     -- track y offset for checkboxes
     local offsetY = 10
+
+    -- standard padding
+    local padding = ABSync.constants.ui.generic.padding
 
     -- primary loop is actionBars as it's sorted
     for _, barName in ipairs(self.db.global.actionBars) do
@@ -59,9 +65,9 @@ function ABSync:CreateSyncFromFrameContent(parent, padding)
 
                 -- create a checkbox if data is found
                 if foundData == true then
-                    self:CreateSyncCheckbox(scrollContent, barName, playerID, currentPlayerID, padding, offsetY)
+                    local checkbox = self:CreateSyncCheckbox(self.ui.frame.shareContent, barName, playerID, currentPlayerID, padding, offsetY)
                     sharedActionBarsAdded = true
-                    offsetY = offsetY + padding + self.constants.ui.checkbox.size
+                    offsetY = offsetY + checkbox:GetHeight()
                 end
             end
         end
@@ -69,10 +75,46 @@ function ABSync:CreateSyncFromFrameContent(parent, padding)
 
     -- if no shared action bars were added, then add a label to indicate that
     if sharedActionBarsAdded == false then
-        local noDataLabel = scrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        noDataLabel:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", padding, -padding)
+        local noDataLabel = self.ui.frame.shareContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        noDataLabel:SetPoint("TOPLEFT", self.ui.frame.shareContent, "TOPLEFT", padding, -padding)
         noDataLabel:SetText("No Shared Action Bars Found")
     end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateSyncFromFrameContent
+    Purpose:    Create the sync from frame for selecting action bars to sync from other characters.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateSyncFromFrameContent(parent)
+    -- standard padding
+    local padding = ABSync.constants.ui.generic.padding
+
+    -- add label for sync frame
+    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    regionLabel:SetJustifyH("LEFT")
+    regionLabel:SetText("Sync Action Bars From:")
+
+    -- create inset frame for syncing from other characters
+    local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    insetFrame:SetPoint("TOPLEFT", regionLabel, "BOTTOMLEFT", 0, 0)
+    insetFrame:SetPoint("TOPRIGHT", regionLabel, "BOTTOMRIGHT", 0, 0)
+    insetFrame:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)
+
+    -- create frame for listing who can be synced from and their bars
+    local scrollContainer = CreateFrame("ScrollFrame", nil, insetFrame, "UIPanelScrollFrameTemplate")
+    scrollContainer:SetPoint("TOPLEFT", insetFrame, "TOPLEFT", 5, -5)
+    scrollContainer:SetPoint("BOTTOMRIGHT", insetFrame, "BOTTOMRIGHT", -27, 5)
+    
+    -- create scroll content frame
+    self.ui.frame.shareContent = CreateFrame("Frame", nil, scrollContainer)
+    self.ui.frame.shareContent:SetWidth(scrollContainer:GetWidth() - padding)
+    self.ui.frame.shareContent:SetHeight(scrollContainer:GetHeight() - padding)
+    scrollContainer:SetScrollChild(self.ui.frame.shareContent)
+
+    -- load checkboxes
+    self:UpdateShareRegion()
 
     -- --@debug@
     -- -- for adding 20 rows of fake data
@@ -83,17 +125,51 @@ function ABSync:CreateSyncFromFrameContent(parent, padding)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   CreateShareCheckboxes
+    Purpose:    Create checkboxes for each action bar to select which action bars to share.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateShareCheckboxes(parent)
+    -- for debugging
+    local funcName = "CreateShareCheckboxes"
+
+    -- get the player ID for the current profile
+    local playerID = self:GetPlayerNameKey()
+
+    -- get action bar names
+    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
+
+    -- track y offset
+    local offsetY = 10
+    
+    -- loop over the action bars and create a checkbox for each one
+    for _, checkboxName in pairs(actionBars) do
+        -- create a checkbox for each action bar
+        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, playerID), function(checked)
+            ABSync:SetBarToShare(checkboxName, checked)
+        end)
+
+        -- position the checkbox
+        checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", 15, -offsetY - 5)
+        offsetY = offsetY + (checkBox:GetHeight())
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   CreateShareFrameContent
-    Purpose:    Create the share frame for selecting action bars to share. This is the "Scan" label with an inset frame and scroll area with checkboxes for each action bar
+    Purpose:    Create the share frame for selecting action bars to share. This is the "Scan" 
+                label with an inset frame and scroll area with checkboxes for each action bar
                 for the current user to share or not.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareFrameContent(parent, padding)
+function ABSync:CreateShareFrameContent(parent)
+    -- standard variables
+    local padding = ABSync.constants.ui.generic.padding
+
     -- title
-    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Share")
+    regionLabel:SetText("Select Action Bars to Share:")
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -108,8 +184,8 @@ function ABSync:CreateShareFrameContent(parent, padding)
 
     -- create scroll content frame
     local scrollContent = CreateFrame("Frame", nil, scrollContainer)
-    scrollContent:SetWidth(scrollContainer:GetWidth() - 20)
-    scrollContent:SetHeight(scrollContainer:GetHeight() - 10)
+    scrollContent:SetWidth(scrollContainer:GetWidth() - padding)
+    scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
     scrollContainer:SetScrollChild(scrollContent)
 
     -- initial add of checkboxes
@@ -117,131 +193,126 @@ function ABSync:CreateShareFrameContent(parent, padding)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateSyncFrame
-    Purpose:    Create the sync frame for selecting action bars to sync.
+    Function:   UpdateLastScanLabel
+    Purpose:    Update the last scan label with the latest scan date/time.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateSyncFrameContent(parent, padding)
-    -- get language data
-    local L = self.localeData
-
-    -- current player ID
-    local currentPlayerID = self:GetPlayerNameKey()
-
-    -- add additional y offset to match scan frame in (CreateScanFrameContent)
-    local offsetY = 10
-
-    -- track content height
-    local contentHeight = 0
-
-    -- add label
-    local syncTitle = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    syncTitle:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    syncTitle:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    syncTitle:SetJustifyH("LEFT")
-    syncTitle:SetText("Sync")
-    contentHeight = contentHeight + syncTitle:GetHeight()
-
-    -- add inset frame
-    local syncFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    syncFrame:SetPoint("TOPLEFT", syncTitle, "BOTTOMLEFT", 0, 0)
-    syncFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-    -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    local autoMountFilterReset = self:CreateCheckbox(syncFrame, "Automatically Reset Mount Journal Filters", self.db.profile.autoResetMountFilters, function(checked)
-        ABSync.db.profile.autoResetMountFilters = checked
-    end)
-    autoMountFilterReset:Disable(self.db.profile.checkOnLogon == false)
-
-    -- create checkbox for sync on login
-    local loginCheckBox = self:CreateCheckbox(syncFrame, "Enable Sync on Login", self.db.profile.checkOnLogon, function(checked)
-        ABSync.db.profile.checkOnLogon = checked
-        if checked == true then
-            autoMountFilterReset:Disable(false)
-        else
-            autoMountFilterReset:Disable(true)
-        end
-    end)
-    loginCheckBox:SetPoint("TOPLEFT", syncFrame, "TOPLEFT", padding, -offsetY)
-
-    -- set the autoMountFilterReset checkbox to the right of the loginCheckBox
-    autoMountFilterReset:SetPoint("TOPLEFT", loginCheckBox, "TOPRIGHT", self:GetCheckboxOffsetY(loginCheckBox), 0)
-
-    -- create button for manual sync
-    local manualSyncButton = self:CreateStandardButton(syncFrame, "Sync Now", 100, function()
-        self:BeginSync()
-    end)
-    manualSyncButton:SetPoint("TOPLEFT", loginCheckBox, "BOTTOMLEFT", 0, -offsetY)
-
-    -- create button for manual mount filter reset
-    local manualMountFilterResetButton = self:CreateStandardButton(syncFrame, "Reset Mount Filters", 160, function()
-        self:MountJournalFilterReset()
-    end)
-    manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
+function ABSync:UpdateLastScanLabel()
+    self.ui.label.lastScan:SetText(self:FormatDateString(self.db.char.lastScan))
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateScanFrameContent
+    Function:   UpdateLastSyncLabel
+    Purpose:    Update the last sync label with the latest sync date/time.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateLastSyncLabel()
+    self.ui.label.lastSync:SetText(self:FormatDateString(self:GetLastSyncedOnChar()))
+end
+
+function ABSync:UpdateCheckboxState(checkbox, checked)
+    if checked == true then
+        checkbox:Enable()
+        checkbox.Text:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+    else
+        checkbox:Disable()
+        checkbox.Text:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateShareSyncTopFrameContent
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateScanFrameContent(parent, padding)
+function ABSync:CreateShareSyncTopFrameContent(parent)
     -- get language data
     local L = self.localeData
     
     -- debugging
-    local funcName = "CreateScanFrameContent"
+    local funcName = "CreateShareSyncTopFrameContent"
 
     -- add additional y offset to add spacing below the portrait art
     local offsetY = 10
+    local buttonOffset = 5
+    local padding = ABSync.constants.ui.generic.padding
 
     -- track content size
     local contentHeight = 0
-    local contentWidth = 0
-
-    -- add label
-    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Scan")
-    contentHeight = contentHeight + regionLabel:GetHeight()
 
     -- add inset frame
     local regionContent = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    regionContent:SetPoint("TOPLEFT", regionLabel, "BOTTOMLEFT", 0, 0)
+    regionContent:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionContent:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
     -- last scan title
     local lastScanTitle = regionContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    lastScanTitle:SetPoint("TOPLEFT", regionContent, "TOPLEFT", padding, -offsetY)
+    lastScanTitle:SetPoint("TOPLEFT", regionContent, "TOPLEFT", padding, -offsetY + -buttonOffset)
     lastScanTitle:SetJustifyH("LEFT")
     lastScanTitle:SetText(("%s%s:|r"):format(ABSync.constants.colors.orange, L["Last Scan on this Character"]))
-    contentHeight = contentHeight + lastScanTitle:GetHeight() + offsetY
-    contentWidth = math.max(contentWidth, lastScanTitle:GetStringWidth() + (padding * 2))
+    contentHeight = contentHeight + lastScanTitle:GetHeight() + offsetY + buttonOffset
 
     -- last scan date/time label
     self.ui.label.lastScan = regionContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    self.ui.label.lastScan:SetPoint("TOPLEFT", lastScanTitle, "BOTTOMLEFT", 0, -offsetY)
+    self.ui.label.lastScan:SetPoint("TOPLEFT", lastScanTitle, "TOPRIGHT", padding, 0)
     self.ui.label.lastScan:SetJustifyH("LEFT")
     self:UpdateLastScanLabel()
-    contentHeight = contentHeight + self.ui.label.lastScan:GetHeight() + offsetY
-    contentWidth = math.max(contentWidth, self.ui.label.lastScan:GetStringWidth())
 
     -- scan button
-    local scanButton = self:CreateStandardButton(regionContent, "Scan Now", 100, function()
+    local scanButton = self:CreateStandardButton(regionContent, "Scan Now", 100, function(self, button, down)
+        ABSync:UpdateCheckboxState(self, false) -- disable button while scanning
         ABSync:GetActionBarData()
         ABSync:UpdateLastScanLabel()
-        ABSync:UpdateShareCheckboxes(shareFrame)
+        ABSync:UpdateShareRegion()
+        ABSync:UpdateCheckboxState(self, true) -- re-enable button after scan is complete
     end)
-    scanButton:SetPoint("TOPLEFT", self.ui.label.lastScan, "BOTTOMLEFT", 0, -offsetY)
-    contentHeight = contentHeight + scanButton:GetHeight() + offsetY
-    contentWidth = math.max(contentWidth, scanButton:GetWidth())
+    scanButton:SetPoint("LEFT", self.ui.label.lastScan, "RIGHT", padding, 0)
+
+    -- last sync date/time title
+    local lastSyncTitle = regionContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    lastSyncTitle:SetPoint("TOPLEFT", lastScanTitle, "BOTTOMLEFT", 0, -offsetY + -buttonOffset)
+    lastSyncTitle:SetJustifyH("LEFT")
+    lastSyncTitle:SetText(("%s%s:|r"):format(ABSync.constants.colors.orange, L["Last Sync on this Character"]))
+    contentHeight = contentHeight + lastSyncTitle:GetHeight() + offsetY + buttonOffset
+
+    -- last sync date/time label
+    self.ui.label.lastSync = regionContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    self.ui.label.lastSync:SetPoint("TOPLEFT", lastSyncTitle, "TOPRIGHT", padding, 0)
+    self.ui.label.lastSync:SetJustifyH("LEFT")
+    self:UpdateLastSyncLabel()
+
+    -- create button for manual sync
+    local manualSyncButton = self:CreateStandardButton(regionContent, "Sync Now", 100, function()
+        self:BeginSync()
+    end)
+    manualSyncButton:SetPoint("LEFT", self.ui.label.lastSync, "RIGHT", padding, 0)
+    manualSyncButton:SetPoint("TOPLEFT", scanButton, "BOTTOMLEFT", 0, -buttonOffset)
+
+    -- create button for manual mount filter reset
+    local manualMountFilterResetButton = self:CreateStandardButton(regionContent, "Reset Mount Filters", 160, function()
+        self:MountJournalFilterReset()
+    end)
+    manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
+    
+    -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
+    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", self.db.profile.autoResetMountFilters, function(checked)
+        ABSync.db.profile.autoResetMountFilters = checked
+    end)
+    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, self.db.profile.checkOnLogon)
+
+    -- create checkbox for sync on login
+    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", self.db.profile.checkOnLogon, function(checked)
+        ABSync.db.profile.checkOnLogon = checked
+        self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
+    end)
+    loginCheckBox:SetPoint("TOPLEFT", lastSyncTitle, "BOTTOMLEFT", 0, -offsetY)
+    contentHeight = contentHeight + loginCheckBox:GetHeight() + offsetY
+
+    -- set the autoMountFilterReset checkbox to the right of the loginCheckBox
+    self.ui.checkbox.autoMountFilterReset:SetPoint("TOPLEFT", loginCheckBox, "TOPRIGHT", self:GetCheckboxOffsetY(loginCheckBox), 0)
 
     -- add in offsetY for padding below last item
     contentHeight = contentHeight + offsetY
 
     -- return info
     return {
-        width = contentWidth,
         height = contentHeight,
     }
 end
@@ -255,12 +326,12 @@ function ABSync:CreateShareSyncFrame(playerID, parent)
     local funcName = "CreateShareSyncFrame"
 
     -- standard variables
-    local padding = 10
+    local padding = ABSync.constants.ui.generic.padding
 
     -- create main frame
     local mainShareFrame = CreateFrame("Frame", nil, parent)
     mainShareFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    mainShareFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, padding)
+    mainShareFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
 
     -- create title for share frame
     local title = mainShareFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -271,44 +342,42 @@ function ABSync:CreateShareSyncFrame(playerID, parent)
     title:SetText("Share & Sync")
 
     -- create main content frame
-    local mainContentFrame = CreateFrame("Frame", nil, mainShareFrame) --, "InsetFrameTemplate")
+    local mainContentFrame = CreateFrame("Frame", nil, mainShareFrame)
     mainContentFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
     mainContentFrame:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, 0)
     mainContentFrame:SetPoint("BOTTOMLEFT", mainShareFrame, "BOTTOMLEFT", 0, 0)
     mainContentFrame:SetPoint("BOTTOMRIGHT", mainShareFrame, "BOTTOMRIGHT", 0, 0)
 
+    -- calculate bottom width for left and right frames
+    local bottomWidth = (mainContentFrame:GetWidth() - (padding * 0.5)) * 0.5
+
     -- create each frame attached to mainContentFrame
-    local topLeftFrame = CreateFrame("Frame", nil, mainShareFrame)
+    local topFrame = CreateFrame("Frame", nil, mainShareFrame)
     local bottomLeftFrame = CreateFrame("Frame", nil, mainShareFrame)
-    local topRightFrame = CreateFrame("Frame", nil, mainShareFrame)
     local bottomRightFrame = CreateFrame("Frame", nil, mainShareFrame)
 
-    -- attach all points for topLeftFrame
-    topLeftFrame:SetPoint("TOPLEFT", mainContentFrame, "TOPLEFT", 0, 0)
-    -- topLeftFrame:SetWidth(100)
-    -- topLeftFrame:SetHeight(100)
-    
-    -- create the share frame; bottom left region
-    bottomLeftFrame:SetPoint("TOPLEFT", topLeftFrame, "BOTTOMLEFT", 0, -padding)
-    bottomLeftFrame:SetPoint("BOTTOMLEFT", mainContentFrame, "BOTTOMLEFT", 0, 0)
+    -- attach all points for topFrame
+    topFrame:SetPoint("TOPLEFT", mainContentFrame, "TOPLEFT", 0, 0)
+    topFrame:SetPoint("TOPRIGHT", mainContentFrame, "TOPRIGHT", 0, 0)
 
-    -- create the sync frame; top right region
-    topRightFrame:SetPoint("TOPLEFT", topLeftFrame, "TOPRIGHT", padding, 0)
-    topRightFrame:SetPoint("TOPRIGHT", mainContentFrame, "TOPRIGHT", 0, 0)
+    -- create the share frame; bottom left region
+    bottomLeftFrame:SetPoint("TOPLEFT", topFrame, "BOTTOMLEFT", 0, -padding)
+    bottomLeftFrame:SetPoint("BOTTOMLEFT", mainContentFrame, "BOTTOMLEFT", 0, 0)
+    bottomLeftFrame:SetWidth(bottomWidth)
 
     -- create the sync from frame; bottom right region
+    bottomRightFrame:SetPoint("TOPRIGHT", topFrame, "BOTTOMRIGHT", 0, -padding)
     bottomRightFrame:SetPoint("BOTTOMLEFT", bottomLeftFrame, "BOTTOMRIGHT", padding, 0)
     bottomRightFrame:SetPoint("BOTTOMRIGHT", mainContentFrame, "BOTTOMRIGHT", 0, 0)
+    -- bottomRightFrame:SetWidth(bottomWidth)
 
     -- add in frame content
-    local scanContent = self:CreateScanFrameContent(topLeftFrame, padding)
-    local shareContent = self:CreateShareFrameContent(bottomLeftFrame, padding)
-    local syncContent = self:CreateSyncFrameContent(topRightFrame, padding)
-    local syncFromContent = self:CreateSyncFromFrameContent(bottomRightFrame, padding)
+    local scanShareContent = self:CreateShareSyncTopFrameContent(topFrame)
+    local shareContent = self:CreateShareFrameContent(bottomLeftFrame)
+    local syncFromContent = self:CreateSyncFromFrameContent(bottomRightFrame)
 
     -- set the sizes of each frame based on content
-    topLeftFrame:SetWidth(scanContent.width)
-    topLeftFrame:SetHeight(scanContent.height)
+    topFrame:SetHeight(scanShareContent.height)
 
     -- finally return the frame
     return mainShareFrame

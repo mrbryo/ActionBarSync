@@ -247,6 +247,9 @@ function ABSync:CreateAboutFrame(parent)
             currentY = currentY - (label:GetStringHeight() + spacing)
         end
     end
+    
+    -- add spacing at end of scroll area
+    leftContent:SetHeight(math.abs(currentY))
 
     -- reset y offset
     currentY = -15
@@ -289,18 +292,18 @@ function ABSync:CreateAboutFrame(parent)
     thankYou:SetWordWrap(true)
 
     -- reset y offset
-    currentY = -15
+    currentY = thankYou:GetHeight() + (spacing * 2)
 
     -- add translators
     for idxa, localeData in pairs(localeAuthors) do
         -- locale name
         local localeLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        localeLabel:SetPoint("TOPLEFT", thankYou, "BOTTOMLEFT", 0, currentY)
+        localeLabel:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -currentY)
         localeLabel:SetJustifyH("LEFT")
         localeLabel:SetText(ABSync.constants.colors.orange .. localeData.label .. ":|r")
         
         -- update y offset
-        currentY = currentY - (localeLabel:GetHeight() + 5)
+        -- currentY = currentY + (localeLabel:GetHeight() + 5)
 
         -- loop over people and build string
         local personText = ""
@@ -327,6 +330,9 @@ function ABSync:CreateAboutFrame(parent)
         personLabel:SetText(personText)
 
         -- add extra spacing between locales
-        currentY = currentY - personLabel:GetHeight()
+        currentY = currentY + personLabel:GetStringHeight() + spacing
     end
+
+    -- add spacing at end of scroll area
+    rightScrollContentFrame:SetHeight(currentY)
 end

@@ -20,6 +20,8 @@ ABSync.ui = {
     scroll = {},
     group = {},
     dropdown = {},
+    frame = {},
+    checkbox = {},
 }
 
 -- colors
@@ -39,6 +41,9 @@ ABSync.constants = {
         checkbox = {
             size = 16,
             padding = 5
+        },
+        generic = {
+            padding = 10
         }
     }
 }
@@ -569,7 +574,9 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:FormatDateString(dateString)
     -- validate input
-    if not dateString or type(dateString) ~= "string" then
+    if dateString == L["never"] then
+        return L["never"]
+    elseif not dateString or type(dateString) ~= "string" then
         return "Invalid Date"
     end
     
@@ -2164,129 +2171,6 @@ end
 -- end
 
 --[[---------------------------------------------------------------------------
-    Function:   AddAboutLeftHandLine
-    Purpose:    Add a line to the left hand side of the About frame.
------------------------------------------------------------------------------]]
-function ABSync:AddAboutLeftHandLine(parent, data)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- standards for left hand side
-    local labelWidth = 0.25
-    local infoWidth = 0.75
-    local offset = 0.02
-
-    -- create the row group
-    local rowFrame = AceGUI:Create("SimpleGroup")
-    rowFrame:SetLayout("Flow")
-    rowFrame:SetFullWidth(true)
-    parent:AddChild(rowFrame)
-
-    -- create the label and add it
-    local labelFrame = AceGUI:Create("InteractiveLabel")
-    labelFrame:SetText(("%s:"):format(data.label))
-    labelFrame:SetRelativeWidth(labelWidth)
-    
-    -- add the label
-    rowFrame:AddChild(labelFrame)
-
-    -- create the edit box and add it
-    local infoFrame = AceGUI:Create("EditBox")
-    infoFrame:SetText(data.text)
-    infoFrame:SetRelativeWidth(infoWidth)
-    rowFrame:AddChild(infoFrame)
-
-    -- create info box and add it
-    if data.tip.disable == false then
-        -- create row grouping
-        local infoRow = AceGUI:Create("SimpleGroup")
-        infoRow:SetLayout("Flow")
-        infoRow:SetFullWidth(true)
-        rowFrame:AddChild(infoRow)
-
-        -- create empty label
-        local emptyLabel = AceGUI:Create("Label")
-        emptyLabel:SetText("")
-        emptyLabel:SetRelativeWidth(labelWidth + offset)
-        infoRow:AddChild(emptyLabel)
-
-        -- create info label
-        local infoBox = AceGUI:Create("Label")
-        infoBox:SetText(data.tip.text)
-        infoBox:SetRelativeWidth(infoWidth - offset)
-        infoRow:AddChild(infoBox)
-    end
-
-    -- disable edit box
-    infoFrame:SetDisabled(data.disable)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   UpdateLastScanLabel
-    Purpose:    Update the last scan label with the latest scan date/time.
------------------------------------------------------------------------------]]
-function ABSync:UpdateLastScanLabel()
-    self.ui.label.lastScan:SetText(self:FormatDateString(self.db.char.lastScan))
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateScanFrameContent
-    Purpose:    Create the Scan frame for the addon.
------------------------------------------------------------------------------]]
-function ABSync:CreateScanFrameContent(parent)
-    -- debugging
-    local funcName = "CreateScanFrameContent"
-
-    -- add additional y offset to add spacing below the portrait art
-    local offsetY = 10
-
-    -- track content height
-    local contentHeight = 0
-
-    -- add label
-    local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Scan")
-    contentHeight = contentHeight + regionLabel:GetHeight()
-
-    -- add inset frame
-    local scanInsetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    scanInsetFrame:SetPoint("TOPLEFT", regionLabel, "BOTTOMLEFT", 0, 0)
-    scanInsetFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-    -- last scan title
-    local lastScanTitle = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    lastScanTitle:SetPoint("TOPLEFT", scanInsetFrame, "TOPLEFT", 10, -offsetY)
-    lastScanTitle:SetJustifyH("LEFT")
-    lastScanTitle:SetText(("%s%s:|r"):format(ABSync.constants.colors.orange, L["Last Scan on this Character"]))
-    contentHeight = contentHeight + lastScanTitle:GetHeight() + offsetY
-
-    -- last scan date/time label
-    self.ui.label.lastScan = scanInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    self.ui.label.lastScan:SetPoint("TOPLEFT", lastScanTitle, "BOTTOMLEFT", 0, -offsetY)
-    self.ui.label.lastScan:SetJustifyH("LEFT")
-    self:UpdateLastScanLabel()
-    contentHeight = contentHeight + self.ui.label.lastScan:GetHeight() + offsetY
-
-    -- scan button
-    local scanButton = self:CreateStandardButton(scanInsetFrame, "Scan Now", 100, function()
-        ABSync:GetActionBarData()
-        ABSync:UpdateLastScanLabel()
-        ABSync:UpdateShareCheckboxes(shareFrame)
-    end)
-    scanButton:SetPoint("TOPLEFT", self.ui.label.lastScan, "BOTTOMLEFT", 0, -offsetY)
-    contentHeight = contentHeight + scanButton:GetHeight() + offsetY
-
-    -- add in offsetY for padding below last item
-    contentHeight = contentHeight + offsetY
-
-    -- return the height of all the items
-    return contentHeight
-end
-
---[[---------------------------------------------------------------------------
     Function:   AddErrorCell
     Purpose:    Add a cell of error information to the error display.
 -----------------------------------------------------------------------------]]
@@ -2335,159 +2219,6 @@ function ABSync:AddErrorRow(data, columns)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateLastSyncErrorFrame
-    Purpose:    Create the Last Sync Error frame for the addon.
------------------------------------------------------------------------------]]
-function ABSync:CreateLastSyncErrorFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- create main frame
-    local lastErrorGroup = AceGUI:Create("SimpleGroup")
-    lastErrorGroup:SetLayout("Flow")
-    lastErrorGroup:SetFullWidth(true)
-    lastErrorGroup:SetFullHeight(true)
-    parent:AddChild(lastErrorGroup)
-
-    -- columns
-    local columns = {
-        { name = "Bar Name", key = "barName", width = 0.10},        -- 10
-        { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
-        { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
-        { name = "Action Type", key = "type", width = 0.10},        -- 30
-        { name = "Action Name", key = "name", width = 0.25},        -- 55
-        { name = "Action ID", key = "id", width = 0.05},            -- 60
-        { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
-        { name = "Message", key = "msg", width = 0.25}              -- 100
-    }
-
-    -- determine column width
-    -- 5px for spacing
-    -- local columnWidth = ((frameWidth - 5) / #columns) - 5
-    -- local columnWidth = 1/(#columns+1)
-    -- columnWidth = tonumber(string.format("%.2f", columnWidth))
-    -- print("Column Width: " .. tostring(columnWidth))
-
-    -- Create header row; important to add the header group to the parent group to maintain a proper layout
-    local errHeader = AceGUI:Create("SimpleGroup")
-    errHeader:SetLayout("Flow")
-    errHeader:SetFullWidth(true)
-    lastErrorGroup:AddChild(errHeader)
-    for _, colDefn in ipairs(columns) do
-        local label = AceGUI:Create("Label")
-        label:SetText("|cff00ff00" .. colDefn.name .. "|r")
-        label:SetRelativeWidth(colDefn.width)
-        errHeader:AddChild(label)
-    end
-
-    -- create a container for the scroll region
-    local errScrollContainer = AceGUI:Create("SimpleGroup")
-    errScrollContainer:SetLayout("Fill")
-    errScrollContainer:SetFullWidth(true)
-    errScrollContainer:SetFullHeight(true)
-    lastErrorGroup:AddChild(errScrollContainer)
-
-    -- Create a scroll container for the spreadsheet
-    local errScroll = AceGUI:Create("ScrollFrame")
-    errScroll:SetLayout("List")
-    errScrollContainer:AddChild(errScroll)
-
-    --@debug@
-    -- if self.db.char.isDevMode == true then
-    --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
-    --     local testdttmkey = date("%Y%m%d%H%M%S")
-    --     self.db.char.lastSyncErrorDttm = testdttmkey
-    --     local testerrors = {}
-    --     for i = 1, 10 do
-    --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
-    --     end
-    --     table.insert(self.db.char.syncErrors, {
-    --         key = testdttmkey,
-    --         errors = testerrors
-    --     })
-    -- end
-    --@end-debug@
-
-    -- verify if we a last sync error
-    local errorsExist = false
-    if not self.db.char then
-        errorsExist = false
-    else
-        local lastDateTime = self.db.char.lastSyncErrorDttm or L["never"]
-        if lastDateTime ~= nil and lastDateTime ~= L["never"] then
-            errorsExist = true
-        end
-    end
-    --@debug@
-    if self.db.char.isDevMode == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
-    --@end-debug@
-    
-    -- loop over sync errors
-    --[[ 
-        errorRcd contains the following properties:
-            property        description
-            --------------- --------------------------------------------------------
-            key             has a value of a date and time string
-            errors          is a table containing error records
-
-        errors contains the following:
-            property        description
-            --------------- --------------------------------------------------------
-            barPos          the action is in which button in the action bars; action bars have buttons 1 to 12
-            type            the action type
-            name            the name of the action
-            barName         the name of the action bar it resides
-            id              the ID of the action
-            msg             the error message
-            sharedby        the player who shared the action
-            buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
-    ]]
-    if errorsExist == true then
-        for _, errorRcd in ipairs(self.db.char.syncErrors) do
-            -- print("here1")
-            -- continue to next row if key doesn't match
-            if errorRcd.key == self.db.char.lastSyncErrorDttm then
-                -- print("here2")
-                -- loop over the rows
-                for _, errorRow in ipairs(errorRcd.errors) do
-                    errScroll:AddChild(self:AddErrorRow(errorRow, columns))
-                end
-            end
-        end
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateShareCheckboxes
-    Purpose:    Create checkboxes for each action bar to select which action bars to share.
------------------------------------------------------------------------------]]
-function ABSync:CreateShareCheckboxes(parent)
-    -- for debugging
-    local funcName = "CreateShareCheckboxes"
-
-    -- get the player ID for the current profile
-    local playerID = self:GetPlayerNameKey()
-
-    -- get action bar names
-    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
-
-    -- track y offset
-    local offsetY = 10
-    
-    -- loop over the action bars and create a checkbox for each one
-    for _, checkboxName in pairs(actionBars) do
-        -- create a checkbox for each action bar
-        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, playerID), function(checked)
-            ABSync:SetBarToShare(checkboxName, checked)
-        end)
-
-        -- position the checkbox
-        checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -offsetY)
-        offsetY = offsetY + (checkBox:GetHeight())
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   UpdateShareTab
     Purpose:    Update the share tab last scan edit box with the latest scan date and time.
 -----------------------------------------------------------------------------]]
@@ -2514,27 +2245,6 @@ end
 
 function ABSync:GetCheckboxOffsetY(checkbox)
     return ABSync.constants.ui.checkbox.size + ABSync.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateSyncCheckbox
-    Purpose:    Create a checkbox for syncing action bars.
------------------------------------------------------------------------------]]
-function ABSync:CreateSyncCheckbox(parent, barName, playerID, currentPlayerID, padding, offsetY)
-    -- set barName to green and playerID to orange
-    local label = self.constants.colors.green .. barName .. "|r from |cffffa500" .. playerID .. "|r"
-
-    -- change color to all gray because syncing to yourself as same spec is not allowed
-    if playerID == currentPlayerID then
-        label = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
-    end
-
-    -- create a checkbox
-    local checkBox = self:CreateCheckbox(parent, label, self:GetBarToSync(barName, playerID), function(checked)
-        ABSync:SyncOnValueChanged(checked, barName, playerID)
-    end)
-    checkBox:Disable(playerID == currentPlayerID)
-    checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -offsetY)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2985,12 +2695,6 @@ end
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
 function ABSync:ShowUI()
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- get player
-    local playerID = self:GetPlayerNameKey()
-    
     -- create main frame
     local mainFrame = ABSync:CreateMainFrame()
 
@@ -3078,6 +2782,10 @@ function ABSync:ShowTabContent(tabKey)
         self.db.profile.mytab = "sharesync"
         -- tabs\ShareSync.lua
         self:CreateShareSyncFrame(playerID, ABSync.ui.contentFrame)
+    elseif tabKey == "last_sync_errors" then
+        self.db.profile.mytab = "last_sync_errors"
+        -- tabs\LastSyncErrors.lua
+        self:CreateLastSyncErrorFrame(tabGroup)
     end
 end
 

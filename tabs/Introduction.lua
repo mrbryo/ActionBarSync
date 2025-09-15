@@ -81,15 +81,21 @@ function ABSync:CreateIntroductionFrame(parent)
 
     -- track current Y position for vertical layout
     local currentY = -10
-    local spacing = 20
+    local spacing = 10
 
     -- Add instruction steps
     for i, instruct in ipairs(instructions) do
+        -- bullet
+        local bullet = instructionsScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        bullet:SetPoint("TOPLEFT", instructionsScrollContent, "TOPLEFT", 10, currentY)
+        bullet:SetText(("%d."):format(i))
+        bullet:SetJustifyH("LEFT")
+
         -- create instruction label
         local stepLabel = instructionsScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        stepLabel:SetPoint("TOPLEFT", instructionsScrollContent, "TOPLEFT", 10, currentY)
-        stepLabel:SetPoint("TOPRIGHT", instructionsScrollContent, "TOPRIGHT", -10, currentY)
-        stepLabel:SetText(string.format("%d. %s", i, instruct))
+        stepLabel:SetPoint("TOPLEFT", bullet, "TOPLEFT", 20, 0)
+        stepLabel:SetPoint("RIGHT", instructionsScrollContent, "RIGHT", -10, 0)
+        stepLabel:SetText(instruct)
         stepLabel:SetJustifyH("LEFT")
         stepLabel:SetWordWrap(true)
 
@@ -99,15 +105,12 @@ function ABSync:CreateIntroductionFrame(parent)
 
         -- add special button for step 1
         if i == 1 then
-            local step1Button = CreateFrame("Button", nil, instructionsScrollContent, "GameMenuButtonTemplate")
-            step1Button:SetSize(150, 22)
-            step1Button:SetPoint("TOPLEFT", stepLabel, "BOTTOMLEFT", 15, -10)
-            step1Button:SetText("Open Options")
-            step1Button:SetScript("OnClick", function()
+            local step1Button = ABSync:CreateStandardButton(instructionsScrollContent, "Open Options", 150, function()
                 LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
             end)
+            step1Button:SetPoint("TOPLEFT", stepLabel, "BOTTOMLEFT", 15, -10)
             
-            currentY = currentY - 20 -- Account for button height
+            currentY = currentY - step1Button:GetHeight() - spacing -- Account for button height
         end
     end
 
