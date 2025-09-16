@@ -54,7 +54,7 @@ ABSync.columns = {
         { name = "Type", key = "type", width = 0.20 },      -- 20
         { name = "ID", key = "id", width = 0.20 },          -- 40
         { name = "Name", key = "name", width = 0.50 },      -- 90
-        { name = "Has", key = "has", width = 0.10 },        -- 100
+        { name = "Has", key = "has", width = 0.5 },         -- 95
     }
 }
 
@@ -2871,21 +2871,6 @@ function ABSync:CreateDropdown(parent, items, initialValue, onChange)
     local function IsSelectedValue(key)
         return dropdown.selectedValue == key
     end
-
-    -- set initial text
-    -- if dropdown.selectedText then
-    --     dropdown:SetText(dropdown.selectedText)
-    -- end
-
-    -- build the item table
-    -- local dropDownInputs = {}
-    -- for ikey, ivalue in pairs(items) do
-    --     local newItem = {ivalue, onChange, ikey}
-    --     table.insert(dropDownInputs, newItem)
-    -- end
-
-    -- populate the dropdown list
-    -- MenuUtil.CreateButtonMenu(dropdown, unpack(dropDownInputs))
 
     -- function to build the dropdown menu from the items parameter
     local function GeneratorFunction(dropdown, rootDescription)

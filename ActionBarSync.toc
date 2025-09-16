@@ -33,6 +33,9 @@ ActionBarSync.lua
 tabs\About.lua
 tabs\Introduction.lua
 tabs\ShareSync.lua
+tabs\LastSyncErrors.lua
+tabs\Lookup.lua
 
 ## Libraries
 libs\StandardFunctions.lua
+libs\FontStringExamples.lua

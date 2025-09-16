@@ -321,7 +321,7 @@ end
     Function:   CreateShareSyncFrame
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareSyncFrame(playerID, parent)
+function ABSync:CreateShareSyncFrame(parent)
     -- for debugging
     local funcName = "CreateShareSyncFrame"
 

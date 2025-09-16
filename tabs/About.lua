@@ -240,7 +240,7 @@ function ABSync:CreateAboutFrame(parent)
             -- column 2 is an edit box
             local editBox = self:CreateEditBox(leftContent, editBoxWidth, label:GetHeight(), rowData.disable)
             editBox:SetPoint("LEFT", label, "RIGHT", columnSpacing, 0)
-            editBox:SetPoint("RIGHT", leftContent, "RIGHT", spacing * -1, 0)
+            editBox:SetPoint("RIGHT", leftContent, "RIGHT", -spacing, 0)
             editBox:SetText(rowData.text)
         
             -- update y offset
