@@ -438,44 +438,6 @@ function ABSync:GetActionData(actionID, actionType)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   LookupAction
-    Purpose:    Look up the action based on the last entered action type and ID.
------------------------------------------------------------------------------]]
-function ABSync:LookupAction()
-    -- get the action type
-    local actionType = self:GetLastActionType()
-    
-    -- get the action ID
-    local actionID = self:GetLastActionID()
-
-    --@debug@
-    -- "Looking up Action - Type: %s - ID: %s"
-    if self.db.char.isDevMode == true then self:Print((L["lookingupactionnotifytext"]):format(actionType, actionID)) end
-    --@end-debug@
-
-    -- instantiate lookup storage
-    local lookupInfo = {
-        type = actionType,
-        id = actionID,
-        name = L["unknown"],
-        has = L["no"]
-    }
-
-    -- perform lookup based on type
-    local actionData = self:GetActionData(actionID, actionType)
-    if actionData then
-        lookupInfo.name = actionData.name
-        lookupInfo.has = actionData.has
-    end
-
-    -- insert record to lookupHistory
-    self:InsertLookupHistory(lookupInfo)
-
-    -- update scroll region for lookup history
-    self:UpdateLookupHistory()
-end
-
---[[---------------------------------------------------------------------------
     Function:   GetActionBarsCount
     Purpose:    Get the count of action bars for a specific source.
 -----------------------------------------------------------------------------]]
@@ -1958,6 +1920,8 @@ function ABSync:SlashCommand(text)
             if self.db.char.isDevMode == true then
                 self:RefreshMountDB()
             end
+        elseif arg:lower() == "fonts" then
+            ABSync:CreateFontStringExamplesFrame():Show()
         -- elseif arg:lower() == "spec" then
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
         --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
@@ -2171,54 +2135,6 @@ end
 -- end
 
 --[[---------------------------------------------------------------------------
-    Function:   AddErrorCell
-    Purpose:    Add a cell of error information to the error display.
------------------------------------------------------------------------------]]
-function ABSync:AddErrorCell(data, width)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-    
-    -- print("here4")
-    local cell = AceGUI:Create("Label")
-    cell:SetText(tostring(data or "-"))
-    cell:SetRelativeWidth(width)
-    
-    -- finally return the cell
-    return cell
-end
-
---[[---------------------------------------------------------------------------
-    Function:   AddErrorRow
-    Purpose:    Add a row of error information to the error display.
------------------------------------------------------------------------------]]
-function ABSync:AddErrorRow(data, columns)
-    -- print("here3")
-    
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-    
-    -- set up row group of columns
-    local rowGroup = AceGUI:Create("SimpleGroup")
-    rowGroup:SetLayout("Flow")
-    rowGroup:SetFullWidth(true)
-    -- parentScrollArea:AddChild(rowGroup)
-
-    -- loop over the column definitions
-    for _, colDef in ipairs(columns) do
-        -- translate data if necessary
-        local colVal = data[colDef.key]
-        if colDef.key == "type" then
-            colVal = ABSync.actionTypeLookup[data[colDef.key]]
-        end
-        rowGroup:AddChild(self:AddErrorCell(colVal, colDef.width))
-        -- print(("Key: %s, Width: %f, Data: %s"):format(colDef.key, colDef.width, tostring(data[colDef.key])))
-    end
-
-    -- finally return the grouping
-    return rowGroup
-end
-
---[[---------------------------------------------------------------------------
     Function:   UpdateShareTab
     Purpose:    Update the share tab last scan edit box with the latest scan date and time.
 -----------------------------------------------------------------------------]]
@@ -2370,160 +2286,6 @@ function ABSync:InsertLookupHistoryRows(parent, columns)
             end
         end
     end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateLookupQueryFrame
-    Purpose:    Create the lookup query frame for performing action lookups.
-    Arguments:  parent  - The parent frame to attach this frame to
-    Returns:    None
-]]
-function ABSync:CreateLookupQueryFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    local labelWidth = 75
-    local controlWidth = 200
-    local padding = 15
-    
-    -- create top section group with label named "Perform a Lookup"
-    local searchFrame = AceGUI:Create("InlineGroup")
-    searchFrame:SetTitle("Perform a Lookup")
-    searchFrame:SetLayout("List")
-    searchFrame:SetRelativeWidth(1)
-    parent:AddChild(searchFrame)
-    
-    -- create a top row
-    local topRow = AceGUI:Create("SimpleGroup")
-    topRow:SetLayout("Flow")
-    topRow:SetRelativeWidth(1)
-    searchFrame:AddChild(topRow)
-
-    -- intro at top of top section
-    local introLabel = AceGUI:Create("Label")
-    introLabel:SetText(L["actionlookupintro"])
-    introLabel:SetRelativeWidth(1)
-    topRow:AddChild(introLabel)
-
-    -- second row for action id label, edit box and the submit button
-    local secondRow = AceGUI:Create("SimpleGroup")
-    secondRow:SetLayout("Flow")
-    secondRow:SetRelativeWidth(1)
-    secondRow:SetFullHeight(true)
-    searchFrame:AddChild(secondRow)
-
-    -- second row column 1 (column 1 is labels)
-    local secondRowCol1 = AceGUI:Create("Label")
-    secondRowCol1:SetText(("%sAction ID:|r"):format(ABSync.constants.colors.label))
-    secondRowCol1:SetWidth(labelWidth)
-    secondRow:AddChild(secondRowCol1)
-
-    -- second row column 2 (column 2 for controls)
-    local secondRowCol2Padding = AceGUI:Create("SimpleGroup")
-    secondRowCol2Padding:SetWidth(controlWidth + padding)
-    secondRow:AddChild(secondRowCol2Padding)
-    local secondRowCol2 = AceGUI:Create("EditBox")
-    secondRowCol2:SetText(ABSync:GetLastActionID())
-    secondRowCol2:SetWidth(controlWidth)
-    secondRowCol2:SetCallback("OnEnterPressed", function(_, _, value)
-        ABSync:SetLastActionID(value)
-    end)
-    secondRowCol2Padding:AddChild(secondRowCol2)
-
-    -- second row column 3 (column 3 for the button)
-    local secondRowCol3 = AceGUI:Create("Button")
-    secondRowCol3:SetText(L["lookupbuttonname"])
-    secondRowCol3:SetWidth(75)
-    secondRowCol3:SetCallback("OnClick", function()
-        ABSync:LookupAction()
-    end)
-    secondRow:AddChild(secondRowCol3)
-
-    -- third row for action type
-    local thirdRow = AceGUI:Create("SimpleGroup")
-    thirdRow:SetLayout("Flow")
-    thirdRow:SetRelativeWidth(1)
-    searchFrame:AddChild(thirdRow)
-
-    -- third row column 1 for action type label
-    local thirdRowCol1 = AceGUI:Create("Label")
-    thirdRowCol1:SetText(("%sAction Type:|r"):format(ABSync.constants.colors.label))
-    thirdRowCol1:SetWidth(labelWidth)
-    thirdRow:AddChild(thirdRowCol1)
-
-    -- third row column 2 for drop down
-    local thirdRowCol2 = AceGUI:Create("Dropdown")
-    thirdRowCol2:SetWidth(controlWidth)
-    thirdRowCol2:SetList(ABSync:GetActionTypeValues())
-    thirdRowCol2:SetValue(ABSync:GetLastActionType())
-    thirdRowCol2:SetCallback("OnValueChanged", function(_, _, value)
-        ABSync:SetLastActionType(value)
-    end)
-    thirdRow:AddChild(thirdRowCol2)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateLookupFrame
-    Purpose:    Create the lookup frame for displaying action lookups.
-    Arguments:  parent  - The parent frame to attach this frame to
-    Returns:    None
------------------------------------------------------------------------------]]
-function ABSync:CreateLookupFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- create main frame which fills the parent with type fill
-    local lookupFrame = AceGUI:Create("SimpleGroup")
-    lookupFrame:SetLayout("Flow")
-    parent:AddChild(lookupFrame)
-
-    -- add query frame
-    self:CreateLookupQueryFrame(lookupFrame)
-
-    --[[ create section to show last 'user defined count' of lookups ]]
-
-    -- create lower section group with label named "Lookup History"
-    local lookupHistoryFrame = AceGUI:Create("InlineGroup")
-    lookupHistoryFrame:SetTitle("Lookup History")
-    lookupHistoryFrame:SetLayout("Fill")
-    lookupHistoryFrame:SetRelativeWidth(1)
-    lookupHistoryFrame:SetFullHeight(true)
-    lookupFrame:AddChild(lookupHistoryFrame)
-    local lookupHistoryGroup = AceGUI:Create("SimpleGroup")
-    lookupHistoryGroup:SetLayout("Flow")
-    lookupHistoryFrame:AddChild(lookupHistoryGroup)
-
-    --[[ lower section to show lookup history ]]
-
-    -- add header
-    local historyHeader = AceGUI:Create("SimpleGroup")
-    historyHeader:SetLayout("Flow")
-    historyHeader:SetFullWidth(true)
-    lookupHistoryGroup:AddChild(historyHeader)
-    for _, colDefn in ipairs(ABSync.columns.lookupHistory) do
-        local label = AceGUI:Create("Label")
-        label:SetText("|cff00ff00" .. colDefn.name .. "|r")
-        label:SetRelativeWidth(colDefn.width)
-        historyHeader:AddChild(label)
-    end
-
-    -- create a scroll frame to hold the history
-    local scrollContainer = AceGUI:Create("SimpleGroup")
-    scrollContainer:SetLayout("Fill")
-    scrollContainer:SetFullWidth(true)
-    scrollContainer:SetFullHeight(true)
-    lookupHistoryGroup:AddChild(scrollContainer)
-
-    -- add scroll frame to container
-    ABSync.ui.scroll.lookupHistory = AceGUI:Create("ScrollFrame")
-    ABSync.ui.scroll.lookupHistory:SetLayout("List")
-    scrollContainer:AddChild(ABSync.ui.scroll.lookupHistory)
-
-    -- populate the scroll frame
-    self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
-
-    -- fixes layout sometimes...
-    lookupFrame:DoLayout()
 end
 
 --[[---------------------------------------------------------------------------
@@ -2781,11 +2543,15 @@ function ABSync:ShowTabContent(tabKey)
     elseif tabKey == "sharesync" then
         self.db.profile.mytab = "sharesync"
         -- tabs\ShareSync.lua
-        self:CreateShareSyncFrame(playerID, ABSync.ui.contentFrame)
+        self:CreateShareSyncFrame(ABSync.ui.contentFrame)
     elseif tabKey == "last_sync_errors" then
         self.db.profile.mytab = "last_sync_errors"
         -- tabs\LastSyncErrors.lua
-        self:CreateLastSyncErrorFrame(tabGroup)
+        self:CreateLastSyncErrorFrame(ABSync.ui.contentFrame)
+    elseif tabKey == "lookup" then
+        self.db.profile.mytab = "lookup"
+        -- tabs\Lookup.lua
+        self:CreateLookupFrame(ABSync.ui.contentFrame)
     end
 end
 
@@ -2978,7 +2744,7 @@ Usage example:
     lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
     lastScanBox:SetText(self.db.char.lastScan or "Never")
 -----------------------------------------------------------------------------]]
-function ABSync:CreateEditBox(parent, width, height, readOnly)
+function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetSize(width or 200, height or 20)
     editBox:SetAutoFocus(false)
@@ -2987,8 +2753,49 @@ function ABSync:CreateEditBox(parent, width, height, readOnly)
         editBox:SetEnabled(false)
         editBox:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
     end
+
+    if onEnter then
+        editBox:SetScript("OnEnterPressed", function(self)
+            onEnter(self) 
+        end)
+    end
     
     return editBox
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLabelWithTimer
+    Purpose:    Set a label's text and clear it after a specified duration.
+    Arguments:  label     - The font string label to update
+                text      - The text to display
+                duration  - How long to show the text before clearing (optional, default 3 seconds)
+                color     - Color table {r, g, b} for the text (optional)
+    Returns:    None
+-----------------------------------------------------------------------------]]
+function ABSync:SetLabelWithTimer(label, text, duration, color)
+    if not label then return end
+    
+    duration = duration or 3.0  -- Default 3 seconds
+    
+    -- Cancel any existing timer
+    if label.clearTimer then
+        label.clearTimer:Cancel()
+        label.clearTimer = nil
+    end
+    
+    -- Set the text immediately
+    label:SetText(text)
+    
+    -- Set color if provided
+    if color then
+        label:SetTextColor(color.r or 1, color.g or 1, color.b or 1)
+    end
+    
+    -- Create timer to clear the text
+    label.clearTimer = C_Timer.NewTimer(duration, function()
+        label:SetText("")
+        label.clearTimer = nil
+    end)
 end
 
 --[[---------------------------------------------------------------------------
@@ -3044,27 +2851,56 @@ Usage example:
         end
     )
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, items, initialValue, onSelectionChanged)
-    local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
-    
-    local function DropdownInitialize(self, level)
-        local info = UIDropDownMenu_CreateInfo()
+function ABSync:CreateDropdown(parent, label, items, initialValue, onSelectionChanged)
+    -- create dropdown and set it up
+    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    dropdown:SetDefaultText(label)
+
+    -- function to build the dropdown menu from the items parameter
+    local function GeneratorFunction(owner, rootDescr)
         for key, value in pairs(items) do
-            info.text = value
-            info.value = key
-            info.func = function(self)
-                UIDropDownMenu_SetSelectedValue(dropdown, self.value)
+            local button = rootDescr:CreateButton(value, function(data)
+                dropdown.selectedValue = key
+                dropdown.selectedText = value
+                dropdown:SetText(value)
                 if onSelectionChanged then
-                    onSelectionChanged(self.value)
+                    onSelectionChanged(key)
                 end
+            end)
+
+            -- set the initial value shown
+            if key == dropdown.selectedValue then
+                button:SetSelected(true)
             end
-            UIDropDownMenu_AddButton(info, level)
+        end
+        rootDescr:CreateButton("My Button", function(data)
+            print("Button clicked!")
+        end)
+    end
+
+    -- setup the menu
+    dropdown:SetupMenu(GeneratorFunction)
+    
+    -- external function; change selected value
+    function dropdown:SetSelectedValue(value)
+        self.selectedValue = value
+        self.selectedText = items[value] or ""
+        if self.selectedText then
+            self:SetText(self.selectedText)
         end
     end
+
+    -- external function; get selected value
+    function dropdown:GetSelectedValue()
+        return self.selectedValue
+    end
+
+    -- set initial value if provided
+    if initialValue and items[initialValue] then
+        dropdown:SetSelectedValue(initialValue)
+    end
     
-    UIDropDownMenu_Initialize(dropdown, DropdownInitialize)
-    UIDropDownMenu_SetSelectedValue(dropdown, initialValue)
-    
+    -- return the created dropdown
     return dropdown
 end
 
