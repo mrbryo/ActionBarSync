@@ -2851,44 +2851,52 @@ Usage example:
         end
     )
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, label, items, initialValue, onSelectionChanged)
+function ABSync:CreateDropdown(parent, items, initialValue, onChange)
     -- create dropdown and set it up
     local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
-    dropdown:SetDefaultText(label)
+    
+    -- store dropdown state
+    dropdown.selectedValue = initialValue or ""
+    dropdown.selectedText = items[initialValue] or ""
+    dropdown.items = items
+    
+    -- external function; change selected value
+    local function SetSelectedValue(key)
+        if dropdown.items[key] then
+            dropdown.selectedValue = key
+            dropdown.selectedText = dropdown.items[key] or ""
+            onChange(key)
+        end
+    end
+    local function IsSelectedValue(key)
+        return dropdown.selectedValue == key
+    end
+
+    -- set initial text
+    -- if dropdown.selectedText then
+    --     dropdown:SetText(dropdown.selectedText)
+    -- end
+
+    -- build the item table
+    -- local dropDownInputs = {}
+    -- for ikey, ivalue in pairs(items) do
+    --     local newItem = {ivalue, onChange, ikey}
+    --     table.insert(dropDownInputs, newItem)
+    -- end
+
+    -- populate the dropdown list
+    -- MenuUtil.CreateButtonMenu(dropdown, unpack(dropDownInputs))
 
     -- function to build the dropdown menu from the items parameter
-    local function GeneratorFunction(owner, rootDescr)
-        for key, value in pairs(items) do
-            local button = rootDescr:CreateButton(value, function(data)
-                dropdown.selectedValue = key
-                dropdown.selectedText = value
-                dropdown:SetText(value)
-                if onSelectionChanged then
-                    onSelectionChanged(key)
-                end
-            end)
-
-            -- set the initial value shown
-            if key == dropdown.selectedValue then
-                button:SetSelected(true)
-            end
+    local function GeneratorFunction(dropdown, rootDescription)
+        -- add buttons for each item
+        for key, value in pairs(dropdown.items) do
+            rootDescription:CreateRadio(value, IsSelectedValue, SetSelectedValue, key)
         end
-        rootDescr:CreateButton("My Button", function(data)
-            print("Button clicked!")
-        end)
     end
 
     -- setup the menu
     dropdown:SetupMenu(GeneratorFunction)
-    
-    -- external function; change selected value
-    function dropdown:SetSelectedValue(value)
-        self.selectedValue = value
-        self.selectedText = items[value] or ""
-        if self.selectedText then
-            self:SetText(self.selectedText)
-        end
-    end
 
     -- external function; get selected value
     function dropdown:GetSelectedValue()
@@ -2897,7 +2905,7 @@ function ABSync:CreateDropdown(parent, label, items, initialValue, onSelectionCh
 
     -- set initial value if provided
     if initialValue and items[initialValue] then
-        dropdown:SetSelectedValue(initialValue)
+        SetSelectedValue(initialValue)
     end
     
     -- return the created dropdown
