@@ -162,4 +162,5 @@ L["Last Sync Errors"] = "Last Sync Errors"
 L["Lookup"] = "Lookup"
 L["Saved!"] = "Saved!"
 L["History"] = "History"
+L["none"] = "None"
 --@end-do-not-package@

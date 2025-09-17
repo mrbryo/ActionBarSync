@@ -35,6 +35,7 @@ tabs\Introduction.lua
 tabs\ShareSync.lua
 tabs\LastSyncErrors.lua
 tabs\Lookup.lua
+tabs\Restore.lua
 
 ## Libraries
 libs\StandardFunctions.lua

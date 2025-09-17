@@ -257,6 +257,20 @@ function ABSync:InstantiateDB(barName)
         self.db.char.lastDiffData = {}
     end
 
+    -- character restore data
+    if not self.db.char.restore then
+        self.db.char.restore = {}
+    end
+    if not self.db.char.restore.choice then
+        self.db.char.restore.choice = {}
+    end
+    if not self.db.char.restore.choice.backupDttm then
+        self.db.char.restore.choice.backupDttm = L["none"]
+    end
+    if not self.db.char.restore.choice.actionBar then
+        self.db.char.restore.choice.actionBar = L["none"]
+    end
+
     -- instantiate barsToSync if it doesn't exist
     if not self.db.global.barsToSync then
         self.db.global.barsToSync = {}
@@ -2289,6 +2303,24 @@ function ABSync:InsertLookupHistoryRows(parent, columns)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UncheckAllChildCheckboxes
+    Purpose:    Uncheck all child checkboxes, except the one just clicked, in the given frame.
+    Inputs:     frame       - parent frame containing the checkboxes
+                checkbox    - checkbox that was just clicked; don't uncheck it
+-----------------------------------------------------------------------------]]
+function ABSync:UncheckAllChildCheckboxes(frame, checkbox)
+    if frame:GetNumChildren() > 0 then
+        for idx, child in ipairs({frame:GetChildren()}) do
+            if child:IsObjectType("CheckButton") == true then
+                if child ~= checkbox then
+                    child:SetChecked(false)
+                end
+            end
+        end
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ClearBackupActionBarDropdown
     Purpose:    Clear the action bar selection dropdown.
 -----------------------------------------------------------------------------]]
@@ -2299,55 +2331,6 @@ function ABSync:ClearBackupActionBarDropdown()
         ABSync.ui.dropdown.currentBackupActionBars:SetList(data)
         ABSync.ui.dropdown.currentBackupActionBars:SetValue("none")
     end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   LoadBackupActionBars
-    Purpose:    Load the action bars from a selected backup into the action bar selection dropdown.
------------------------------------------------------------------------------]]
-function ABSync:LoadBackupActionBars(backupKey)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- find the backup record
-    local found = false
-    for _, backupRow in ipairs(self.db.char.backup) do
-        if backupRow.dttm == backupKey then
-            -- loop over the action bars in the backup record and create a checkbox for each one
-            local newData = {}
-            for actionBarName, _ in pairs(backupRow.data) do
-                newData[actionBarName] = actionBarName
-            end
-            -- update list
-            ABSync.ui.dropdown.currentBackupActionBars:SetList(newData)
-            ABSync.ui.dropdown.currentBackupActionBars:SetValue("")
-            -- mark found
-            found = true
-            -- exit loop
-            break
-        end
-    end
-    -- if no records found then reset table with a single "None" value
-    if found == false then
-        self:ClearBackupActionBarDropdow()
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateRestoreFrame
-    Purpose:    Create the restore frame for selecting which action bars to restore and a button to trigger it.
------------------------------------------------------------------------------]]
-function ABSync:CreateRestoreFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- create drop down based on selected backup, initially it will have a fake value
-    local actionBarSelection = AceGUI:Create("Dropdown")
-    actionBarSelection:SetLabel("Select an Action Bar to Restore")
-    actionBarSelection:AddItem("none", "None")
-    actionBarSelection:SetValue("none")
-    parent:AddChild(actionBarSelection)
-    ABSync.ui.dropdown.currentBackupActionBars = actionBarSelection
 end
 
 --[[---------------------------------------------------------------------------
@@ -2399,60 +2382,6 @@ function ABSync:CreateBackupListFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateBackupFrame
-    Purpose:    Create the backup frame for displaying and restoring backups.
------------------------------------------------------------------------------]]
-function ABSync:CreateBackupFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- create backup top level frame, child to the tab
-    local backupFrame = AceGUI:Create("SimpleGroup")
-    backupFrame:SetLayout("Flow")
-    parent:AddChild(backupFrame)
-
-    -- add info label
-    local infoFrame = AceGUI:Create("InlineGroup")
-    infoFrame:SetTitle("Directions")
-    infoFrame:SetLayout("Fill")
-    infoFrame:SetFullWidth(true)
-    local infoLabel = AceGUI:Create("Label")
-    infoLabel:SetText("Backups are stored per character. Select which backup by date and time and then which action bars to restore. Then click the 'Restore Selected Backup' button.")
-    infoFrame:AddChild(infoLabel)
-    backupFrame:AddChild(infoFrame)
-
-    -- group for the backup list group and the restore group
-    local backupAndRestoreGroup = AceGUI:Create("SimpleGroup")
-    backupAndRestoreGroup:SetLayout("Flow")
-    backupAndRestoreGroup:SetRelativeWidth(1)
-    backupAndRestoreGroup:SetFullHeight(true)
-    backupFrame:AddChild(backupAndRestoreGroup)
-
-    -- create a container for the scroll region
-    local backupScrollContainer = AceGUI:Create("InlineGroup")
-    backupScrollContainer:SetTitle("Backups")
-    backupScrollContainer:SetLayout("Fill")
-    backupScrollContainer:SetRelativeWidth(0.5)
-    backupScrollContainer:SetFullHeight(true)
-    backupAndRestoreGroup:AddChild(backupScrollContainer)
-
-    -- create listing of backups; scrollable area with columns: Date/Time, Note
-    self:CreateBackupListFrame(backupScrollContainer)
-
-    -- create a container for the action bar selection
-    local actionBarSelectContainer = AceGUI:Create("InlineGroup")
-    actionBarSelectContainer:SetTitle("Restore")
-    actionBarSelectContainer:SetLayout("List")
-    actionBarSelectContainer:SetRelativeWidth(0.5)
-    actionBarSelectContainer:SetFullHeight(true)
-    backupAndRestoreGroup:AddChild(actionBarSelectContainer)
-
-    -- create frame for selecting which action bars to restore
-    self:CreateRestoreFrame(actionBarSelectContainer)
-    backupAndRestoreGroup:DoLayout()
-end
-
---[[---------------------------------------------------------------------------
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
@@ -2472,48 +2401,6 @@ function ABSync:ShowUI()
     self:ShowTabContent(tabkey)
     local buttonID = ABSync.uitabs["buttonref"][tabkey]
     PanelTemplates_SetTab(ABSync.uitabs["tabframe"], buttonID)
-
-
-    -- adjust content based on selected tab
-    -- tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
-    --     -- clear all children
-    --     tabGroup:ReleaseChildren()
-
-    --     -- check which tab is selected
-    --     if group == "about" then
-    --         local aboutFrame = self:CreateAboutFrame(tabGroup)
-    --         self.db.profile.mytab = "about"
-    --     elseif group == "instructions" then
-    --         local instructionsFrame = self:CreateInstructionsFrame()
-    --         tabGroup:AddChild(instructionsFrame)
-    --         self.db.profile.mytab = "instructions"
-    --     elseif group == "share" then
-    --         local shareFrame = self:CreateShareFrame(playerID)
-    --         tabGroup:AddChild(shareFrame)
-    --         self.db.profile.mytab = "share"
-    --     elseif group == "sync" then
-    --         local syncFrame = self:CreateSyncFrame(tabGroup)
-    --         self.db.profile.mytab = "sync"
-    --     elseif group == "last_sync_errors" then
-    --         local lastSyncErrorFrame = self:CreateLastSyncErrorFrame(tabGroup)
-    --         self.db.profile.mytab = "last_sync_errors"
-    --     elseif group == "developer" then
-    --         local developerFrame = self:CreateDeveloperFrame(tabGroup)
-    --         self.db.profile.mytab = "developer"
-    --     elseif group == "lookup" then
-    --         local lookupFrame = self:CreateLookupFrame(tabGroup)
-    --         self.db.profile.mytab = "lookup"
-    --     elseif group == "backup" then
-    --         local backupFrame = self:CreateBackupFrame(tabGroup)
-    --         self.db.profile.mytab = "backup"
-    --     end
-    -- end)
-
-    -- set the tab
-    -- tabGroup:SelectTab(self.db.profile.mytab or "instructions")
-
-    -- finally add the tab group
-    -- frame:AddChild(tabGroup)
 
     -- display the frame
     mainFrame:Show()
@@ -2552,6 +2439,14 @@ function ABSync:ShowTabContent(tabKey)
         self.db.profile.mytab = "lookup"
         -- tabs\Lookup.lua
         self:CreateLookupFrame(ABSync.ui.contentFrame)
+    elseif tabKey == "backup" then
+        self.db.profile.mytab = "backup"
+        -- tabs\Restore.lua
+        self:CreateBackupFrame(ABSync.ui.contentFrame)
+    elseif tabKey == "developer" then
+        self.db.profile.mytab = "developer"
+        -- tabs\Developer.lua
+        self:CreateDeveloperFrame(ABSync.ui.contentFrame)
     end
 end
 
@@ -2810,7 +2705,7 @@ end
 Usage example:
 
 ----------------------------------------------------------------------------]]
-function ABSync:CreateCheckbox(parent, text, initialValue, onChanged)
+function ABSync:CreateCheckbox(parent, text, initialValue, OnClick)
     -- create checkbox
     local checkbox = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
 
@@ -2821,10 +2716,10 @@ function ABSync:CreateCheckbox(parent, text, initialValue, onChanged)
     checkbox:SetChecked(initialValue)
 
     -- set the OnClick event function to the onChanged parameter function
-    checkbox:SetScript("OnClick", function(self)
+    checkbox:SetScript("OnClick", function(self, button, down)
         local checked = self:GetChecked()
-        if onChanged then
-            onChanged(checked)
+        if OnClick then
+            OnClick(self, button, checked)
         end
     end)
     
@@ -2862,12 +2757,22 @@ function ABSync:CreateDropdown(parent, items, initialValue, onChange)
     
     -- external function; change selected value
     local function SetSelectedValue(key)
+        --@debug@
+        -- print("(CreateDropdown) SetSelectedValue called with key:", key)
+        --@end-debug@
         if dropdown.items[key] then
             dropdown.selectedValue = key
             dropdown.selectedText = dropdown.items[key] or ""
+        else
+            dropdown.selectedValue = ""
+            dropdown.selectedText = ""
+        end
+        if onChange then
             onChange(key)
         end
     end
+
+    -- function to check if a value is selected
     local function IsSelectedValue(key)
         return dropdown.selectedValue == key
     end
@@ -2882,6 +2787,17 @@ function ABSync:CreateDropdown(parent, items, initialValue, onChange)
 
     -- setup the menu
     dropdown:SetupMenu(GeneratorFunction)
+
+    -- external function; update function
+    function dropdown:UpdateItems(newItems, newValue)
+        --@debug@
+        -- print("(CreateDropdown) New Value:", newValue)
+        --@end-debug@
+        self.items = newItems
+        -- dropdown:SetupMenu(GeneratorFunction)
+        SetSelectedValue(newValue)
+        dropdown:GenerateMenu()
+    end
 
     -- external function; get selected value
     function dropdown:GetSelectedValue()
