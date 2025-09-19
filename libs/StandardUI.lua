@@ -298,7 +298,7 @@ function ABSync:CreateCustomDialog(parent, title, width, height, enableDrag, sho
         if dialog.TitleText then
             dialog.TitleText:SetText(title)
         else
-            local titleText = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            local titleText = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             titleText:SetPoint("TOP", dialog, "TOP", 0, -8)
             titleText:SetText(title)
             dialog.TitleText = titleText

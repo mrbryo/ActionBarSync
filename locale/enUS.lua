@@ -165,4 +165,8 @@ L["History"] = "History"
 L["none"] = "None"
 L["restore"] = "Restore"
 L["Default Name"] = "Default Name"
+L["Unknown issue when trying to pickup and/or place the spell."] = "Unknown issue when trying to pickup and/or place the spell."
+L["Switch Flight Style cannot be synced because it is a zone ability, not a normal spell."] = "Switch Flight Style cannot be synced because it is a zone ability, not a normal spell."
+L["Warning"] = "Warning"
+L["This tab is used for development purposes only."] = "This tab is used for development purposes only. If you are a user and using anything on this tab, then please use at your own risk. Please do not open tickets about this tab unless you believe it's causing issues with standard functionality."
 --@end-do-not-package@

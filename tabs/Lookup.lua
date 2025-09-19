@@ -5,7 +5,7 @@
 function ABSync:LookupAction()
     -- get language data
     local L = self.localeData
-    
+
     -- get the action type
     local actionType = self:GetLastActionType()
     
@@ -30,6 +30,10 @@ function ABSync:LookupAction()
         lookupInfo.name = actionData.name
         lookupInfo.has = actionData.has
     end
+
+    --@debug@
+    -- for k, v in pairs(actionData)
+    --@end-debug@
 
     -- insert record to lookupHistory
     self:InsertLookupHistory(lookupInfo)

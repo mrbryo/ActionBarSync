@@ -15,7 +15,7 @@ function ABSync:CreateIntroductionFrame(parent)
 
     -- FAQ
     local faq = {
-        "New addon so nothing yet. This is a placeholder.",
+        "If an action button does not sync and an error for the same button isn't on the 'Last Sync Errors' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures.",
     }
 
     -- set label height
@@ -54,7 +54,7 @@ function ABSync:CreateIntroductionFrame(parent)
     instructionsScroll:SetScrollChild(instructionsScrollContent)
 
     -- create faq title
-    local faqTitle = instructionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local faqTitle = instructionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     faqTitle:SetPoint("TOPLEFT", instructionsInsetFrame, "BOTTOMLEFT", 0, 0)
     faqTitle:SetPoint("TOPRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", 0, 0)
     faqTitle:SetHeight(labelHeight)
@@ -122,11 +122,17 @@ function ABSync:CreateIntroductionFrame(parent)
 
     -- loop over faq entries
     for i, faqentry in ipairs(faq) do
+        -- bullet
+        local bullet = faqScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        bullet:SetPoint("TOPLEFT", faqScrollContent, "TOPLEFT", 10, currentY)
+        bullet:SetText(("%d."):format(i))
+        bullet:SetJustifyH("LEFT")
+
         -- create instruction label
         local stepLabel = faqScrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        stepLabel:SetPoint("TOPLEFT", faqScrollContent, "TOPLEFT", 10, currentY)
-        stepLabel:SetPoint("TOPRIGHT", faqScrollContent, "TOPRIGHT", -10, currentY)
-        stepLabel:SetText(string.format("%d. %s", i, faqentry))
+        stepLabel:SetPoint("TOPLEFT", bullet, "TOPLEFT", 20, 0)
+        stepLabel:SetPoint("RIGHT", faqScrollContent, "RIGHT", -10, 0)
+        stepLabel:SetText(string.format("%s", faqentry))
         stepLabel:SetJustifyH("LEFT")
         stepLabel:SetWordWrap(true)
 
@@ -140,7 +146,7 @@ function ABSync:CreateIntroductionFrame(parent)
     -- faqFrame:SetPoint("TOPLEFT", instructionsContent, "TOPLEFT", 10, currentY)
 
     -- Add FAQ content
-    -- local faqLabel = faqFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    -- local faqLabel = faqFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     -- faqLabel:SetPoint("TOPLEFT", faqFrame, "TOPLEFT", 15, -25)
     -- faqLabel:SetPoint("TOPRIGHT", faqFrame, "TOPRIGHT", -15, -25)
     -- faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")

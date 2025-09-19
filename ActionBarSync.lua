@@ -1200,9 +1200,11 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 type = diffData.shared.actionType,
                 name = diffData.shared.name,
                 id = diffData.shared.sourceID,
+                link = diffData.shared.blizData.link or L["unknown"],
                 sharedby = diffData.sharedBy,
                 msg = ""
             }
+
 
             --@debug@
             -- if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
@@ -1222,6 +1224,13 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 buttonUpdated = true
 
             elseif err.type == "spell" then
+                -- review base ID vs source ID and override with base ID
+                if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
+                    err.id = diffData.shared.blizData.baseID
+                    --@debug@
+                    if self.db.char.isDevMode == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
+                    --@end-debug@
+                end
 
                 -- report error if player does not have the spell
                 if diffData.shared.hasSpell == L["no"] then
@@ -1235,7 +1244,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- make sure we have a name that isn't unknown
                 elseif err.name ~= L["unknown"] then
                     -- set the action bar button to the spell
-                     C_Spell.PickupSpell(err.name)
+                    C_Spell.PickupSpell(err.id)
                     PlaceAction(tonumber(err.buttonID))
                     ClearCursor()
 
@@ -1252,12 +1261,15 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- does player have the item
                 local itemCount = self:GetItemCount(err.id)
 
+                print(("Item Name: %s, Item ID: %s, Item Count: %s, Is Toy? %s"):format(tostring(err.name), tostring(err.id), tostring(itemCount), tostring(diffData.shared.isToy and "Yes" or "No")))
+
                 -- if the user has the item, then add it to their action bar as long as the name is not unknown
                 if itemCount > 0 then
                     -- item exists
                     if err.name ~= L["unknown"] and diffData.shared.isToy == false then
                         -- set the action bar button to the item
-                        C_Item.PickupItem(err.name)
+                        -- TODO: Maybe...just like for spells this may need to be err.id and not err.name? So far no issues...yet!
+                        C_Item.PickupItem(err.id)
                         PlaceAction(tonumber(err.buttonID))
                         ClearCursor()
 
@@ -1272,7 +1284,9 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- could be a toy
                 elseif diffData.shared.isToy == true then
-                    -- print("toy found: " .. checkItemName)
+                    --@debug@
+                    -- print("toy found: " .. err.name)
+                    --@end-debug@
                     -- set the action bar button to the toy
                     C_ToyBox.PickupToyBoxItem(err.id)
                     PlaceAction(tonumber(err.buttonID))
@@ -1449,12 +1463,17 @@ end
     Purpose:    Retrieve spell information based on the spell ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetSpellDetails(spellID)
+    -- special handling for Switch Flight Style
+    -- if spellID == 460002 then spellID = 436854 end
+    
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
     local spellName = spellData and spellData.name or L["unknown"]
     local hasSpell = self:CharacterHasSpell(spellID)
     local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
     local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
+    local spellLink = C_Spell.GetSpellLink(spellID) or L["unknown"]
+    local baseID = C_Spell.GetBaseSpell(spellID) or -1
 
     -- finally return the data collected
     return {
@@ -1465,13 +1484,42 @@ function ABSync:GetSpellDetails(spellID)
             castTime = spellData and spellData.castTime or -1,
             minRange = spellData and spellData.minRange or -1,
             maxRange = spellData and spellData.maxRange or -1,
-            spellID = spellData and spellData.spellID or -1
+            spellID = spellData and spellData.spellID or -1,
+            link = spellLink,
+            baseID = baseID,
         },
         name = spellName,
         hasSpell = hasSpell,
         isTalent = isTalentSpell,
         isPvp = isPvpSpell,
     }
+end
+
+--[[ --------------------------------------------------------------------------
+    Function:   GetToyIDs
+    Purpose:    Retrieve the toy index by using the toy item ID...and then get the toy ID from that index. Seems like it is always the same ID either way? But now after doing this search toys are being added to the action bar correctly.
+-----------------------------------------------------------------------------]]
+function ABSync:GetToyIDs(toyID)
+    local count = C_ToyBox.GetNumFilteredToys()
+    local toyIndex = -1
+    local displayedToyID = -1
+    
+    for i = 1, count do
+        displayedToyID = C_ToyBox.GetToyFromIndex(i)
+        -- local toyData = C_ToyBox.GetToyFromIndex(i)
+
+        -- for k, v in pairs(toyData) do
+        --     print(("Toy Key: %s, Value: %s"):format(tostring(k), tostring(v)))
+        -- end
+
+        if displayedToyID == toyID then
+            -- print("toy found - index: " .. i .. ", id: " .. displayedToyID)
+            toyIndex = i
+            break
+        end
+    end
+
+    return { id = displayedToyID, index = toyIndex }
 end
 
 --[[---------------------------------------------------------------------------
@@ -1493,6 +1541,12 @@ function ABSync:GetItemDetails(itemID)
     local toyData = {}
     local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
     if toyName then
+        -- is toy usable?
+        local toyUsable = C_ToyBox.IsToyUsable(itemID)
+
+        -- get toy ID by using the toy index
+        local toyInfo = self:GetToyIDs(itemID)
+
         -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
         checkItemName = toyName or L["unknown"]
         isToy = true
@@ -1502,7 +1556,10 @@ function ABSync:GetItemDetails(itemID)
             icon = toyIcon,
             isFavorite = toyIsFavorite,
             hasFanfare = toyHasFanfare,
-            quality = toyItemQuality
+            quality = toyItemQuality,
+            usable = toyUsable and L["yes"] or L["no"],
+            index = toyInfo.index or -1,
+            toyID = toyInfo.id or -1,
         }
     end
 
@@ -1531,7 +1588,7 @@ function ABSync:GetItemDetails(itemID)
         finalItemName = checkItemName,
         isToy = isToy,
         toyData = toyData,
-        hasItem = (itemCount > 0) and L["yes"] or L["no"],
+        hasItem = (itemCount > 0 or toyData.usable) and L["yes"] or L["no"],
     }
 end
 
@@ -1708,7 +1765,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         actionType = actionType or L["unknown"],
         subType = subType or L["unknown"],
         actionID = actionID,
-        infoID = infoID,
+        originalSourceID = infoID,
         buttonID = buttonID,
         btnName = btnName,
         name = L["unknown"],
@@ -1739,6 +1796,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.hasSpell = spellInfo.hasSpell
         returnData.isTalent = spellInfo.isTalent
         returnData.isPvp = spellInfo.isPvp
+        returnData.link = spellInfo.blizData.link
 
     -- process items
     elseif actionType == "item" then
@@ -2121,7 +2179,7 @@ function ABSync:RegisterEvents()
 	-- self:Hook("ActionBarController_OnLoad", true)
 	-- Hook to Action Bar On Event Calls
 	-- self:Hook("ActionBarController_OnEvent", true)
-    -- Register Events
+    
     self:RegisterEvent("ADDON_LOADED", function()
         --@debug@
         if self.db.char.isDevMode == true then self:Print(L["registerevents_addon_loaded"]) end
@@ -2164,13 +2222,32 @@ function ABSync:RegisterEvents()
         --@end-debug@
     end)
 
-    --[[ trying to process cursor changed is CRAZY...giving up for now... ]]
-    -- self:RegisterEvent("CURSOR_CHANGED", function(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+    --[[ trying to process cursor changed is CRAZY...giving up for now...
+
+        2025Sep18 Further Research to try and fix spell Switch Flight Style
+        -----
+        When picking up the spell from the spellbook:
+        - the CURSOR_CHANGED event fires once with newCursorType = 3 (spell cursor)
+        - the GetCursorInfo for type 3 cursor type shows a spell ID of 436854
+        Not important but when placing the spell on the action bar, the CURSOR_CHANGED event fires again with newCursorType = 0 (default cursor).
+        When removing the spell from the action bar:
+        - the CURSOR_CHANGED event fires again with newCursorType = 3 (spell cursor)
+        - the GetCursorInfo for type 3 cursor type shows a spell ID of 460003 and the baseSpellID of 436854! 
+          Expectation was the same spell ID of 436854 with baseSpellID of 0 since those were the values when it was placed.
+        - the button icon changes based on what flight mode the character is curently in but the spell ID's do not change
+    ]]
+    -- self:RegisterEvent("CURSOR_CHANGED", function(event, isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
     --     self:Print("Event - CURSOR_CHANGED")
-    --     --@debug@
-    --     if ABSync.isDevMode == false then
-    --         ABSync:PrintMountInfo(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+    --     self:Print(("Event: %s, isDefault: %s, newCursorType: %s, oldCursorType: %s, oldCursorVirtualID: %s"):format(event, tostring(isDefault), tostring(newCursorType), tostring(oldCursorType), tostring(oldCursorVirtualID)))
+
+    --     if newCursorType == 3 then -- 3 is the spell cursor type
+    --         local spell, spellIndex, booktype, spellID, baseSpellID = GetCursorInfo()
+    --         self:Print(("Spell on Cursor: %s, Spell Index: %s, Book Type: %s, SpellID: %s, BaseSpellID: %s"):format(tostring(spell or L["unknown"]), tostring(spellIndex or L["unknown"]), tostring(booktype or L["unknown"]), tostring(spellID or L["unknown"]), tostring(baseSpellID or L["unknown"])))
     --     end
+    --     --@debug@
+    --     -- if ABSync.isDevMode == false then
+    --     --     ABSync:PrintMountInfo(isDefault, newCursorType, oldCursorType, oldCursorVirtualID)
+    --     -- end
     --     --@end-debug@
     -- end)
 
@@ -2286,84 +2363,6 @@ end
 
 function ABSync:GetCheckboxOffsetY(checkbox)
     return ABSync.constants.ui.checkbox.size + ABSync.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateDeveloperFrame
-    Purpose:    Create the developer frame for testing and debugging.
------------------------------------------------------------------------------]]
-function ABSync:CreateDeveloperFrame(parent)
-    -- instantiate AceGUI; can't be called when registering the addon in the initialize.lua file!
-    local AceGUI = LibStub("AceGUI-3.0")
-
-    -- create main frame
-    local devFrame = AceGUI:Create("SimpleGroup")
-    devFrame:SetLayout("Flow")
-    devFrame:SetFullWidth(true)
-    parent:AddChild(devFrame)
-
-    --[[ warning! ]]
-
-    -- create frame for warning
-    local warningFrame = AceGUI:Create("InlineGroup")
-    warningFrame:SetTitle("|cffff0000Warning!|r")
-    warningFrame:SetLayout("List")
-    warningFrame:SetFullWidth(true)
-    devFrame:AddChild(warningFrame)
-
-    -- add developer tab warning
-    local devWarningLabel = AceGUI:Create("Label")
-    devWarningLabel:SetText("This tab is used for development purposes only. If you are a user and using anything on this tab, then please use at your own risk. Please do not open tickets about this tab.")
-    devWarningLabel:SetFullWidth(true)
-    warningFrame:AddChild(devWarningLabel)
-
-    --[[ mount db refresh ]]
-
-    -- create frame for mount db
-    local mountDBFrame = AceGUI:Create("InlineGroup")
-    mountDBFrame:SetTitle("Mount Database")
-    mountDBFrame:SetLayout("Flow")
-    mountDBFrame:SetRelativeWidth(0.5)
-    devFrame:AddChild(mountDBFrame)
-
-    -- add label explaining the purpose of the button
-    local mountDBRefreshInfoLabel = AceGUI:Create("Label")
-    mountDBRefreshInfoLabel:SetText("Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file.")
-    mountDBRefreshInfoLabel:SetFullWidth(true)
-    mountDBFrame:AddChild(mountDBRefreshInfoLabel)
-
-    -- add space between text and button; terrible way to add space...need to figure out how to add bottom padding or switch to standard UI design outside of AceGUI
-    local spacer = AceGUI:Create("Label")
-    spacer:SetText(" ")
-    spacer:SetFullWidth(true)
-    mountDBFrame:AddChild(spacer)
-
-    -- create button to refresh mount db
-    local mountDBRefreshButton = AceGUI:Create("Button")
-    mountDBRefreshButton:SetText("Refresh Mount DB")
-    mountDBRefreshButton:SetWidth(150)
-    mountDBRefreshButton:SetCallback("OnClick", function()
-        ABSync:RefreshMountDB()
-    end)
-    mountDBFrame:AddChild(mountDBRefreshButton)
-
-    -- create button to reload the ui
-    local mountDBReloadButton = AceGUI:Create("Button")
-    mountDBReloadButton:SetText("Reload UI")
-    mountDBReloadButton:SetWidth(150)
-    mountDBReloadButton:SetCallback("OnClick", function()
-        C_UI.Reload()
-    end)
-    mountDBFrame:AddChild(mountDBReloadButton)
-
-    -- create button to clear db for this char
-    local mountDBClearButton = AceGUI:Create("Button")
-    mountDBClearButton:SetText("Clear Character Mount DB")
-    mountDBClearButton:SetWidth(200)
-    mountDBClearButton:SetCallback("OnClick", function()
-        ABSync:ClearMountDB()
-    end)
-    mountDBFrame:AddChild(mountDBClearButton)
 end
 
 --[[---------------------------------------------------------------------------

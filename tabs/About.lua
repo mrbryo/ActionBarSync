@@ -97,29 +97,29 @@ function ABSync:CreateAboutFrame(parent)
         "mrbryo",
     }
     --@debug@
-    if self.db.char.isDevMode == true then
-        englishTranslators = {
-            "mrbryo",
-            "Johnny",
-            "Raffi",
-            "Mordra",
-            "Khalan",
-            "Evilbunny",
-            "Hyesung",
-            "Guilherme",
-            "Dmitry",
-            "Xiaojun",
-            "Yuchen",
-        }
-    end
+    -- if self.db.char.isDevMode == true then
+    --     englishTranslators = {
+    --         "mrbryo",
+    --         "Johnny",
+    --         "Raffi",
+    --         "Mordra",
+    --         "Khalan",
+    --         "Evilbunny",
+    --         "Hyesung",
+    --         "Guilherme",
+    --         "Dmitry",
+    --         "Xiaojun",
+    --         "Yuchen",
+    --     }
+    -- end
     --@end-debug@
 
     -- localizations by data structure
     local localeAuthors = {
-        {
-            label = L["English"],
-            people = englishTranslators
-        },
+        -- {
+        --     label = L["English"],
+        --     people = englishTranslators
+        -- },
         {
             label = L["German"],
             people = {}
