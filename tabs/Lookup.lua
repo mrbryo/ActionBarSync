@@ -3,6 +3,9 @@
     Purpose:    Look up the action based on the last entered action type and ID.
 -----------------------------------------------------------------------------]]
 function ABSync:LookupAction()
+    -- get language data
+    local L = self.localeData
+    
     -- get the action type
     local actionType = self:GetLastActionType()
     
@@ -214,18 +217,18 @@ end
     Function:   LookupHistoryRemoveAllRows
     Purpose:    Remove all rows from the lookup history.
 -----------------------------------------------------------------------------]]
-function ABSync:LookupHistoryRemoveAllRows()
-    -- if no scroll region, nothing to do
-    if not ABSync.ui.scroll.lookupHistory then return end
+-- function ABSync:LookupHistoryRemoveAllRows()
+--     -- if no scroll region, nothing to do
+--     if not ABSync.ui.scroll.lookupHistory then return end
 
-    -- loop over children and remove them
-    for i, child in ipairs({ ABSync.ui.scroll.lookupHistory:GetChildren() }) do
-        child:Hide()
-        child:SetParent(nil)
-        child = nil
-        -- print("Removed Lookup History Row: " .. tostring(i))
-    end
-end
+--     -- loop over children and remove them
+--     for i, child in ipairs({ ABSync.ui.scroll.lookupHistory:GetChildren() }) do
+--         child:Hide()
+--         child:SetParent(nil)
+--         child = nil
+--         -- print("Removed Lookup History Row: " .. tostring(i))
+--     end
+-- end
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateLookupHistory
@@ -236,7 +239,7 @@ function ABSync:UpdateLookupHistory()
     local offsetY = 5
 
     -- remove all existing rows
-    self:LookupHistoryRemoveAllRows()
+    self:RemoveFrameChildren(ABSync.ui.scroll.lookupHistory)
 
     -- if 1 or more rows loop and add a row for each history record
     if #self.db.char.lookupHistory > 0 then

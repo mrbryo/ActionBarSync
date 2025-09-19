@@ -299,7 +299,7 @@ function ABSync:InstantiateDB(barName)
     end
 
     if not self.db.profile.mytab then
-        self.db.profile.mytab = "instructions"
+        self.db.profile.mytab = "introduction"
     end
 
     --@debug@
@@ -417,7 +417,7 @@ function ABSync:GetActionData(actionID, actionType)
         local itemInfo = self:GetItemDetails(actionID)
 
         -- update details
-        lookupInfo.name = itemInfo.name
+        lookupInfo.name = itemInfo.finalItemName
         lookupInfo.has = itemInfo.hasItem
     elseif actionType == "macro" then
         -- get macro details
@@ -539,9 +539,16 @@ end
     Function:   GetPlayerNameFormatted
     Purpose:    Get the owner of the specified action bar.
 -----------------------------------------------------------------------------]]
-function ABSync:GetPlayerNameFormatted()
+function ABSync:GetPlayerNameFormatted(nospace)
+    if not nospace then nospace = false end
+
     local unitName, unitServer = UnitFullName("player")
-    return unitName .. " - " .. unitServer
+
+    if nospace == false then
+        return unitName .. " - " .. unitServer
+    else
+        return unitName .. "-" .. unitServer
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -632,6 +639,29 @@ function ABSync:GetBarToShare(barName, playerID)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   RemoveFrameChildren
+    Purpose:    Remove all children from a frame.
+-----------------------------------------------------------------------------]]
+function ABSync:RemoveFrameChildren(parent)
+    -- if no scroll region, nothing to do
+    if not parent then return end
+
+    -- loop over children and remove them
+    for i, child in ipairs({ parent:GetChildren() }) do
+        child:Hide()
+        child:SetParent(nil)
+        child = nil
+    end
+
+    -- remove all font strings and textures (regions)
+    for _, region in ipairs({ parent:GetRegions() }) do
+        region:Hide()
+        region:SetParent(nil)
+        region = nil
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   SetBarToShare
     Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
@@ -659,7 +689,7 @@ function ABSync:SetBarToShare(barName, value)
     end
 
     -- run db initialize again but pass in barName to make sure all keys are setup for this barName
-    self:InstantiateDB(barName)
+    -- self:InstantiateDB(barName)
 
     -- track if bar is found in profile.currentBarData
     local barFound = false
@@ -704,8 +734,11 @@ function ABSync:SetBarToShare(barName, value)
         self.db.global.barsToSync[barName][playerID] = {}
     end
 
+    -- update the check boxes in the share area
+    ABSync:UpdateShareRegion()
+
     --@debug@
-    if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
+    -- if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -779,7 +812,26 @@ function ABSync:SetBarToSync(key, value)
     --@end-debug@
 end
 
--- NEXT: check BeginSync and make sure backup is what it should be. Need additional UI tab to allow user to see backup history and to be able to restore from backup.
+--[[---------------------------------------------------------------------------
+    Function:   BeginRestore
+    Purpose:    Start the restore process for a single backup and action bar combination.
+-----------------------------------------------------------------------------]]
+function ABSync:BeginRestore(button)
+    -- disable button
+    button:Disable()
+
+    -- refresh current bar data
+    self:GetActionBarData()
+
+    -- trigger message
+    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(self.db.char.restore.choice.backupDttm), self.db.char.restore.choice.actionBar))
+
+    -- trigger the update with the backup date time and a true value for isRestore
+    self:UpdateActionBars(self.db.char.restore.choice.backupDttm, true)
+
+    -- enable button
+    button:Enable()
+end
 
 --[[---------------------------------------------------------------------------
     Function:   BeginSync
@@ -792,8 +844,8 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:BeginSync()
     -- add dialog to ask for backup reason
-    StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NOTE"] = {
-        text = L["actionbarsync_backup_note_text"],
+    StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
+        text = L["Enter a name for this backup:"],
         button1 = L["ok"],
         button2 = L["cancel"],
         hasEditBox = true,
@@ -805,12 +857,12 @@ function ABSync:BeginSync()
             local backupdttm = ABSync:TriggerBackup(backupReason)
             -- sync the bars
             ABSync:UpdateActionBars(backupdttm)
-        end,
+        end, 
         OnCancel = function(self)
             StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
         end,
         OnShow = function(self)
-            self.EditBox:SetText(L["beginsyncdefaultbackupreason"])
+            self.EditBox:SetText(L["Default Name"])
             self.EditBox:SetFocus()
         end,
         timeout = 0,
@@ -854,7 +906,7 @@ function ABSync:BeginSync()
         StaticPopup_Show("ACTIONBARSYNC_NO_SYNCBARS")
     else
         -- if data found, proceed with backup; ask user for backup note
-        StaticPopup_Show("ACTIONBARSYNC_BACKUP_NOTE")
+        StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
     end
 end
 
@@ -1014,40 +1066,105 @@ function ABSync:MountIDToOriginalIndex(mountID)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetSharedByWithOutSpec
+    Purpose:    Split a player-server-spec string into player and server components. Used for macro comparison.
+-----------------------------------------------------------------------------]]
+function ABSync:GetSharedByWithOutSpec(str)
+    -- Find the position of the last hyphen
+    local lastHyphen = str:match(".*()%-")
+    if lastHyphen then
+        local before = str:sub(1, lastHyphen - 1)
+        local after = str:sub(lastHyphen + 1)
+        return before, after
+    else
+        -- No hyphen found, return the whole string and nil
+        return str, nil
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   UpdateActionBars
     Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
     Todo:       Streamline this fuction to use LookUp action to remove duplicated code.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateActionBars(backupdttm)
+function ABSync:UpdateActionBars(backupdttm, isRestore)
+    -- check parameters
+    if not isRestore or isRestore == nil then isRestore = false end
+
+    --@debug@
+    self:Print(("(UpdateActionBars) Starting update process. Is Restore? %s"):format(isRestore and "Yes" or "No"))
+
     -- store differences
     local differences = {}
     local differencesFound = false
 
-    -- compare the global barsToSync data to the user's current action bar data
-    -- loop over only the bars the character wants to sync
-    for barName, sharedby in pairs(self.db.profile.barsToSync) do
-        if sharedby ~= false then
-            -- print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
-            -- loop over the shared data
-            for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do
-                -- define what values to check
-                local checkValues = { "sourceID", "actionType", "subType" }
-                
-                -- loop over checkValues
-                for _, testit in ipairs(checkValues) do
-                    if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
-                        differencesFound = true
-                        table.insert(differences, {
-                            shared = self.db.global.barsToSync[barName][sharedby][buttonID],
-                            current = self.db.char.currentBarData[barName][buttonID],
-                            barName = barName,
-                            sharedBy = sharedby,
-                        })
-                        break
+    -- define what values to check
+    local checkValues = { "sourceID", "actionType", "subType" }
+
+    if isRestore == false then
+        -- compare the global barsToSync data to the user's current action bar data
+        -- loop over only the bars the character wants to sync
+        for barName, sharedby in pairs(self.db.profile.barsToSync) do
+            if sharedby ~= false then
+                -- print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
+                -- loop over the shared data
+                for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do                    
+                    -- loop over checkValues
+                    for _, testit in ipairs(checkValues) do
+                        if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
+                            differencesFound = true
+                            table.insert(differences, {
+                                shared = self.db.global.barsToSync[barName][sharedby][buttonID],
+                                current = self.db.char.currentBarData[barName][buttonID],
+                                barName = barName,
+                                sharedBy = sharedby,
+                            })
+                            break
+                        end
                     end
                 end
             end
         end
+    else
+        -- loop over the backup data looking for the specific entry
+        for _, backupRow in ipairs(self.db.char.backup) do
+            -- print("here1")
+            -- verify the row has the matching date/time
+            if backupRow.dttm == backupdttm then
+                -- print("here2")
+                -- loop over the action bars
+                for barName, barData in pairs(backupRow.data) do
+                    -- print("here3")
+                    -- loop over the buttons
+                    for buttonID, buttonData in pairs(barData) do
+                        -- print("here4")
+                        -- loop over checkValues
+                        for _, testit in ipairs(checkValues) do
+                            -- print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(self.db.char.currentBarData[barName][buttonID][testit])))
+
+                            -- compare values
+                            if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
+                                -- print("here6")
+                                differencesFound = true
+                                table.insert(differences, {
+                                    shared = buttonData,
+                                    current = self.db.char.currentBarData[barName][buttonID],
+                                    barName = barName,
+                                    sharedBy = L["restore"],
+                                })
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- capture last diff data
+    if isRestore == true then
+        self.db.char.lastDiffDataRestore = differences
+    else
+        self.db.char.lastDiffData = differences
     end
 
     -- do we have differences?
@@ -1062,9 +1179,6 @@ function ABSync:UpdateActionBars(backupdttm)
         }
         StaticPopup_Show("ACTIONBARSYNC_NO_DIFFS_FOUND")
     else
-        -- capture last diff data
-        self.db.char.lastDiffData = differences
-
         -- track any errors
         local errors = {}
 
@@ -1091,7 +1205,7 @@ function ABSync:UpdateActionBars(backupdttm)
             }
 
             --@debug@
-            if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
+            -- if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
             --@end-debug@
 
             -- track if something was updated to action bar
@@ -1121,7 +1235,7 @@ function ABSync:UpdateActionBars(backupdttm)
                 -- make sure we have a name that isn't unknown
                 elseif err.name ~= L["unknown"] then
                     -- set the action bar button to the spell
-                    C_Spell.PickupSpell(err.name)
+                     C_Spell.PickupSpell(err.name)
                     PlaceAction(tonumber(err.buttonID))
                     ClearCursor()
 
@@ -1135,7 +1249,6 @@ function ABSync:UpdateActionBars(backupdttm)
                 end
 
             elseif err.type == "item" then
-
                 -- does player have the item
                 local itemCount = self:GetItemCount(err.id)
 
@@ -1174,8 +1287,12 @@ function ABSync:UpdateActionBars(backupdttm)
                     table.insert(errors, err)
                 end
             elseif err.type == "macro" then
+                -- parse out character and server
+                local sharedByWithOutSpec = self:GetSharedByWithOutSpec(diffData.sharedBy)
+                print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetPlayerNameFormatted(true)))
+
                 -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
-                if diffData.shared.macroType == ABSync.MacroType.character then
+                if diffData.shared.macroType == ABSync.MacroType.character and sharedByWithOutSpec ~= self:GetPlayerNameFormatted(true) then
                     err["msg"] = L["charactermacro"]
                     table.insert(errors, err)
                 
@@ -1268,7 +1385,7 @@ function ABSync:UpdateActionBars(backupdttm)
         -- store errors
         if #errors > 0 then
             --@debug@
-            if self.db.char.isDevMode == true then self:Print((L["actionbarsync_sync_errors_found"]):format(backupdttm)) end
+            if self.db.char.isDevMode == true then self:Print((L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
             --@end-debug@
 
             -- make sure syncErrors exists
@@ -1323,8 +1440,8 @@ end
     Purpose:    Check if the current character has a specific spell.
 -----------------------------------------------------------------------------]]
 function ABSync:CharacterHasSpell(spellID)
-    local hasSpell = C_Spell.IsCurrentSpell(spellID) and L["yes"] or L["no"]
-    return hasSpell
+    local hasSpell = C_Spell.DoesSpellExist(spellID)
+    return hasSpell and L["yes"] or L["no"]
 end
 
 --[[---------------------------------------------------------------------------
@@ -1336,6 +1453,8 @@ function ABSync:GetSpellDetails(spellID)
     local spellData = C_Spell.GetSpellInfo(spellID)
     local spellName = spellData and spellData.name or L["unknown"]
     local hasSpell = self:CharacterHasSpell(spellID)
+    local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
+    local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
 
     -- finally return the data collected
     return {
@@ -1349,7 +1468,9 @@ function ABSync:GetSpellDetails(spellID)
             spellID = spellData and spellData.spellID or -1
         },
         name = spellName,
-        hasSpell = hasSpell
+        hasSpell = hasSpell,
+        isTalent = isTalentSpell,
+        isPvp = isPvpSpell,
     }
 end
 
@@ -1616,6 +1737,8 @@ function ABSync:GetActionButtonData(actionID, btnName)
         returnData.sourceID = spellInfo.blizData.spellID
         returnData.blizData = spellInfo.blizData
         returnData.hasSpell = spellInfo.hasSpell
+        returnData.isTalent = spellInfo.isTalent
+        returnData.isPvp = spellInfo.isPvp
 
     -- process items
     elseif actionType == "item" then
@@ -1969,7 +2092,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:EventPlayerLogin() 
     -- check for initial db setup
-    self:InstantiateDB(nil)
+    -- self:InstantiateDB(nil)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2160,18 +2283,6 @@ end
 --     self.ui.group.shareFrame:ReleaseChildren()
 --     self:CreateShareCheckboxes(playerID, funcName)
 -- end
-
---[[---------------------------------------------------------------------------
-    Function:   SyncOnValueChanged
-    Purpose:    Sync the action bar state when the checkbox value changes.
------------------------------------------------------------------------------]]
-function ABSync:SyncOnValueChanged(value, barName, playerID)
-    if value == true then
-        self.db.profile.barsToSync[barName] = playerID
-    else
-        self.db.profile.barsToSync[barName] = false
-    end
-end
 
 function ABSync:GetCheckboxOffsetY(checkbox)
     return ABSync.constants.ui.checkbox.size + ABSync.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
@@ -2570,262 +2681,4 @@ function ABSync:CreateTabSystem(parent)
     ABSync.uitabs["buttons"] = tabButtons
 end
 
---[[---------------------------------------------------------------------------
-    Function:   CreateContentFrame
-    Purpose:    Create a scrollable content frame for tab content.
-    Arguments:  parent - The parent frame to attach this frame to
-    Returns:    The created ScrollFrame and its child Frame for content.
------------------------------------------------------------------------------]]
-function ABSync:CreateContentFrame(parent)
-    -- add footer
-    local footer = CreateFrame("Frame", nil, parent)
-    footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-    footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    footer:SetHeight(40)
-
-    -- create close button
-    local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
-        parent:Hide()
-    end)
-    local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
-    closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
-
-    -- create a frame to hold the content
-    local contentFrame = CreateFrame("Frame", nil, parent)
-    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
-    contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
-
-    -- return the created frame
-    return contentFrame
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateStandardButton
-    Purpose:    Replace AceGUI buttons with standard buttons.
-    Arguments:  parent   - The parent frame to attach this frame to
-                text     - The button text
-                width    - The width of the button
-                onClick  - Callback function when the button is clicked
-    Returns:    The created Button frame.
-
-Usage example:
-
-    local scanButton = CreateStandardButton(shareFrame, "Scan Now", 100, function()
-        ABSync:GetActionBarData()
-        -- Update UI
-    end)
-    scanButton:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 10, -10)
------------------------------------------------------------------------------]]
-function ABSync:CreateStandardButton(parent, text, width, onClick)
-    local button = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
-    button:SetSize(width or 120, 22)
-    button:SetText(text)
-    button:SetScript("OnClick", onClick)
-    return button
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateEditBox
-    Purpose:    Replace AceGUI edit boxes with standard edit boxes.
-    Arguments:  parent   - The parent frame to attach this frame to
-                width    - The width of the edit box
-                height   - The height of the edit box
-                readOnly - Boolean to set if the edit box is read-only
-    Returns:    The created EditBox frame.
-
-Usage example:
-
-    local lastScanBox = CreateEditBox(scanFrame, 250, 20, true)
-    lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
-    lastScanBox:SetText(self.db.char.lastScan or "Never")
------------------------------------------------------------------------------]]
-function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
-    local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    editBox:SetSize(width or 200, height or 20)
-    editBox:SetAutoFocus(false)
-    
-    if readOnly then
-        editBox:SetEnabled(false)
-        editBox:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
-    end
-
-    if onEnter then
-        editBox:SetScript("OnEnterPressed", function(self)
-            onEnter(self) 
-        end)
-    end
-    
-    return editBox
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLabelWithTimer
-    Purpose:    Set a label's text and clear it after a specified duration.
-    Arguments:  label     - The font string label to update
-                text      - The text to display
-                duration  - How long to show the text before clearing (optional, default 3 seconds)
-                color     - Color table {r, g, b} for the text (optional)
-    Returns:    None
------------------------------------------------------------------------------]]
-function ABSync:SetLabelWithTimer(label, text, duration, color)
-    if not label then return end
-    
-    duration = duration or 3.0  -- Default 3 seconds
-    
-    -- Cancel any existing timer
-    if label.clearTimer then
-        label.clearTimer:Cancel()
-        label.clearTimer = nil
-    end
-    
-    -- Set the text immediately
-    label:SetText(text)
-    
-    -- Set color if provided
-    if color then
-        label:SetTextColor(color.r or 1, color.g or 1, color.b or 1)
-    end
-    
-    -- Create timer to clear the text
-    label.clearTimer = C_Timer.NewTimer(duration, function()
-        label:SetText("")
-        label.clearTimer = nil
-    end)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateCheckbox
-    Purpose:    Replace AceGUI checkboxes with standard check buttons.
-    Arguments:  parent       - The parent frame to attach this frame to
-                text         - The label text for the checkbox
-                initialValue - The initial checked state (true/false)
-                onChanged    - Callback function when the checkbox state changes
-    Returns:    The created CheckButton frame.
-
-Usage example:
-
-----------------------------------------------------------------------------]]
-function ABSync:CreateCheckbox(parent, text, initialValue, OnClick)
-    -- create checkbox
-    local checkbox = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
-
-    -- set its label
-    checkbox.Text:SetText(text)
-
-    -- set if its checked or not
-    checkbox:SetChecked(initialValue)
-
-    -- set the OnClick event function to the onChanged parameter function
-    checkbox:SetScript("OnClick", function(self, button, down)
-        local checked = self:GetChecked()
-        if OnClick then
-            OnClick(self, button, checked)
-        end
-    end)
-    
-    -- finally return the checkbox object
-    return checkbox
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateDropdown
-    Purpose:    Replace AceGUI dropdowns with standard dropdown menus.
-    Arguments:  parent          - The parent frame to attach this frame to
-                items           - A table of items for the dropdown (key-value pairs)
-                initialValue    - The initial selected value
-                onSelectionChanged - Callback function when the selection changes
-    Returns:    The created Dropdown frame.
-    
-Usage example:
-
-    local actionTypeDropdown = CreateDropdown(lookupFrame, 
-        ABSync:GetActionTypeValues(),
-        ABSync:GetLastActionType(),
-        function(value)
-            ABSync:SetLastActionType(value)
-        end
-    )
------------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, items, initialValue, onChange)
-    -- create dropdown and set it up
-    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
-    
-    -- store dropdown state
-    dropdown.selectedValue = initialValue or ""
-    dropdown.selectedText = items[initialValue] or ""
-    dropdown.items = items
-    
-    -- external function; change selected value
-    local function SetSelectedValue(key)
-        --@debug@
-        -- print("(CreateDropdown) SetSelectedValue called with key:", key)
-        --@end-debug@
-        if dropdown.items[key] then
-            dropdown.selectedValue = key
-            dropdown.selectedText = dropdown.items[key] or ""
-        else
-            dropdown.selectedValue = ""
-            dropdown.selectedText = ""
-        end
-        if onChange then
-            onChange(key)
-        end
-    end
-
-    -- function to check if a value is selected
-    local function IsSelectedValue(key)
-        return dropdown.selectedValue == key
-    end
-
-    -- function to build the dropdown menu from the items parameter
-    local function GeneratorFunction(dropdown, rootDescription)
-        -- add buttons for each item
-        for key, value in pairs(dropdown.items) do
-            rootDescription:CreateRadio(value, IsSelectedValue, SetSelectedValue, key)
-        end
-    end
-
-    -- setup the menu
-    dropdown:SetupMenu(GeneratorFunction)
-
-    -- external function; update function
-    function dropdown:UpdateItems(newItems, newValue)
-        --@debug@
-        -- print("(CreateDropdown) New Value:", newValue)
-        --@end-debug@
-        self.items = newItems
-        -- dropdown:SetupMenu(GeneratorFunction)
-        SetSelectedValue(newValue)
-        dropdown:GenerateMenu()
-    end
-
-    -- external function; get selected value
-    function dropdown:GetSelectedValue()
-        return self.selectedValue
-    end
-
-    -- set initial value if provided
-    if initialValue and items[initialValue] then
-        SetSelectedValue(initialValue)
-    end
-    
-    -- return the created dropdown
-    return dropdown
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateInlineGroup
-    Purpose:    Replace AceGUI inline groups with standard frames with a title.
-    Arguments:  parent - The parent frame to attach this frame to
-                title  - The title text for the group
-                width  - The width of the group
-                height - The height of the group
-    Returns:    The created Frame.
------------------------------------------------------------------------------]]
-function ABSync:CreateInlineGroup(parent, width, height)
-    local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    frame:SetSize(width or 200, height or 100)
-    
-    return frame
-end
-
+--EOF

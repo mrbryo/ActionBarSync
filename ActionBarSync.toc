@@ -40,3 +40,4 @@ tabs\Restore.lua
 ## Libraries
 libs\StandardFunctions.lua
 libs\FontStringExamples.lua
+libs\StandardUI.lua

@@ -186,6 +186,12 @@ function ABSync:CreateRestoreFrame(parent)
     local dropdownOffset = (self.ui.dropdown.actionBarSelection:GetHeight() - dropdownLabel:GetStringHeight()) / 2
     dropdownLabel:SetPoint("TOPLEFT", insetFrame, "TOPLEFT", padding, -(padding + dropdownOffset))
     self.ui.dropdown.actionBarSelection:SetPoint("LEFT", dropdownLabel, "RIGHT", padding, 0)
+
+    -- add button to trigger restore
+    local restoreButton = self:CreateStandardButton(insetFrame, "Restore", 100, function(self, button, down)        
+        ABSync:BeginRestore(self)
+    end)
+    restoreButton:SetPoint("TOPLEFT", dropdownLabel, "BOTTOMLEFT", 0, -(padding + dropdownOffset))
 end
 
 --[[---------------------------------------------------------------------------
