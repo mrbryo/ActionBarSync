@@ -233,8 +233,14 @@ function ABSync:CreateTopRegion(parent)
 
     -- place action button
     local applyActionButton = self:CreateStandardButton(rowBtn, "Place Action", 100, function()
-        ABSync:PlaceActionOnBar()
+        -- get stored values
+        local actionID = ABSync:GetLastActionID()
+        local actionType = ABSync:GetLastActionType()
+        local actionBar = ABSync:GetLastActionBar()
+        local actionButton = ABSync:GetLastActionButton()
+        ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     end)
+    applyActionButton:SetPoint("LEFT", actionBtnDropDown, "RIGHT", padding, 0)
 
     -- adjust height of trigger content frame
     topContent:SetHeight(rowID:GetHeight() + rowType:GetHeight() + rowName:GetHeight() + introLabel:GetHeight() + (padding * 3))

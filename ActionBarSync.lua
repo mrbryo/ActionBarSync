@@ -874,13 +874,11 @@ function ABSync:SetBarToSync(key, value)
     --@end-debug@
 end
 
-function ABSync:PlaceActionOnBar()
-    -- get stored values
-    local actionID = self:GetLastActionID()
-    local actionType = self:GetLastActionType()
-    local actionBar = self:GetLastActionBar()
-    local actionButton = self:GetLastActionButton()
-
+--[[---------------------------------------------------------------------------
+    Function:   PlaceActionOnBar
+    Purpose:    Place a specific action on a specific action bar and button.
+-----------------------------------------------------------------------------]]
+function ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
     local buttonID = self.db.global.actionButtonTranslation[actionBar][actionButton]
 
