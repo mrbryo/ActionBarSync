@@ -43,12 +43,12 @@ function ABSync:LookupAction()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateLookupQueryFrame
+    Function:   CreateTopRegion
     Purpose:    Create the lookup query frame for performing action lookups.
     Arguments:  parent  - The parent frame to attach this frame to
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:CreateLookupQueryFrame(parent)
+function ABSync:CreateTopRegion(parent)
     -- get language data
     local L = self.localeData
 
@@ -57,6 +57,7 @@ function ABSync:CreateLookupQueryFrame(parent)
     local controlWidth = 200
     local padding = ABSync.constants.ui.generic.padding
     local paddingAdjust = 5 -- to align edit boxes with drop downs, add N padding to the left of edit boxes and make the size N smaller
+    local rowHeight = 30
 
     -- track heights and widths
     local topFrameHeight = 0
@@ -67,71 +68,122 @@ function ABSync:CreateLookupQueryFrame(parent)
     topContent:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     topContent:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     topContent:SetHeight(100) -- set initial height, will expand as needed
+    local topWidth = (topContent:GetWidth() / 2) - (padding * 1.5)
 
     -- intro at top of top section
     local introLabel = topContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     introLabel:SetPoint("TOPLEFT", topContent, "TOPLEFT", padding, -padding)
     introLabel:SetPoint("TOPRIGHT", topContent, "TOPRIGHT", -padding, -padding)
     introLabel:SetJustifyH("LEFT")
-    introLabel:SetText(L["This tab allows you to look up actions by type and ID."])
+    introLabel:SetText(L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."])
     -- topFrameHeight = topFrameHeight + introLabel:GetHeight() + padding
 
     -- build table
-    local rowOne = CreateFrame("Frame", nil, topContent)
-    rowOne:SetPoint("TOPLEFT", introLabel, "BOTTOMLEFT", 0, -padding)
-    rowOne:SetPoint("TOPRIGHT", introLabel, "BOTTOMRIGHT", 0, -padding)
-    rowOne:SetHeight(25)    -- set initial height, will expand as needed
-    local rowTwo = CreateFrame("Frame", nil, topContent)
-    rowTwo:SetPoint("TOPLEFT", rowOne, "BOTTOMLEFT", 0, 0)
-    rowTwo:SetPoint("TOPRIGHT", rowOne, "BOTTOMRIGHT", 0, 0)
-    rowTwo:SetHeight(25)    -- set initial height, will expand as needed
+    local rowID = CreateFrame("Frame", nil, topContent)
+    rowID:SetPoint("TOPLEFT", introLabel, "BOTTOMLEFT", 0, -padding)
+    rowID:SetHeight(rowHeight)    -- set initial height, will expand as needed
+    rowID:SetWidth(topWidth)
+    local rowName = CreateFrame("Frame", nil, topContent)
+    rowName:SetPoint("TOPLEFT", rowID, "BOTTOMLEFT", 0, 0)
+    rowName:SetPoint("TOPRIGHT", rowID, "BOTTOMRIGHT", 0, 0)
+    rowName:SetHeight(rowHeight)  -- set initial height, will expand as needed
+    rowID:SetWidth(topWidth)
+    local rowType = CreateFrame("Frame", nil, topContent)
+    rowType:SetPoint("TOPLEFT", rowName, "BOTTOMLEFT", 0, 0)
+    rowType:SetPoint("TOPRIGHT", rowName, "BOTTOMRIGHT", 0, 0)
+    rowType:SetHeight(rowHeight)    -- set initial height, will expand as needed
+    rowID:SetWidth(topWidth)
+    local rowBar = CreateFrame("Frame", nil, topContent)
+    rowBar:SetPoint("LEFT", rowID, "RIGHT", padding, 0)
+    rowBar:SetHeight(rowHeight)    -- set initial height, will expand as needed
+    rowBar:SetWidth(topWidth)
+    local rowBtn = CreateFrame("Frame", nil, topContent)
+    rowBtn:SetPoint("LEFT", rowName, "RIGHT", padding, 0)
+    rowBtn:SetHeight(rowHeight)    -- set initial height, will expand as needed
+    rowBtn:SetWidth(topWidth)
+
+    --[[ action id row ]]
 
     -- action id row; label for edit box
-    local actionIdLabel = rowOne:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    actionIdLabel:SetPoint("LEFT", rowOne, "LEFT", 0, 0)
+    local actionIdLabel = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    actionIdLabel:SetPoint("LEFT", rowID, "LEFT", 0, 0)
     actionIdLabel:SetJustifyH("LEFT")
-    actionIdLabel:SetText(("%sAction ID:|r"):format(ABSync.constants.colors.label))
+    actionIdLabel:SetText(("%sID:|r"):format(ABSync.constants.colors.label))
 
     -- action id row; edit box for entering action id
-    local actionIdInput = self:CreateEditBox(rowOne, controlWidth - paddingAdjust, nil, false, function(self)
+    local actionIdInput = self:CreateEditBox(rowID, controlWidth - paddingAdjust, nil, false, function(self)
         local value = self:GetText()
         ABSync:SetLastActionID(value)
 
         -- trigger timer
         if value and value ~= "" then
-            ABSync:SetLabelWithTimer(ABSync.ui.label.actionSaved, L["Saved!"], 3, nil)
+            ABSync:SetLabelWithTimer(ABSync.ui.label.actionIdSaved, L["Saved!"], 3, nil)
         end
     end)
     actionIdInput:SetPoint("LEFT", actionIdLabel, "RIGHT", padding + paddingAdjust, 0)
-    actionIdInput:SetText(ABSync:GetLastActionID() or "")
+    actionIdInput:SetText(self:GetLastActionID() or "")
     -- topFrameHeight = topFrameHeight + actionIdInput:GetHeight() + padding
 
-    -- action id row; label to show entered action id, confirms to use it was entered successfully
-    self.ui.label.actionSaved = rowOne:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    self.ui.label.actionSaved:SetPoint("LEFT", actionIdInput, "RIGHT", padding, 0)
-    self.ui.label.actionSaved:SetJustifyH("LEFT")
+    -- save confirmation
+    self.ui.label.actionIdSaved = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    self.ui.label.actionIdSaved:SetPoint("LEFT", actionIdInput, "RIGHT", padding, 0)
+    self.ui.label.actionIdSaved:SetJustifyH("LEFT")
+    self.ui.label.actionIdSaved:SetText(L["Saved!"])
+    local savedWidthId = self.ui.label.actionIdSaved:GetWidth()
+    self.ui.label.actionIdSaved:SetText("")  -- clear it out for now
+
+    --[[ action name row]]
+
+    -- add label for Action Name
+    local actionNameLabel = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    actionNameLabel:SetPoint("LEFT", rowName, "LEFT", 0, 0)
+    actionNameLabel:SetJustifyH("LEFT")
+    actionNameLabel:SetText(("%sName:|r"):format(ABSync.constants.colors.label))
+
+    -- edit box for enter action name
+    local actionNameInput = self:CreateEditBox(rowName, controlWidth - paddingAdjust, nil, false, function(self)
+        local value = self:GetText()
+        ABSync:SetLastActionName(value)
+
+        -- trigger timer
+        if value and value ~= "" then
+            ABSync:SetLabelWithTimer(ABSync.ui.label.actionNameSaved, L["Saved!"], 3, nil)
+        end
+    end)
+    actionNameInput:SetPoint("LEFT", actionNameLabel, "RIGHT", padding + paddingAdjust, 0)
+    actionNameInput:SetText(self:GetLastActionName())
+
+    -- save confirmation
+    self.ui.label.actionNameSaved = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    self.ui.label.actionNameSaved:SetPoint("LEFT", actionNameInput, "RIGHT", padding, 0)
+    self.ui.label.actionNameSaved:SetJustifyH("LEFT")
+
+    --[[ action type row ]]
     
-    -- action type row; label for drop down
-    local actionTypeLabelText = ("%sAction Type:|r"):format(ABSync.constants.colors.label)
-    local actionTypeLabel = rowTwo:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    actionTypeLabel:SetPoint("LEFT", rowTwo, "LEFT", 0, 0)
+    -- label for drop down
+    local actionTypeLabelText = ("%sType:|r"):format(ABSync.constants.colors.label)
+    local actionTypeLabel = rowType:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    actionTypeLabel:SetPoint("LEFT", rowType, "LEFT", 0, 0)
     actionTypeLabel:SetJustifyH("LEFT")
     actionTypeLabel:SetText(actionTypeLabelText)
-    colOneWidth = math.max(actionIdLabel:GetStringWidth(), actionTypeLabel:GetStringWidth())
 
-    -- set action ID now we know which label is wider
+    -- check which label is wider
+    colOneWidth = math.max(actionIdLabel:GetStringWidth(), actionTypeLabel:GetStringWidth(), actionNameLabel:GetStringWidth())
+
+    -- set all labels to same width
     actionIdLabel:SetWidth(colOneWidth)
-
-    -- must set the size of this label in case the action ID was larger
     actionTypeLabel:SetWidth(colOneWidth)
+    actionNameLabel:SetWidth(colOneWidth)
+
+    --[[ action type row]]
 
     -- action type row; drop down for selecting action type
-    local actionTypeDropDown = self:CreateDropdown(rowTwo, self:GetActionTypeValues(), self:GetLastActionType(), function(key)
+    local actionTypeDropDown = self:CreateDropdown(rowType, self:GetActionTypeValues(), self:GetLastActionType(), function(key)
         ABSync:SetLastActionType(key)
     end)
     --@debug@
     -- swap this in for CreateDropdown to see if size is really same as the action id row; it normally is and the drop down is more narrow for some reason
-    -- local actionTypeDropDown = self:CreateEditBox(rowTwo, controlWidth, nil, false, function(self)
+    -- local actionTypeDropDown = self:CreateEditBox(rowType, controlWidth, nil, false, function(self)
     --     local value = self:GetText()
     --     ABSync:SetLastActionType(value)
     -- end)
@@ -141,14 +193,56 @@ function ABSync:CreateLookupQueryFrame(parent)
     -- topFrameHeight = topFrameHeight + actionTypeDropDown:GetHeight() + padding
 
     -- action type row; button to perform the lookup
-    local lookupButton = self:CreateStandardButton(rowTwo, L["lookupbuttonname"], 75, function()
+    local lookupButton = self:CreateStandardButton(rowType, L["lookupbuttonname"], 75, function()
         ABSync:LookupAction()
     end)
     lookupButton:SetPoint("LEFT", actionTypeDropDown, "RIGHT", padding, 0)
     -- topFrameHeight = topFrameHeight + lookupButton:GetHeight() + padding
 
+    --[[ action bar choice row ]]
+
+    -- label for drop down
+    local actionBarLabelText = ("%sBar:|r"):format(ABSync.constants.colors.label)
+    local actionBarLabel = rowBar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    actionBarLabel:SetPoint("LEFT", rowBar, "LEFT", 0, 0)
+    actionBarLabel:SetJustifyH("LEFT")
+    actionBarLabel:SetText(actionBarLabelText)
+
+    -- action bar drop down
+    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetActionBarValues(), self:GetLastActionBar(), function(key)
+        ABSync:SetLastActionBar(key)
+    end)
+    actionBarDropDown:SetWidth(controlWidth)
+    actionBarDropDown:SetPoint("LEFT", actionBarLabel, "RIGHT", padding, 0)
+
+    --[[ action button drop down row]]
+
+    -- label for button drop down
+    local actionBtnLabelText = ("%sButton:|r"):format(ABSync.constants.colors.label)
+    local actionBtnLabel = rowBtn:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    actionBtnLabel:SetPoint("LEFT", rowBtn, "LEFT", 0, 0)
+    actionBtnLabel:SetJustifyH("LEFT")
+    actionBtnLabel:SetText(actionBtnLabelText)
+
+    -- action button drop down
+    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetActionButtonValues(), self:GetLastActionButton(), function(key)
+        ABSync:SetLastActionButton(key)
+    end)
+    actionBtnDropDown:SetWidth(controlWidth)
+    actionBtnDropDown:SetPoint("LEFT", actionBtnLabel, "RIGHT", padding, 0)
+
+    -- place action button
+    local applyActionButton = self:CreateStandardButton(rowBtn, "Place Action", 100, function()
+        ABSync:PlaceActionOnBar()
+    end)
+
     -- adjust height of trigger content frame
-    topContent:SetHeight(rowOne:GetHeight() + rowTwo:GetHeight() + introLabel:GetHeight() + (padding * 3))
+    topContent:SetHeight(rowID:GetHeight() + rowType:GetHeight() + rowName:GetHeight() + introLabel:GetHeight() + (padding * 3))
+
+    -- check for max width of column 2
+    local colTwoWidth = math.max(actionBtnLabel:GetWidth(), actionBarLabel:GetWidth())
+    actionBtnLabel:SetWidth(colTwoWidth)
+    actionBarLabel:SetWidth(colTwoWidth)
 
     -- return built frame
     return topContent
@@ -345,7 +439,7 @@ function ABSync:CreateLookupFrame(parent)
     title:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", 0, 0)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(L["Lookup"])
+    title:SetText(L["Lookup & Assign"])
 
     -- create main content frame
     local mainContentFrame = CreateFrame("Frame", nil, mainFrame)
@@ -355,7 +449,7 @@ function ABSync:CreateLookupFrame(parent)
     mainContentFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", 0, 0)
 
     -- add top frame to perform lookup
-    local topFrame = self:CreateLookupQueryFrame(mainContentFrame)
+    local topFrame = self:CreateTopRegion(mainContentFrame)
 
     -- create lower section group with label named "Lookup History"
     local historyFrame = self:CreateLookupHistoryFrame(mainContentFrame, topFrame:GetHeight())

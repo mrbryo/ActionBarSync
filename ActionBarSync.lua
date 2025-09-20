@@ -193,6 +193,17 @@ function ABSync:InstantiateDB(barName)
         self.db.global.actionBars = {}
     end
 
+    -- action buttons
+    self.db.global.actionButtons = {}
+    for i = 1, 12 do
+        table.insert(self.db.global.actionButtons, i, tostring(i))
+    end
+
+    -- action button translation
+    if not self.db.global.actionButtonTranslation then
+        self.db.global.actionButtonTranslation = {}
+    end
+
     -- auto reset mount journal filters flag
     if not self.db.profile.autoResetMountFilters then
         self.db.profile.autoResetMountFilters = false
@@ -238,7 +249,9 @@ function ABSync:InstantiateDB(barName)
         self.db.char.actionLookup = {
             name = "",
             id = "",
-            type = ""
+            type = "",
+            bar = "",
+            btn = "",
         }
     end
 
@@ -378,6 +391,54 @@ function ABSync:SetLastActionType(value)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetActionBarValues
+    Purpose:    Get the action bar values.
+-----------------------------------------------------------------------------]]
+function ABSync:GetActionBarValues()
+    return self.db.global.actionBars
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetActionButtonValues
+    Purpose:    Get the action button values.
+-----------------------------------------------------------------------------]]
+function ABSync:GetActionButtonValues()
+    return self.db.global.actionButtons
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastActionBar
+    Purpose:    Get the last action bar for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionBar()
+    return self.db.char.actionLookup.bar or ""
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLastActionBar
+    Purpose:    Set the last action bar for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionBar(value)
+    self.db.char.actionLookup.bar = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastActionButton
+    Purpose:    Get the last action button for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionButton()
+    return self.db.char.actionLookup.btn or ""
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetLastActionButton
+    Purpose:    Set the last action button for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionButton(value)
+    self.db.char.actionLookup.btn = value
+end
+
+--[[---------------------------------------------------------------------------
     Function:   InsertLookupHistory
     Purpose:    Insert a new entry into the lookup history and only keeping the max records set by the user.
 -----------------------------------------------------------------------------]]
@@ -401,50 +462,51 @@ end
 function ABSync:GetActionData(actionID, actionType)
     -- store results
     local lookupInfo = {
+        data = {},
         name = L["unknown"],
         has = L["no"]
     }
 
     if actionType == "spell" then
         -- get spell details: data, name, hasSpell
-        local spellInfo = self:GetSpellDetails(actionID)
+        lookupInfo.data = self:GetSpellDetails(actionID)
 
         -- update details
-        lookupInfo.name = spellInfo.name
-        lookupInfo.has = spellInfo.hasSpell
+        lookupInfo.name = lookupInfo.data.name
+        lookupInfo.has = lookupInfo.data.hasSpell
     elseif actionType == "item" then
         -- get item details
-        local itemInfo = self:GetItemDetails(actionID)
+        lookupInfo.data = self:GetItemDetails(actionID)
 
         -- update details
-        lookupInfo.name = itemInfo.finalItemName
-        lookupInfo.has = itemInfo.hasItem
+        lookupInfo.name = lookupInfo.data.finalItemName
+        lookupInfo.has = lookupInfo.data.hasItem
     elseif actionType == "macro" then
         -- get macro details
-        local macroInfo = self:GetMacroDetails(actionID)
+        lookupInfo.data = self:GetMacroDetails(actionID)
         
         -- update details
-        lookupInfo.name = macroInfo.blizData.name
-        lookupInfo.has = macroInfo.hasMacro
+        lookupInfo.name = lookupInfo.data.blizData.name
+        lookupInfo.has = lookupInfo.data.hasMacro
     elseif actionType == "summonpet" then
         -- get pet data
-        local petInfo = self:GetPetDetails(actionID)
+        lookupInfo.data = self:GetPetDetails(actionID)
 
         -- update details
-        lookupInfo.name = petInfo.name
-        lookupInfo.has = petInfo.hasPet
+        lookupInfo.name = lookupInfo.data.name
+        lookupInfo.has = lookupInfo.data.hasPet
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
-        local mountInfo = self:GetMountinfo(actionID)
+        lookupInfo.data = self:GetMountinfo(actionID)
 
         -- update name
-        lookupInfo.name = mountInfo.name
+        lookupInfo.name = lookupInfo.data.name
 
         -- get mount journal index
-        local mountJournalIndex = self:MountIDToOriginalIndex(mountInfo.mountID)
+        -- local mountJournalIndex = self:MountIDToOriginalIndex(mountInfo.mountID)
 
         -- has mount
-        lookupInfo.has = mountJournalIndex and "Yes" or "No"
+        lookupInfo.has = lookupInfo.data.mountJournalIndex and "Yes" or "No"
     end
 
     -- finally return results
@@ -812,6 +874,59 @@ function ABSync:SetBarToSync(key, value)
     --@end-debug@
 end
 
+function ABSync:PlaceActionOnBar()
+    -- get stored values
+    local actionID = self:GetLastActionID()
+    local actionType = self:GetLastActionType()
+    local actionBar = self:GetLastActionBar()
+    local actionButton = self:GetLastActionButton()
+
+    -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
+    local buttonID = self.db.global.actionButtonTranslation[actionBar][actionButton]
+
+    -- get action details
+    local actionDetails = self:GetActionData(actionID, actionType)
+
+    -- something picked up?
+    local pickedUp = false
+
+    -- response
+    local response = {
+        msg = "Not Picked Up - Unknown"
+    }
+
+    -- place action on bar based on type
+    if actionType == "spell" then
+        C_Spell.PickupSpell(actionID)
+        pickedUp = true
+    elseif actionType == "item" then
+        if actionDetails.data.userItemCount > 0 and actionDetails.data.isToy == false then
+            C_Item.PickupItem(actionID)
+            pickedUp = true
+            response.msg = "Picked Up"
+        elseif actionDetails.data.isToy == true then
+            C_ToyBox.PickupToyBoxItem(actionID)
+            pickedUp = true
+            response.msg = "Picked Up"
+        elseif actionDetails.data.userItemCount == 0 and actionDetails.data.isToy == false then
+            response.msg = "Not Picked Up - Item not in inventory!"
+        end
+    elseif actionType == "macro" then
+        PickupMacro(actionDetails.name)
+        pickedUp = true
+    elseif actionType == "summonpet" then
+        C_PetJournal.PickupPet(actionID)
+        pickedUp = true
+    elseif actionType == "summonmount" then
+        C_MountJournal.Pickup(actionDetails.mountJournalIndex)
+        pickedUp = true
+    end
+
+    -- place action and clear the cursor
+    PlaceAction(tonumber(buttonID))
+    ClearCursor()
+end
+
 --[[---------------------------------------------------------------------------
     Function:   BeginRestore
     Purpose:    Start the restore process for a single backup and action bar combination.
@@ -999,73 +1114,6 @@ function ABSync:RemoveButtonAction(buttonID)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   MountJournalFilterBackup
-    Purpose:    Backup the current mount journal filter settings.
-
-    NOT USED YET
------------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterBackup()
-    -- backup current filter settings
-    self.db.char.mountJournalFilters = {
-        collected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED),
-        notCollected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED),
-        unusable = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE),
-    }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   MountJournalFilterReset
-    Purpose:    Reset the mount journal filter settings to default.
------------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterReset()
-    -- reset default filter settings
-    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, true)
-    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, false)
-    C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, false)
-    C_MountJournal.SetAllSourceFilters(true)
-    C_MountJournal.SetSearch("")
-    C_MountJournal.SetAllTypeFilters(true)
-
-    -- notify user
-    self:Print("Mount Journal filters have been set to show all collected mounts.")
-end
-
---[[---------------------------------------------------------------------------
-    Function:   MountJournalFilterRestore
-    Purpose:    Restore the mount journal filter settings from backup.
-
-    NOT USED YET
------------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterRestore()
-    -- restore previous filter settings
-    if self.db.char.mountJournalFilters then
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, self.db.char.mountJournalFilters.collected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, self.db.char.mountJournalFilters.notCollected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, self.db.char.mountJournalFilters.unusable)
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   MountIdToOriginalIndex
-    Purpose:    Get the original index of a mount by its ID.
-    Credit:     MountJournalEnhanced authors!
-
-    Usage:      Should call MountJournalFilterReset() before calling this but should add code to let user know if mount is not found and ask if filter should be restored to default or our own "default".
------------------------------------------------------------------------------]]
-function ABSync:MountIDToOriginalIndex(mountID)
-    -- get the current number from the journal
-    local count = C_MountJournal.GetNumDisplayedMounts()
-    for i = 1, count do
-        local displayedMountID = select(12, C_MountJournal.GetDisplayedMountInfo(i))
-        if displayedMountID == mountID then
-            return i
-        end
-    end
-
-    return nil
-end
-
---[[---------------------------------------------------------------------------
     Function:   GetSharedByWithOutSpec
     Purpose:    Split a player-server-spec string into player and server components. Used for macro comparison.
 -----------------------------------------------------------------------------]]
@@ -1083,24 +1131,23 @@ function ABSync:GetSharedByWithOutSpec(str)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   UpdateActionBars
-    Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
-    Todo:       Streamline this fuction to use LookUp action to remove duplicated code.
+    Function:   GetActionBarDifferences
+    Purpose:    Compare two action bar button data tables.
+                If isRestore is true then compare the backup data to the current data.
+                If isRestore is false then compare the shared data to the current data.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateActionBars(backupdttm, isRestore)
+function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     -- check parameters
     if not isRestore or isRestore == nil then isRestore = false end
 
-    --@debug@
-    self:Print(("(UpdateActionBars) Starting update process. Is Restore? %s"):format(isRestore and "Yes" or "No"))
-
-    -- store differences
+    -- instantiate variables
     local differences = {}
     local differencesFound = false
 
     -- define what values to check
     local checkValues = { "sourceID", "actionType", "subType" }
 
+    -- determine differences
     if isRestore == false then
         -- compare the global barsToSync data to the user's current action bar data
         -- loop over only the bars the character wants to sync
@@ -1108,7 +1155,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             if sharedby ~= false then
                 -- print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
                 -- loop over the shared data
-                for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do                    
+                for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do
                     -- loop over checkValues
                     for _, testit in ipairs(checkValues) do
                         if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
@@ -1137,11 +1184,11 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     -- print("here3")
                     -- loop over the buttons
                     for buttonID, buttonData in pairs(barData) do
-                        -- print("here4")
                         -- loop over checkValues
                         for _, testit in ipairs(checkValues) do
+                            --@debug@
                             -- print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(self.db.char.currentBarData[barName][buttonID][testit])))
-
+                            --@end-debug@
                             -- compare values
                             if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
                                 -- print("here6")
@@ -1166,6 +1213,25 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     else
         self.db.char.lastDiffData = differences
     end
+
+    return differences, differencesFound
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   UpdateActionBars
+    Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
+    Todo:       Streamline this fuction to use LookUp action to remove duplicated code.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateActionBars(backupdttm, isRestore)
+    -- check parameters
+    if not isRestore or isRestore == nil then isRestore = false end
+
+    --@debug@
+    if self.db.char.isDevMode == true then self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No")) end
+    --@end-debug@
+
+    -- store differences
+    local differences, differencesFound = self:GetActionBarDifferences(backupdttm, isRestore)
 
     -- do we have differences?
     if differencesFound == false then
@@ -1205,7 +1271,6 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 msg = ""
             }
 
-
             --@debug@
             -- if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
             --@end-debug@
@@ -1232,8 +1297,14 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     --@end-debug@
                 end
 
+                -- verify if user has spell
+                local hasSpell = self:CharacterHasSpell(err.id)
+
                 -- report error if player does not have the spell
-                if diffData.shared.hasSpell == L["no"] then
+                --@debug@
+                -- print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
+                --@end-debug@
+                if hasSpell == L["no"] then
                     -- update message to show character doesn't have the spell
                     err["msg"] = L["unavailable"]
 
@@ -1261,14 +1332,15 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- does player have the item
                 local itemCount = self:GetItemCount(err.id)
 
-                print(("Item Name: %s, Item ID: %s, Item Count: %s, Is Toy? %s"):format(tostring(err.name), tostring(err.id), tostring(itemCount), tostring(diffData.shared.isToy and "Yes" or "No")))
+                --@debug@
+                -- print(("Item Name: %s, Item ID: %s, Item Count: %s, Is Toy? %s"):format(tostring(err.name), tostring(err.id), tostring(itemCount), tostring(diffData.shared.isToy and "Yes" or "No")))
+                --@end-debug@
 
                 -- if the user has the item, then add it to their action bar as long as the name is not unknown
                 if itemCount > 0 then
                     -- item exists
                     if err.name ~= L["unknown"] and diffData.shared.isToy == false then
                         -- set the action bar button to the item
-                        -- TODO: Maybe...just like for spells this may need to be err.id and not err.name? So far no issues...yet!
                         C_Item.PickupItem(err.id)
                         PlaceAction(tonumber(err.buttonID))
                         ClearCursor()
@@ -1346,8 +1418,9 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     table.insert(errors, err)
                 end
             elseif err.type == "summonmount" then
-                -- get mount journal index
+                -- get mount location in journal
                 local mountJournalIndex = self:MountIDToOriginalIndex(diffData.shared.mountID)
+
                 if mountJournalIndex then
                     C_MountJournal.Pickup(mountJournalIndex)
                     PlaceAction(tonumber(err.buttonID))
@@ -1447,308 +1520,6 @@ end
 function ABSync:GetItemCount(id)
     local itemCount = C_Item.GetItemCount(id)
     return itemCount
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CharacterHasSpell
-    Purpose:    Check if the current character has a specific spell.
------------------------------------------------------------------------------]]
-function ABSync:CharacterHasSpell(spellID)
-    local hasSpell = C_Spell.DoesSpellExist(spellID)
-    return hasSpell and L["yes"] or L["no"]
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetSpellDetails
-    Purpose:    Retrieve spell information based on the spell ID.
------------------------------------------------------------------------------]]
-function ABSync:GetSpellDetails(spellID)
-    -- special handling for Switch Flight Style
-    -- if spellID == 460002 then spellID = 436854 end
-    
-    -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
-    local spellData = C_Spell.GetSpellInfo(spellID)
-    local spellName = spellData and spellData.name or L["unknown"]
-    local hasSpell = self:CharacterHasSpell(spellID)
-    local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
-    local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
-    local spellLink = C_Spell.GetSpellLink(spellID) or L["unknown"]
-    local baseID = C_Spell.GetBaseSpell(spellID) or -1
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            name = spellData and spellData.name or L["unknown"],
-            iconID = spellData and spellData.iconID or -1,
-            originalIconID = spellData and spellData.originalIconID or -1,
-            castTime = spellData and spellData.castTime or -1,
-            minRange = spellData and spellData.minRange or -1,
-            maxRange = spellData and spellData.maxRange or -1,
-            spellID = spellData and spellData.spellID or -1,
-            link = spellLink,
-            baseID = baseID,
-        },
-        name = spellName,
-        hasSpell = hasSpell,
-        isTalent = isTalentSpell,
-        isPvp = isPvpSpell,
-    }
-end
-
---[[ --------------------------------------------------------------------------
-    Function:   GetToyIDs
-    Purpose:    Retrieve the toy index by using the toy item ID...and then get the toy ID from that index. Seems like it is always the same ID either way? But now after doing this search toys are being added to the action bar correctly.
------------------------------------------------------------------------------]]
-function ABSync:GetToyIDs(toyID)
-    local count = C_ToyBox.GetNumFilteredToys()
-    local toyIndex = -1
-    local displayedToyID = -1
-    
-    for i = 1, count do
-        displayedToyID = C_ToyBox.GetToyFromIndex(i)
-        -- local toyData = C_ToyBox.GetToyFromIndex(i)
-
-        -- for k, v in pairs(toyData) do
-        --     print(("Toy Key: %s, Value: %s"):format(tostring(k), tostring(v)))
-        -- end
-
-        if displayedToyID == toyID then
-            -- print("toy found - index: " .. i .. ", id: " .. displayedToyID)
-            toyIndex = i
-            break
-        end
-    end
-
-    return { id = displayedToyID, index = toyIndex }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetItemDetails
-    Purpose:    Retrieve item information based on the item ID.
------------------------------------------------------------------------------]]
-function ABSync:GetItemDetails(itemID)
-    -- fetch blizzard item details
-    local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
-
-    -- need a string as itemName or error occurs if the item actually doesn't exist
-    local checkItemName = itemName or L["unknown"]
-
-    -- does player have the item
-    local itemCount = self:GetItemCount(itemID)
-
-    -- if checkItemName is unknown then see if its a toy
-    local isToy = false
-    local toyData = {}
-    local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(itemID)
-    if toyName then
-        -- is toy usable?
-        local toyUsable = C_ToyBox.IsToyUsable(itemID)
-
-        -- get toy ID by using the toy index
-        local toyInfo = self:GetToyIDs(itemID)
-
-        -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
-        checkItemName = toyName or L["unknown"]
-        isToy = true
-        toyData = {
-            id = toyID,
-            name = toyName,
-            icon = toyIcon,
-            isFavorite = toyIsFavorite,
-            hasFanfare = toyHasFanfare,
-            quality = toyItemQuality,
-            usable = toyUsable and L["yes"] or L["no"],
-            index = toyInfo.index or -1,
-            toyID = toyInfo.id or -1,
-        }
-    end
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            itemName = itemName or L["unknown"],
-            itemLink = itemLink or L["unknown"],
-            itemQuality = itemQuality or L["unknown"],
-            itemLevel = itemLevel or -1,
-            itemMinLevel = itemMinLevel or -1,
-            itemType = itemType or L["unknown"],
-            itemSubType = itemSubType or L["unknown"],
-            itemStackCount = itemStackCount or -1,
-            itemEquipLoc = itemEquipLoc or L["unknown"],
-            itemTexture = itemTexture or -1,
-            sellPrice = sellPrice or -1,
-            classID = classID or -1,
-            subclassID = subclassID or -1,
-            bindType = bindType or -1,
-            expansionID = expansionID or -1,
-            setID = setID or -1,
-            isCraftingReagent = isCraftingReagent or false,
-        },
-        itemID = itemID,
-        finalItemName = checkItemName,
-        isToy = isToy,
-        toyData = toyData,
-        hasItem = (itemCount > 0 or toyData.usable) and L["yes"] or L["no"],
-    }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetMacroDetails
-    Purpose:    Retrieve macro information based on the macro ID.
------------------------------------------------------------------------------]]
-function ABSync:GetMacroDetails(macroID)
-    -- get macro information: name, iconTexture, body
-    -- isLocal removed in patch 3.0.2
-    local macroName, iconTexture, body = GetMacroInfo(macroID)
-
-    -- macro type: general or character
-    local macroType = ABSync.MacroType.general
-    if tonumber(macroID) > 120 then
-        macroType = ABSync.MacroType.character
-    end
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            name = macroName or L["unknown"],
-            icon = iconTexture or -1,
-            body = body or L["unknown"]
-        },
-        macroType = macroType,
-        id = macroID,
-        hasMacro = macroName and L["yes"] or L["no"],
-    }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetPetDetails
-    Purpose:    Retrieve pet information based on the pet ID.
------------------------------------------------------------------------------]]
-function ABSync:GetPetDetails(petID)
-    -- requires a pet GUID
-    local allPetIDs = C_PetJournal.GetOwnedPetIDs()
-
-    -- was a valid pet id found
-    local petFound = false
-
-    -- see if petID is in the list
-    for _, ownedPetID in ipairs(allPetIDs) do
-        if ownedPetID == petID then
-            -- print(("Pet ID %s found!"):format(tostring(petID)))
-            petFound = true
-            break
-        end
-    end
-
-    -- get pet information
-    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable
-    if petFound == true then
-        speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
-    end
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            speciesID = speciesID or -1,
-            customName = customName or L["unknown"],
-            level = level or -1,
-            xp = xp or -1,
-            maxXp = maxXp or -1,
-            displayID = displayID or -1,
-            isFavorite = isFavorite or false,
-            name = name or L["unknown"],
-            icon = icon or -1,
-            petType = petType or L["unknown"],
-            creatureID = creatureID or -1,
-            sourceText = sourceText or L["unknown"],
-            description = description or L["unknown"],
-            isWild = isWild or false,
-            canBattle = canBattle or false,
-            isTradeable = isTradeable or false,
-            isUnique = isUnique or false,
-            obtainable = obtainable or false
-        },
-        petID = petID,
-        name = name or L["unknown"],
-        hasPet = name and L["yes"] or L["no"]
-    }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetMountinfo
-    Purpose:    Retrieve mount information based on the action ID.
------------------------------------------------------------------------------]]
-function ABSync:GetMountinfo(mountID)
-    -- first call to get mount information based on the action bar action id
-    local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
-
-    -- make sure certain values are not nil
-    name = name or L["unknown"]
-
-    -- get more mount data looking for how to pickup a mount with the cursor correctly
-    local displayIDs = C_MountJournal.GetAllCreatureDisplayIDsForMountID(mountID)
-
-    -- get more mount data!!!
-    local creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
-    local extraInfo = {
-        creatureDisplayInfoID = creatureDisplayInfoID or -1,
-        description = description or L["unknown"],
-        source = source or L["unknown"],
-        isSelfMount = isSelfMount or false,
-        mountTypeID = mountTypeID or -1,
-        uiModelSceneID = uiModelSceneID or -1,
-        animID = animID or -1,
-        spellVisualKitID = spellVisualKitID or -1,
-        disablePlayerMountPreview = disablePlayerMountPreview or false
-    }
-
-    -- and get more data!!!
-    local mountCreatureDisplayInfoLink = L["unknown"]
-    if spellID then
-        mountCreatureDisplayInfoLink = C_MountJournal.GetMountLink(spellID)
-    end
-
-    -- get the mountID to displayIndex mapping
-    local mountLookup = C_MountJournal.GetMountIDs()
-
-    -- loop over the values to get the key
-    local displayIndex = -1
-    for journalIndex, journalMountID in pairs(mountLookup) do
-        if journalMountID == mountID then
-            displayIndex = journalIndex
-            break
-        end
-    end
-
-    --@debug@
-    -- if self.db.char.isDevMode == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
-    --@end-debug@
-
-    -- finally return the spell name
-    return {
-        blizData = {
-            name = name,
-            spellID = spellID or -1,
-            icon = icon or -1,
-            isActive = isActive or false,
-            isUsable = isUsable or false,
-            sourceType = sourceType or -1,
-            isFavorite = isFavorite or false,
-            isFactionSpecific = isFactionSpecific or false,
-            faction = faction or -1,
-            shouldHideOnChar = shouldHideOnChar or false,
-            isCollected = isCollected or false,
-            mountID = sourceMountID or -1,
-            isSteadyFlight = isSteadyFlight or false
-        },
-        name = name or L["unknown"],
-        sourceID = sourceMountID or -1,
-        displayIndex = displayIndex or -1,
-        mountID = mountID,
-        displayIDs = displayIDs or {},
-        extraInfo = extraInfo or {},
-        displayInfoLink = mountCreatureDisplayInfoLink
-    }
 end
 
 --[[---------------------------------------------------------------------------
@@ -2033,6 +1804,12 @@ function ABSync:GetActionBarData()
 
                 -- insert the info table into the current action bar data
                 self.db.char.currentBarData[barName][tostring(actionID)] = buttonData
+
+                -- insert details into button translation table
+                if not self.db.global.actionButtonTranslation[barName] then
+                    self.db.global.actionButtonTranslation[barName] = {}
+                end
+                self.db.global.actionButtonTranslation[barName][buttonData.barPosn] = buttonData.actionID
             end
         end
     end

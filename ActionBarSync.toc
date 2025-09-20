@@ -42,3 +42,5 @@ tabs\Developer.lua
 libs\StandardFunctions.lua
 libs\FontStringExamples.lua
 libs\StandardUI.lua
+libs\MountExtra.lua
+libs\ActionData.lua
