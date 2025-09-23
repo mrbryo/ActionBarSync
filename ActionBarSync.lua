@@ -2396,6 +2396,18 @@ function ABSync:CreateMainFrame()
     frame:SetTitle("Action Bar Sync")
     frame:SetPortraitToAsset("Interface\\Icons\\inv_misc_coinbag_special")
     
+    -- Enable escape key functionality following WoW addon patterns
+    frame:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            self:Hide()
+        end
+    end)
+    frame:EnableKeyboard(true)
+    frame:SetPropagateKeyboardInput(true)
+    
+    -- Register frame for escape key handling using WoW's standard system
+    tinsert(UISpecialFrames, "ActionBarSyncMainFrame")
+    
     -- finally return the frame
     return frame
 end

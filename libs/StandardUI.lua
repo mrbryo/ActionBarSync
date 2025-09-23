@@ -1,6 +1,6 @@
 --[[---------------------------------------------------------------------------
     Function:   CreateBarIdentificationFrame
-    Purpose:    Create a movable frame that displays the action bar identification image.
+    Purpose:    Create a movable and resizable frame that displays the action bar identification image.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     -- Check if frame already exists to prevent duplicates
@@ -38,12 +38,34 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     frame:SetSize(frameWidth, frameHeight)
     frame:SetPoint("CENTER", positionFrame, "CENTER", offsetX or 0, offsetY or 0)
     frame:SetMovable(true)
+    frame:SetResizable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     frame:SetFrameStrata("DIALOG")
     frame:SetFrameLevel(1)
+    
+    -- Set minimum and maximum size constraints
+    local minWidth, minHeight = 300, 200
+    local maxWidth, maxHeight = 2000, 1500
+    frame:SetResizeBounds(minWidth, minHeight, maxWidth, maxHeight)
+    
+    -- Create resize button in bottom-right corner
+    local resizeButton = CreateFrame("Button", nil, frame)
+    resizeButton:SetSize(16, 16)
+    resizeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
+    resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeButton:SetScript("OnMouseDown", function(self, button)
+        if button == "LeftButton" then
+            frame:StartSizing("BOTTOMRIGHT")
+        end
+    end)
+    resizeButton:SetScript("OnMouseUp", function(self, button)
+        frame:StopMovingOrSizing()
+    end)
     
     -- set frame title following addon's color scheme
     frame.TitleText:SetText(("%sAction Bar Identification Guide|r"):format(self.constants.colors.label))
@@ -68,7 +90,7 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     
     --@debug@
     if self.db.char.isDevMode == true then 
-        self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d"):format(
+        self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
     --@end-debug@
