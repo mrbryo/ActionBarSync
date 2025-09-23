@@ -13,11 +13,29 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
         positionFrame = UIParent
     end
 
+    -- Create a temporary texture to get the image dimensions
+    local tempTexture = UIParent:CreateTexture()
+    tempTexture:SetTexture("Interface\\AddOns\\ActionBarSync\\assets\\action-bar-sync-bar-identification.png")
+    
+    -- Get the actual image dimensions
+    local imageWidth = 1732 / 2
+    local imageHeight = 994 / 2
+    
+    -- Clean up temporary texture
+    tempTexture:Hide()
+    tempTexture = nil
+
+    -- Set frame padding for title bar and borders
+    local framePadding = 50  -- Extra space for title and borders
+    local titleBarHeight = 30
+    local frameWidth = imageWidth + framePadding
+    local frameHeight = imageHeight + framePadding + titleBarHeight
+
     -- create main frame with standard WoW frame template with close button
     local frame = CreateFrame("Frame", nil, positionFrame, "BasicFrameTemplateWithInset")
 
-    -- set frame properties
-    frame:SetSize(800, 600) -- Adjust size based on your image dimensions
+    -- set frame properties using actual image dimensions
+    frame:SetSize(frameWidth, frameHeight)
     frame:SetPoint("CENTER", positionFrame, "CENTER", offsetX or 0, offsetY or 0)
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -30,13 +48,12 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     -- set frame title following addon's color scheme
     frame.TitleText:SetText(("%sAction Bar Identification Guide|r"):format(self.constants.colors.label))
     
-    -- create texture to display the image
+    -- create texture to display the image using actual dimensions
     local texture = frame:CreateTexture(nil, "ARTWORK")
     texture:SetPoint("TOPLEFT", frame.InsetBorderTop, "BOTTOMLEFT", 10, -10)
     texture:SetPoint("BOTTOMRIGHT", frame.InsetBorderBottom, "TOPRIGHT", -10, 10)
     
     -- Set the texture to your image file
-    -- Assuming the image is in Interface/AddOns/ActionBarSync/assets/
     texture:SetTexture("Interface\\AddOns\\ActionBarSync\\assets\\action-bar-sync-bar-identification.png")
     texture:SetTexCoord(0, 1, 0, 1) -- Use full texture coordinates
     
@@ -51,7 +68,8 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     
     --@debug@
     if self.db.char.isDevMode == true then 
-        self:Print("Bar identification frame created and displayed")
+        self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d"):format(
+            imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
     --@end-debug@
 end
@@ -283,7 +301,7 @@ function ABSync:CreateDropdown(parent, items, initialValue, onChange, frameName)
     -- check frameName
     if not frameName then
         frameName = self:GetUniqueID(self.uiframetype.dropdown, true)
-        print("Generated unique frameName for dropdown:", frameName)
+        -- print("Generated unique frameName for dropdown:", frameName)
     end
 
     -- create dropdown and set it up
