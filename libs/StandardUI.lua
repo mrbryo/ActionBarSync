@@ -1,4 +1,70 @@
 --[[---------------------------------------------------------------------------
+    Function:   CreateBarIdentificationFrame
+    Purpose:    Create a movable frame that displays the action bar identification image.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
+    -- Check if frame already exists to prevent duplicates
+    if self.ui.frame.barIdentification and self.ui.frame.barIdentification:IsShown() then
+        return
+    end
+
+    -- if positionFrame is nil then set it to the UIParent
+    if not positionFrame then
+        positionFrame = UIParent
+    end
+
+    -- create main frame with standard WoW frame template with close button
+    local frame = CreateFrame("Frame", nil, positionFrame, "BasicFrameTemplateWithInset")
+
+    -- set frame properties
+    frame:SetSize(800, 600) -- Adjust size based on your image dimensions
+    frame:SetPoint("CENTER", positionFrame, "CENTER", offsetX or 0, offsetY or 0)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetFrameLevel(1)
+    
+    -- set frame title following addon's color scheme
+    frame.TitleText:SetText(("%sAction Bar Identification Guide|r"):format(self.constants.colors.label))
+    
+    -- create texture to display the image
+    local texture = frame:CreateTexture(nil, "ARTWORK")
+    texture:SetPoint("TOPLEFT", frame.InsetBorderTop, "BOTTOMLEFT", 10, -10)
+    texture:SetPoint("BOTTOMRIGHT", frame.InsetBorderBottom, "TOPRIGHT", -10, 10)
+    
+    -- Set the texture to your image file
+    -- Assuming the image is in Interface/AddOns/ActionBarSync/assets/
+    texture:SetTexture("Interface\\AddOns\\ActionBarSync\\assets\\action-bar-sync-bar-identification.png")
+    texture:SetTexCoord(0, 1, 0, 1) -- Use full texture coordinates
+    
+    -- Store frame reference in UI table following addon pattern
+    if not self.ui.frame then
+        self.ui.frame = {}
+    end
+    self.ui.frame.barIdentification = frame
+    
+    -- Show the frame
+    frame:Show()
+    
+    --@debug@
+    if self.db.char.isDevMode == true then 
+        self:Print("Bar identification frame created and displayed")
+    end
+    --@end-debug@
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ShowBarIdentificationGuide
+    Purpose:    Public function to show the bar identification guide frame.
+-----------------------------------------------------------------------------]]
+function ABSync:ShowBarIdentificationGuide()
+    self:CreateBarIdentificationFrame()
+end
+
+--[[---------------------------------------------------------------------------
     Function:   CreateContentFrame
     Purpose:    Create a scrollable content frame for tab content.
     Arguments:  parent - The parent frame to attach this frame to
@@ -10,6 +76,12 @@ function ABSync:CreateContentFrame(parent)
     footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
     footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
     footer:SetHeight(40)
+
+    -- add button to show action bar guide
+    local guideButton = self:CreateStandardButton(footer, "Show Action Bar Guide", 150, function()
+        self:CreateBarIdentificationFrame(parent)
+    end)
+    guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
 
     -- create close button
     local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
@@ -155,6 +227,39 @@ function ABSync:CreateCheckbox(parent, text, initialValue, OnClick)
     return checkbox
 end
 
+ABSync.uniqueID = {
+    dropdown = 0,
+    checkbox = 0,
+    button = 0,
+    editbox = 0,
+}
+
+ABSync.uniqueIDPrefix = {
+    dropdown = "DD",
+    checkbox = "CB",
+    button = "BTN",
+    editbox = "EB",
+}
+
+ABSync.uiframetype = {
+    dropdown = "dropdown",
+    checkbox = "checkbox",
+    button = "button",
+    editbox = "editbox",
+}
+
+function ABSync:GetUniqueID(type, increment)
+    if not ABSync.uniqueID[type] then
+        ABSync.uniqueID[type] = 0
+    end
+
+    if increment then
+        ABSync.uniqueID[type] = ABSync.uniqueID[type] + 1
+    end
+
+    return "ActionBarSyncUIObjectType" .. self.uniqueIDPrefix[type] .. "Nbr" .. ABSync.uniqueID[type]
+end
+
 --[[---------------------------------------------------------------------------
     Function:   CreateDropdown
     Purpose:    Replace AceGUI dropdowns with standard dropdown menus.
@@ -174,9 +279,15 @@ Usage example:
         end
     )
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, items, initialValue, onChange)
+function ABSync:CreateDropdown(parent, items, initialValue, onChange, frameName)
+    -- check frameName
+    if not frameName then
+        frameName = self:GetUniqueID(self.uiframetype.dropdown, true)
+        print("Generated unique frameName for dropdown:", frameName)
+    end
+
     -- create dropdown and set it up
-    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    local dropdown = CreateFrame("DropdownButton", frameName, parent, "WowStyle1DropdownTemplate")
     
     -- store dropdown state
     dropdown.selectedValue = initialValue or ""

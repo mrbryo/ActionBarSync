@@ -20,7 +20,7 @@ function ABSync:LookupAction()
     local lookupInfo = {
         type = actionType,
         id = actionID,
-        name = L["unknown"],
+        name = L["Unknown"],
         has = L["no"]
     }
 
@@ -101,6 +101,10 @@ function ABSync:CreateTopRegion(parent)
     rowBtn:SetPoint("LEFT", rowName, "RIGHT", padding, 0)
     rowBtn:SetHeight(rowHeight)    -- set initial height, will expand as needed
     rowBtn:SetWidth(topWidth)
+    local rowTrigger = CreateFrame("Frame", nil, topContent)
+    rowTrigger:SetPoint("LEFT", rowType, "RIGHT", padding, 0)
+    rowTrigger:SetHeight(rowHeight)    -- set initial height, will expand as needed
+    rowTrigger:SetWidth(topWidth)
 
     --[[ action id row ]]
 
@@ -175,8 +179,6 @@ function ABSync:CreateTopRegion(parent)
     actionTypeLabel:SetWidth(colOneWidth)
     actionNameLabel:SetWidth(colOneWidth)
 
-    --[[ action type row]]
-
     -- action type row; drop down for selecting action type
     local actionTypeDropDown = self:CreateDropdown(rowType, self:GetActionTypeValues(), self:GetLastActionType(), function(key)
         ABSync:SetLastActionType(key)
@@ -231,8 +233,10 @@ function ABSync:CreateTopRegion(parent)
     actionBtnDropDown:SetWidth(controlWidth)
     actionBtnDropDown:SetPoint("LEFT", actionBtnLabel, "RIGHT", padding, 0)
 
+    --[[ place action button row ]]
+
     -- place action button
-    local applyActionButton = self:CreateStandardButton(rowBtn, "Place Action", 100, function()
+    local applyActionButton = self:CreateStandardButton(rowTrigger, "Place Action", 100, function()
         -- get stored values
         local actionID = ABSync:GetLastActionID()
         local actionType = ABSync:GetLastActionType()
@@ -240,7 +244,9 @@ function ABSync:CreateTopRegion(parent)
         local actionButton = ABSync:GetLastActionButton()
         ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     end)
-    applyActionButton:SetPoint("LEFT", actionBtnDropDown, "RIGHT", padding, 0)
+    applyActionButton:SetPoint("LEFT", rowTrigger, "LEFT", 0, 0)
+
+    -- [[ content added, below is further adjustments to layout and sizes ]]
 
     -- adjust height of trigger content frame
     topContent:SetHeight(rowID:GetHeight() + rowType:GetHeight() + rowName:GetHeight() + introLabel:GetHeight() + (padding * 3))

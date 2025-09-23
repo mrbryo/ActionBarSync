@@ -93,9 +93,9 @@ function ABSync:CreateAboutFrame(parent)
     }
 
     -- local store english translators; for debug mode I need a variable to add fake translators
-    local englishTranslators = {
-        "mrbryo",
-    }
+    -- local englishTranslators = {
+    --     "mrbryo",
+    -- }
     --@debug@
     -- if self.db.char.isDevMode == true then
     --     englishTranslators = {

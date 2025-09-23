@@ -11,17 +11,17 @@ function ABSync:GetSpellDetails(spellID)
     
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
-    local spellName = spellData and spellData.name or L["unknown"]
+    local spellName = spellData and spellData.name or L["Unknown"]
     local hasSpell = self:CharacterHasSpell(spellID)
     local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
     local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
-    local spellLink = C_Spell.GetSpellLink(spellID) or L["unknown"]
+    local spellLink = C_Spell.GetSpellLink(spellID) or L["Unknown"]
     local baseID = C_Spell.GetBaseSpell(spellID) or -1
 
     -- finally return the data collected
     return {
         blizData = {
-            name = spellData and spellData.name or L["unknown"],
+            name = spellData and spellData.name or L["Unknown"],
             iconID = spellData and spellData.iconID or -1,
             originalIconID = spellData and spellData.originalIconID or -1,
             castTime = spellData and spellData.castTime or -1,
@@ -105,7 +105,7 @@ function ABSync:GetItemDetails(itemID)
     local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
 
     -- need a string as itemName or error occurs if the item actually doesn't exist
-    local checkItemName = itemName or L["unknown"]
+    local checkItemName = itemName or L["Unknown"]
 
     -- does player have the item
     local itemCount = self:GetItemCount(itemID)
@@ -121,8 +121,8 @@ function ABSync:GetItemDetails(itemID)
         -- get toy ID by using the toy index
         local toyInfo = self:GetToyIDs(itemID)
 
-        -- print(("toy found: %s (%s)"):format(tostring(toyName or L["unknown"]), toyID))
-        checkItemName = toyName or L["unknown"]
+        -- print(("toy found: %s (%s)"):format(tostring(toyName or L["Unknown"]), toyID))
+        checkItemName = toyName or L["Unknown"]
         isToy = true
         toyData = {
             id = toyID,
@@ -140,15 +140,15 @@ function ABSync:GetItemDetails(itemID)
     -- finally return the data collected
     return {
         blizData = {
-            itemName = itemName or L["unknown"],
-            itemLink = itemLink or L["unknown"],
-            itemQuality = itemQuality or L["unknown"],
+            itemName = itemName or L["Unknown"],
+            itemLink = itemLink or L["Unknown"],
+            itemQuality = itemQuality or L["Unknown"],
             itemLevel = itemLevel or -1,
             itemMinLevel = itemMinLevel or -1,
-            itemType = itemType or L["unknown"],
-            itemSubType = itemSubType or L["unknown"],
+            itemType = itemType or L["Unknown"],
+            itemSubType = itemSubType or L["Unknown"],
             itemStackCount = itemStackCount or -1,
-            itemEquipLoc = itemEquipLoc or L["unknown"],
+            itemEquipLoc = itemEquipLoc or L["Unknown"],
             itemTexture = itemTexture or -1,
             sellPrice = sellPrice or -1,
             classID = classID or -1,
@@ -188,9 +188,9 @@ function ABSync:GetMacroDetails(macroID)
     -- finally return the data collected
     return {
         blizData = {
-            name = macroName or L["unknown"],
+            name = macroName or L["Unknown"],
             icon = iconTexture or -1,
-            body = body or L["unknown"]
+            body = body or L["Unknown"]
         },
         macroType = macroType,
         id = macroID,
@@ -231,18 +231,18 @@ function ABSync:GetPetDetails(petID)
     return {
         blizData = {
             speciesID = speciesID or -1,
-            customName = customName or L["unknown"],
+            customName = customName or L["Unknown"],
             level = level or -1,
             xp = xp or -1,
             maxXp = maxXp or -1,
             displayID = displayID or -1,
             isFavorite = isFavorite or false,
-            name = name or L["unknown"],
+            name = name or L["Unknown"],
             icon = icon or -1,
-            petType = petType or L["unknown"],
+            petType = petType or L["Unknown"],
             creatureID = creatureID or -1,
-            sourceText = sourceText or L["unknown"],
-            description = description or L["unknown"],
+            sourceText = sourceText or L["Unknown"],
+            description = description or L["Unknown"],
             isWild = isWild or false,
             canBattle = canBattle or false,
             isTradeable = isTradeable or false,
@@ -250,7 +250,7 @@ function ABSync:GetPetDetails(petID)
             obtainable = obtainable or false
         },
         petID = petID,
-        name = name or L["unknown"],
+        name = name or L["Unknown"],
         hasPet = name and L["yes"] or L["no"]
     }
 end
@@ -267,7 +267,7 @@ function ABSync:GetMountinfo(mountID)
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
 
     -- make sure certain values are not nil
-    name = name or L["unknown"]
+    name = name or L["Unknown"]
 
     -- get more mount data looking for how to pickup a mount with the cursor correctly
     local displayIDs = C_MountJournal.GetAllCreatureDisplayIDsForMountID(mountID)
@@ -279,8 +279,8 @@ function ABSync:GetMountinfo(mountID)
     local creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
     local extraInfo = {
         creatureDisplayInfoID = creatureDisplayInfoID or -1,
-        description = description or L["unknown"],
-        source = source or L["unknown"],
+        description = description or L["Unknown"],
+        source = source or L["Unknown"],
         isSelfMount = isSelfMount or false,
         mountTypeID = mountTypeID or -1,
         uiModelSceneID = uiModelSceneID or -1,
@@ -290,7 +290,7 @@ function ABSync:GetMountinfo(mountID)
     }
 
     -- and get more data!!!
-    local mountCreatureDisplayInfoLink = L["unknown"]
+    local mountCreatureDisplayInfoLink = L["Unknown"]
     if spellID then
         mountCreatureDisplayInfoLink = C_MountJournal.GetMountLink(spellID)
     end
@@ -330,7 +330,7 @@ function ABSync:GetMountinfo(mountID)
             mountID = sourceMountID or -1,
             isSteadyFlight = isSteadyFlight or false
         },
-        name = name or L["unknown"],
+        name = name or L["Unknown"],
         sourceID = sourceMountID or -1,
         displayIndex = displayIndex or -1,
         mountID = mountID,

@@ -42,57 +42,60 @@ end
     Purpose:    Update the share region with checkboxes for each action bar and character combo that has data.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateShareRegion()
-    -- current player ID
-    local currentPlayerID = self:GetPlayerNameKey()
+    -- only run when the shareContent frame exists
+    if self.ui.frame.shareContent then
+        -- current player ID
+        local currentPlayerID = self:GetPlayerNameKey()
 
-    -- loop over data and add checkboxes per character and action bar combo where they are enabled
-    -- track if anything was added or not
-    local sharedActionBarsAdded = false
+        -- loop over data and add checkboxes per character and action bar combo where they are enabled
+        -- track if anything was added or not
+        local sharedActionBarsAdded = false
 
-    -- track y offset for checkboxes
-    local offsetY = 10
+        -- track y offset for checkboxes
+        local offsetY = 10
 
-    -- standard padding
-    local padding = ABSync.constants.ui.generic.padding
+        -- standard padding
+        local padding = ABSync.constants.ui.generic.padding
 
-    -- remove all existing children from the shareContent frame
-    self:RemoveFrameChildren(self.ui.frame.shareContent)
+        -- remove all existing children from the shareContent frame
+        self:RemoveFrameChildren(self.ui.frame.shareContent)
 
-    -- primary loop is actionBars as it's sorted
-    if self.db.global.actionBars ~= nil then
-        for _, barName in ipairs(self.db.global.actionBars) do
-            -- verify bar exists in global.barsToSync
-            if self.db.global.barsToSync[barName] ~= nil then
-                -- loop over the barName in global.barsToSync
-                for playerID, buttonData in pairs(self.db.global.barsToSync[barName]) do
-                    -- to see if enabled the buttonData must be a table and have at least 1 record
-                    -- count variable
-                    local foundData = false
-                    
-                    -- make sure buttonData is a table
-                    if type(buttonData) == "table" then
-                        -- next returns the first key in the table or nil if the table is empty
-                        if next(buttonData) then
-                            foundData = true
+        -- primary loop is actionBars as it's sorted
+        if self.db.global.actionBars ~= nil then
+            for _, barName in ipairs(self.db.global.actionBars) do
+                -- verify bar exists in global.barsToSync
+                if self.db.global.barsToSync[barName] ~= nil then
+                    -- loop over the barName in global.barsToSync
+                    for playerID, buttonData in pairs(self.db.global.barsToSync[barName]) do
+                        -- to see if enabled the buttonData must be a table and have at least 1 record
+                        -- count variable
+                        local foundData = false
+                        
+                        -- make sure buttonData is a table
+                        if type(buttonData) == "table" then
+                            -- next returns the first key in the table or nil if the table is empty
+                            if next(buttonData) then
+                                foundData = true
+                            end
                         end
-                    end
 
-                    -- create a checkbox if data is found
-                    if foundData == true then
-                        local checkbox = self:CreateSyncCheckbox(self.ui.frame.shareContent, barName, playerID, currentPlayerID, padding, offsetY)
-                        sharedActionBarsAdded = true
-                        offsetY = offsetY + checkbox:GetHeight()
+                        -- create a checkbox if data is found
+                        if foundData == true then
+                            local checkbox = self:CreateSyncCheckbox(self.ui.frame.shareContent, barName, playerID, currentPlayerID, padding, offsetY)
+                            sharedActionBarsAdded = true
+                            offsetY = offsetY + checkbox:GetHeight()
+                        end
                     end
                 end
             end
         end
-    end
 
-    -- if no shared action bars were added, then add a label to indicate that
-    if sharedActionBarsAdded == false then
-        local noDataLabel = self.ui.frame.shareContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        noDataLabel:SetPoint("TOPLEFT", self.ui.frame.shareContent, "TOPLEFT", padding + 5, -padding - 5)
-        noDataLabel:SetText("No Shared Action Bars Found")
+        -- if no shared action bars were added, then add a label to indicate that
+        if sharedActionBarsAdded == false then
+            local noDataLabel = self.ui.frame.shareContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            noDataLabel:SetPoint("TOPLEFT", self.ui.frame.shareContent, "TOPLEFT", padding + 5, -padding - 5)
+            noDataLabel:SetText("No Shared Action Bars Found")
+        end
     end
 end
 

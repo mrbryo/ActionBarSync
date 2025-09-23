@@ -16,6 +16,7 @@ function ABSync:CreateIntroductionFrame(parent)
     -- FAQ
     local faq = {
         "If an action button does not sync and an error for the same button isn't on the 'Last Sync Errors' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures.",
+        "Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content.",
     }
 
     -- set label height

@@ -98,7 +98,7 @@ ABSync.uitabs = {
         ["introduction"] = "Introduction",
         ["sharesync"] = "Share/Sync",
         ["last_sync_errors"] = "Last Sync Errors",
-        ["lookup"] = "Lookup",
+        ["lookup"] = "Lookup & Assign",
         ["backup"] = "Backup/Restore",
         ["developer"] = "Developer",
     },
@@ -463,7 +463,7 @@ function ABSync:GetActionData(actionID, actionType)
     -- store results
     local lookupInfo = {
         data = {},
-        name = L["unknown"],
+        name = L["Unknown"],
         has = L["no"]
     }
 
@@ -733,7 +733,7 @@ function ABSync:SetBarToShare(barName, value)
     --@end-debug@
 
     -- initialize variables
-    local barName = barName or L["unknown"]
+    local barName = barName or L["Unknown"]
     local playerID = self:GetPlayerNameKey()
 
     -- check for input barName, if it doesn't exist then let user know and return false
@@ -828,7 +828,7 @@ function ABSync:SetBarToSync(key, value)
     --@end-debug@
 
     -- initialize variables
-    local barName = L["unknown"]
+    local barName = L["Unknown"]
 
     -- initialize missing key dialog
     StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
@@ -879,6 +879,12 @@ end
     Purpose:    Place a specific action on a specific action bar and button.
 -----------------------------------------------------------------------------]]
 function ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
+    -- translate action bar number into action bar name
+    actionBar = self.db.global.actionBars[actionBar]
+    --@debug@
+    -- if self.db.char.isDevMode == true then self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton))) end
+    --@end-debug@
+
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
     local buttonID = self.db.global.actionButtonTranslation[actionBar][actionButton]
 
@@ -1264,7 +1270,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 type = diffData.shared.actionType,
                 name = diffData.shared.name,
                 id = diffData.shared.sourceID,
-                link = diffData.shared.blizData.link or L["unknown"],
+                link = diffData.shared.blizData.link or L["Unknown"],
                 sharedby = diffData.sharedBy,
                 msg = ""
             }
@@ -1279,7 +1285,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             --[[ process based on type ]]
 
             -- if unknown then shared action bar has no button there, if current char has a button in that position remove it
-            if err.type == L["unknown"] and diffData.current.name ~= L["unknown"] then
+            if err.type == L["Unknown"] and diffData.current.name ~= L["Unknown"] then
                 -- call function to remove a buttons action
                 self:RemoveButtonAction(err.buttonID)
 
@@ -1311,7 +1317,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- proceed if player has the spell
                 -- make sure we have a name that isn't unknown
-                elseif err.name ~= L["unknown"] then
+                elseif err.name ~= L["Unknown"] then
                     -- set the action bar button to the spell
                     C_Spell.PickupSpell(err.id)
                     PlaceAction(tonumber(err.buttonID))
@@ -1337,7 +1343,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- if the user has the item, then add it to their action bar as long as the name is not unknown
                 if itemCount > 0 then
                     -- item exists
-                    if err.name ~= L["unknown"] and diffData.shared.isToy == false then
+                    if err.name ~= L["Unknown"] and diffData.shared.isToy == false then
                         -- set the action bar button to the item
                         C_Item.PickupItem(err.id)
                         PlaceAction(tonumber(err.buttonID))
@@ -1373,7 +1379,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             elseif err.type == "macro" then
                 -- parse out character and server
                 local sharedByWithOutSpec = self:GetSharedByWithOutSpec(diffData.sharedBy)
-                print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetPlayerNameFormatted(true)))
+                -- print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetPlayerNameFormatted(true)))
 
                 -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
                 if diffData.shared.macroType == ABSync.MacroType.character and sharedByWithOutSpec ~= self:GetPlayerNameFormatted(true) then
@@ -1381,7 +1387,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     table.insert(errors, err)
                 
                 -- if macro name is found proceed
-                elseif err.name ~= L["unknown"] then
+                elseif err.name ~= L["Unknown"] then
                     -- set the action bar button to the macro
                     PickupMacro(err.name)
                     PlaceAction(tonumber(err.buttonID))
@@ -1531,13 +1537,13 @@ function ABSync:GetActionButtonData(actionID, btnName)
     -- instantiate the return table
     local returnData = {
         blizData = {},
-        actionType = actionType or L["unknown"],
-        subType = subType or L["unknown"],
+        actionType = actionType or L["Unknown"],
+        subType = subType or L["Unknown"],
         actionID = actionID,
         originalSourceID = infoID,
         buttonID = buttonID,
         btnName = btnName,
-        name = L["unknown"],
+        name = L["Unknown"],
         icon = -1,
         sourceID = -1,
         unknownActionType = false,
@@ -1626,8 +1632,16 @@ function ABSync:GetActionButtonData(actionID, btnName)
         -- actually unknown, this addon doesn't know what to do with it!
         -- add unknown action type property
         returnData.unknownActionType = true
-        -- Localized: Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...
-        self:Print((L["unknown_action_type"]):format(btnName, tostring(actionType)))
+        self:Print((L["Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...lots more text."]):format(btnName, tostring(actionType)))
+
+        -- add to scan errors
+        self.db.char.scanErrors = {
+            actionID = actionID,
+            btnName = btnName,
+            actionType = actionType,
+            infoID = infoID,
+            subType = subType
+        }
     end
 
     -- finally return the data
@@ -1741,13 +1755,13 @@ function ABSync:GetActionBarData()
         -- need to know if this changes based on language!
         if string.find(btnName, "^ActionButton%d+$") or string.find(btnName, "^MultiBarBottomLeftButton%d+$") or string.find(btnName, "^MultiBarBottomRightButton%d+$") or string.find(btnName, "^MultiBarLeftButton%d+$") or string.find(btnName, "^MultiBarRightButton%d+$") or string.find(btnName, "^MultiBar%d+Button%d+$") then
             -- make up a name for each bar using the button names by removing the button number
-            local barName = string.gsub(btnName, L["getactionbardata_button_name_template"], "")
+            local barName = string.gsub(btnName, L["Button%d+$"], "")
 
             -- translate and replace barName into the blizzard visible name in settings for the bars
-            local barName = ABSync.blizzardTranslate[barName] or L["unknown"]
+            local barName = ABSync.blizzardTranslate[barName] or L["Unknown"]
 
             -- skip bar if unknown
-            if barName == L["unknown"] then
+            if barName == L["Unknown"] then
                 self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
 
             -- continue if barname is known
@@ -1850,7 +1864,13 @@ end
     Purpose:    Enable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
 function ABSync:EnableDevelopment()
+    -- enable development mode
     self.db.char.isDevMode = true
+
+    -- force close the window
+    self.ui.frame.mainFrame:Hide()
+
+    -- give user status
     self:Print("Development Mode: Enabled")
 end
 
@@ -1859,7 +1879,18 @@ end
     Purpose:    Disable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
 function ABSync:DisableDevelopment()
+    if self.db.profile.mytab == "developer" then
+        -- switch to default tab if the user is on the developer tab
+        self.db.profile.mytab = "introduction"
+    end
+
+    -- disable development mode
     self.db.char.isDevMode = false
+
+    -- force close the window
+    self.ui.frame.mainFrame:Hide()
+
+    -- give user status
     self:Print("Development Mode: Disabled")
 end
 
@@ -1892,11 +1923,13 @@ function ABSync:SlashCommand(text)
             end
         elseif arg:lower() == "fonts" then
             ABSync:CreateFontStringExamplesFrame():Show()
+        else
+
         -- elseif arg:lower() == "spec" then
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
         --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
         --     local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
-        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or L["unknown"]))
+        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or L["Unknown"]))
         -- elseif arg:lower() == "test" then
             -- local mountIDs = C_MountJournal.GetMountIDs()
             -- for midx, mountID in ipairs(mountIDs) do
@@ -2017,7 +2050,7 @@ function ABSync:RegisterEvents()
 
     --     if newCursorType == 3 then -- 3 is the spell cursor type
     --         local spell, spellIndex, booktype, spellID, baseSpellID = GetCursorInfo()
-    --         self:Print(("Spell on Cursor: %s, Spell Index: %s, Book Type: %s, SpellID: %s, BaseSpellID: %s"):format(tostring(spell or L["unknown"]), tostring(spellIndex or L["unknown"]), tostring(booktype or L["unknown"]), tostring(spellID or L["unknown"]), tostring(baseSpellID or L["unknown"])))
+    --         self:Print(("Spell on Cursor: %s, Spell Index: %s, Book Type: %s, SpellID: %s, BaseSpellID: %s"):format(tostring(spell or L["Unknown"]), tostring(spellIndex or L["Unknown"]), tostring(booktype or L["Unknown"]), tostring(spellID or L["Unknown"]), tostring(baseSpellID or L["Unknown"])))
     --     end
     --     --@debug@
     --     -- if ABSync.isDevMode == false then
@@ -2272,13 +2305,13 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:ShowUI()
     -- create main frame
-    local mainFrame = ABSync:CreateMainFrame()
+    self.ui.frame.mainFrame = ABSync:CreateMainFrame()
 
     -- create tab group
-    ABSync:CreateTabSystem(mainFrame)
+    ABSync:CreateTabSystem(self.ui.frame.mainFrame)
 
     -- create content area
-    local contentFrame = ABSync:CreateContentFrame(mainFrame)
+    local contentFrame = ABSync:CreateContentFrame(self.ui.frame.mainFrame)
     ABSync.ui.contentFrame = contentFrame
 
     -- show initial tab
@@ -2288,7 +2321,7 @@ function ABSync:ShowUI()
     PanelTemplates_SetTab(ABSync.uitabs["tabframe"], buttonID)
 
     -- display the frame
-    mainFrame:Show()
+    self.ui.frame.mainFrame:Show()
 end
 
 --[[---------------------------------------------------------------------------
