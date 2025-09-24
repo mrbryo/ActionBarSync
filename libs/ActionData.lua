@@ -310,7 +310,7 @@ function ABSync:GetMountinfo(mountID)
     end
 
     --@debug@
-    -- if self.db.char.isDevMode == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
     --@end-debug@
 
     -- finally return the spell name

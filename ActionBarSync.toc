@@ -27,6 +27,8 @@ locale\zhCN.lua
 locale\zhTW.lua
 
 ## Main
+Sets.lua
+Gets.lua
 ActionBarSync.lua
 
 ## UI Tabs

@@ -79,12 +79,6 @@ ABSync.blizzardTranslate = {
     ["Action"] = L["actionbar1"]
 }
 
--- lookup for source on sync details
-ABSync.profiletype = {
-    ["profile"] = "profile",
-    ["global"] = "global"
-}
-
 -- lookup macro types
 ABSync.MacroType = {
     general = "general",
@@ -129,46 +123,18 @@ function ABSync:OnInitialize()
     -- Instantiate Standard Functions
     local StdFuncs = ABSync:GetModule("StandardFunctions")
 
-    -- initialize the db
-    self.db = LibStub("AceDB-3.0"):New("ActionBarSyncDB")
-
-    -- check dev mode
-    if not self.db.char then
-        self.db.char = {}
-    end
-    if not self.db.char.isDevMode then
-        self.db.char.isDevMode = false
-    end
-
+    -- get development mode status
+    local isDevMode = self:GetDevMode()
+    
     --@debug@
-    if self.db.char.isDevMode == true then self:Print(L["initializing"]) end
+    if isDevMode == true then self:Print(L["initializing"]) end
     --@end-debug@
-
-    -- Instantiate Option Table
-    self.ActionBarSyncOptions = {
-        name = L["actionbarsynctitle"],
-        handler = ABSync,
-        type = "group",
-        args = {}
-    }
-   
-    -- get the ace db options for profile management
-    self.ActionBarSyncOptions.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-    
-    -- register the options
-    LibStub("AceConfig-3.0"):RegisterOptionsTable(ABSync.optionLocName, self.ActionBarSyncOptions)
-    
-    -- create a title for the addon option section
-    local optionsTitle = L["actionbarsynctitle"]
-    
-    -- add the options to the ui
-    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ABSync.optionLocName, optionsTitle, nil)
     
     -- register some slash commands
     self:RegisterChatCommand("abs", "SlashCommand")
     
     --@debug@ leave at end of function
-    if self.db.char.isDevMode == true then self:Print(L["initialized"]) end
+    if isDevMode == true then self:Print(L["initialized"]) end
     --@end-debug@
 end
 
@@ -177,76 +143,91 @@ end
     Purpose:    Ensure the DB has all the necessary values. Can run anytime to check and fix all data with default values.
 -----------------------------------------------------------------------------]]
 function ABSync:InstantiateDB(barName)
-    -- get current playerID
-    local playerID = self:GetPlayerNameKey()
+    -- make sure player key is set
+    self:GetKeyPlayerServerSpec()
+    self:GetKeyPlayerServer()
 
     -- option which lets the user pick to check if they bars are out of sync after logon
-    if not self.db.profile.checkOnLogon then
-        self.db.profile.checkOnLogon = false
+    if not ActionBarSyncDB.profile then
+        ActionBarSyncDB.profile = {}
+    end
+    if not ActionBarSyncDB.profile[self.currentPlayerServer] then
+        ActionBarSyncDB.profile[self.currentPlayerServer] = {}
+    end
+    if not ActionBarSyncDB.profile[self.currentPlayerServer].checkOnLogon then
+        ActionBarSyncDB.profile[self.currentPlayerServer].checkOnLogon = false
     end
 
     -- actionBars holds just a sorted array of action bar names; needed under global and profile
-    if not self.db.profile.actionBars then
-        self.db.profile.actionBars = {}
+    if not ActionBarSyncDB.global then
+        ActionBarSyncDB.global = {}
     end
-    if not self.db.global.actionBars then
-        self.db.global.actionBars = {}
+    if not ActionBarSyncDB.global.actionBars then
+        ActionBarSyncDB.global.actionBars = {}
+    end
+    if not ActionBarSyncDB.global.actionBars then
+        ActionBarSyncDB.global.actionBars = {}
     end
 
     -- action buttons
-    self.db.global.actionButtons = {}
+    if not ActionBarSyncDB.global.actionButtons then
+        ActionBarSyncDB.global.actionButtons = {}
+    end
     for i = 1, 12 do
-        table.insert(self.db.global.actionButtons, i, tostring(i))
+        table.insert(ActionBarSyncDB.global.actionButtons, i, tostring(i))
     end
 
     -- action button translation
-    if not self.db.global.actionButtonTranslation then
-        self.db.global.actionButtonTranslation = {}
+    if not ActionBarSyncDB.global.actionButtonTranslation then
+        ActionBarSyncDB.global.actionButtonTranslation = {}
     end
 
     -- auto reset mount journal filters flag
-    if not self.db.profile.autoResetMountFilters then
-        self.db.profile.autoResetMountFilters = false
+    if not ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters then
+        ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters = false
     end
 
     -- currentBarData holds the last scan of data fetched from the action bars for the current character; hence stored in char
-    if not self.db.char.currentBarData then
-        self.db.char.currentBarData = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec] = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
     end 
 
     -- character specific sync error data
-    if not self.db.char.syncErrors then
-        self.db.char.syncErrors = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
     end
 
     -- character specific date/time of last scan, defaults to never
-    if not self.db.char.lastScan then
-        self.db.char.lastScan = L["never"]
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = L["never"]
     end
 
     -- character specific last synced date/time, defaults to never
-    if not self.db.char.lastSynced then
-        self.db.char.lastSynced = L["never"]
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = L["never"]
     end
 
     -- backup of action bar data so a user can restore
-    if not self.db.char.backup then
-        self.db.char.backup = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].backup then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup = {}
     end
 
     -- character last sync error date/time, represents the date/time of the errors captured
-    if not self.db.char.lastSyncErrorDttm then
-        self.db.char.lastSyncErrorDttm = L["never"]
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = L["never"]
     end
 
     -- character last share scan error data
-    if not self.db.char.lastShareScanData then
-        self.db.char.scanErrors = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastShareScanData then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].scanErrors = {}
     end
 
     -- character specific action lookup data
-    if not self.db.char.actionLookup then
-        self.db.char.actionLookup = {
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup = {
             name = "",
             id = "",
             type = "",
@@ -256,67 +237,67 @@ function ABSync:InstantiateDB(barName)
     end
 
     -- character specific lookup history
-    if not self.db.char.lookupHistory then
-        self.db.char.lookupHistory = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory = {}
     end
 
     -- set default for max history lookup records
-    if not self.db.char.lookupHistoryMaxRecords then
-        self.db.char.lookupHistoryMaxRecords = 20
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords = 20
     end
 
     -- character last diff data
-    if not self.db.char.lastDiffData then
-        self.db.char.lastDiffData = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData = {}
     end
 
     -- character restore data
-    if not self.db.char.restore then
-        self.db.char.restore = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
     end
-    if not self.db.char.restore.choice then
-        self.db.char.restore.choice = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
     end
-    if not self.db.char.restore.choice.backupDttm then
-        self.db.char.restore.choice.backupDttm = L["none"]
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = L["none"]
     end
-    if not self.db.char.restore.choice.actionBar then
-        self.db.char.restore.choice.actionBar = L["none"]
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar = L["none"]
     end
 
     -- instantiate barsToSync if it doesn't exist
-    if not self.db.global.barsToSync then
-        self.db.global.barsToSync = {}
+    if not ActionBarSyncDB.global.barsToSync then
+        ActionBarSyncDB.global.barsToSync = {}
     end
 
     -- instantiate barsToSync also under the character profile
-    if not self.db.profile.barsToSync then
-        self.db.profile.barsToSync = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync = {}
     end
 
     if barName ~= nil then
         -- if the barName is not in barsToSync then add it with default value of false
-        if not self.db.global.barsToSync[barName] then
-            self.db.global.barsToSync[barName] = {}
+        if not ActionBarSyncDB.global.barsToSync[barName] then
+            ActionBarSyncDB.global.barsToSync[barName] = {}
         end
 
         -- instantiate bar owner if it doesn't exist
-        if not self.db.global.barsToSync[barName][playerID] then
-            self.db.global.barsToSync[barName][playerID] = {}
+        if not ActionBarSyncDB.global.barsToSync[barName][playerID] then
+            ActionBarSyncDB.global.barsToSync[barName][playerID] = {}
         end
 
         -- if the barName is missing in the profile barToSync data, add it with default value of false
-        if not self.db.profile.barsToSync[barName] then
-            self.db.profile.barsToSync[barName] = false
+        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] then
+            ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] = false
         end
     end
 
-    if not self.db.profile.mytab then
-        self.db.profile.mytab = "introduction"
+    if not ActionBarSyncDB.profile[self.currentPlayerServer].mytab then
+        ActionBarSyncDB.profile[self.currentPlayerServer].mytab = "introduction"
     end
 
     --@debug@
-    -- if self.db.char.isDevMode == true then
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
     --     if barName ~= nil then
     --         self:Print(("(%s) Instantiated DB for bar: %s and Player: %s"):format("InstantiateDB", barName, playerID))
     --     else
@@ -327,130 +308,18 @@ function ABSync:InstantiateDB(barName)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetLastActionName
-    Purpose:    Get the last action name for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetLastActionName()
-    return self.db.char.actionLookup.name
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastActionName
-    Purpose:    Set the last action name for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetLastActionName(value)
-    self.db.char.actionLookup.name = value
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetLastActionID
-    Purpose:    Get the last action ID for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetLastActionID()
-    -- first get a copy of the value
-    local returnme = self.db.char.actionLookup.id
-
-    -- check for nil
-    if returnme == nil or returnme == "" then
-        returnme = 0
-    end
-
-    return returnme
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastActionID
-    Purpose:    Set the last action ID for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetLastActionID(value)
-    self.db.char.actionLookup.id = value
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetActionTypeValues
-    Purpose:    Get the action type values.
------------------------------------------------------------------------------]]
-function ABSync:GetActionTypeValues()
-    return ABSync.actionTypeLookup
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetLastActionType
-    Purpose:    Get the last action type for the current character. Defaults to "spell" if never set.
------------------------------------------------------------------------------]]
-function ABSync:GetLastActionType()
-    return self.db.char.actionLookup.type or "spell"
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastActionType
-    Purpose:    Set the last action type for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetLastActionType(value)
-    self.db.char.actionLookup.type = value
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetActionBarValues
-    Purpose:    Get the action bar values.
------------------------------------------------------------------------------]]
-function ABSync:GetActionBarValues()
-    return self.db.global.actionBars
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetActionButtonValues
-    Purpose:    Get the action button values.
------------------------------------------------------------------------------]]
-function ABSync:GetActionButtonValues()
-    return self.db.global.actionButtons
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetLastActionBar
-    Purpose:    Get the last action bar for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetLastActionBar()
-    return self.db.char.actionLookup.bar or ""
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastActionBar
-    Purpose:    Set the last action bar for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetLastActionBar(value)
-    self.db.char.actionLookup.bar = value
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetLastActionButton
-    Purpose:    Get the last action button for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetLastActionButton()
-    return self.db.char.actionLookup.btn or ""
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastActionButton
-    Purpose:    Set the last action button for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetLastActionButton(value)
-    self.db.char.actionLookup.btn = value
-end
-
---[[---------------------------------------------------------------------------
     Function:   InsertLookupHistory
     Purpose:    Insert a new entry into the lookup history and only keeping the max records set by the user.
 -----------------------------------------------------------------------------]]
 function ABSync:InsertLookupHistory(info)
     -- insert the record
-    table.insert(self.db.char.lookupHistory, 1, info)
+    table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory, 1, info)
 
     -- if +1 of max records exist and the table has more then reduce the table size
-    local nextRecord = self.db.char.lookupHistoryMaxRecords + 1
-    if #self.db.char.lookupHistory > self.db.char.lookupHistoryMaxRecords then
-        for i = nextRecord, #self.db.char.lookupHistory do
-            table.remove(self.db.char.lookupHistory, i)
+    local nextRecord = ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords + 1
+    if #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory > ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords then
+        for i = nextRecord, #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory do
+            table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory, i)
         end
     end
 end
@@ -514,106 +383,6 @@ function ABSync:GetActionData(actionID, actionType)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetActionBarsCount
-    Purpose:    Get the count of action bars for a specific source.
------------------------------------------------------------------------------]]
-function ABSync:GetActionBarsCount(source)
-    -- initialize variable
-    local count = 0
-    local tmpdb = {}
-
-    -- point to correct db branch based on source
-    if source == self.profiletype["profile"] then
-        tmpdb = self.db.profile
-
-    -- always get global if source doesn't match a valid type
-    else
-        tmpdb = self.db.global
-    end
-
-    -- if actionBars variable exist then continue
-    if tmpdb.actionBars then
-        -- if actionBars is not a table then return 0
-        if tostring(type(tmpdb.actionBars)) == "table" then
-            count = #tmpdb.actionBars
-        end
-    end
-
-    -- finally return the count
-    return tonumber(count)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetActionBarNames
-    Purpose:    Return the list/table of action bar names.
------------------------------------------------------------------------------]]
-function ABSync:GetActionBarNames(source)
-    -- check to make sure a data fetch has happened, if not return No Scan Completed
-    local barNames = {}
-    
-    -- get a count of actionbars
-    local count = self:GetActionBarsCount(source)
-
-    -- if actionBars does not exist
-    if count == 0 then
-        -- add an entry to let user know a can has not been done; this will get overwritten once a scan is done.
-        table.insert(barNames, L["noscancompleted"])
-
-        -- finally return bar names
-        return barNames
-    else
-        return self.db.global.actionBars
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetLastSyncedOnChar
-    Purpose:    Get the last synced time for the action bars to update the Last Synced field in the options for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetLastSyncedOnChar()
-    -- store response
-    local response = ""
-
-    -- check for nil or blank
-    if not self.db.char.lastSynced or self.db.char.lastSynced == "" or self.db.char.lastSynced == nil then
-        response = L["never"]
-
-    -- return the last synced time
-    else
-        -- if last synced time exists then return the formatted date
-        response = self.db.char.lastSynced
-    end
-
-    -- finally return data
-    return response
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetLastSyncedOnChar
-    Purpose:    Set the last synced time for the action bars to update the Last Synced field in the options for the current character.
-       TODO:    Format a base data value instead of a formatted value. Format it when needed later.
------------------------------------------------------------------------------]]
-function ABSync:SetLastSyncedOnChar()
-    self.db.char.lastSynced = date("%Y-%m-%d %H:%M:%S")
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetPlayerNameFormatted
-    Purpose:    Get the owner of the specified action bar.
------------------------------------------------------------------------------]]
-function ABSync:GetPlayerNameFormatted(nospace)
-    if not nospace then nospace = false end
-
-    local unitName, unitServer = UnitFullName("player")
-
-    if nospace == false then
-        return unitName .. " - " .. unitServer
-    else
-        return unitName .. "-" .. unitServer
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   FormatDateString
     Purpose:    Convert a date string from YYYYMMDDHHMISS or YYYY-MM-DD HH:MI:SS format to YYYY, Mon DD HH:MI:SS format.
 -----------------------------------------------------------------------------]]
@@ -667,40 +436,6 @@ function ABSync:FormatDateString(dateString)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetPlayerNameKey
-    Purpose:    Get the formatted key needed to track shared bars based on character and spec.
------------------------------------------------------------------------------]]
-function ABSync:GetPlayerNameKey()
-    -- get player and server name
-    local unitName, unitServer = UnitFullName("player")
-
-    -- get characters current spec number
-    local specializationIndex = C_SpecializationInfo.GetSpecialization()
-
-    -- get the name of the current spec number
-    local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
-
-    -- finally return the special key
-    return ("%s-%s-%s"):format(unitName, unitServer, name)
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetBarToShare
-    Purpose:    Check if a specific action bar is set to share for a specific player.
------------------------------------------------------------------------------]]
-function ABSync:GetBarToShare(barName, playerID)
-    if not self.db.global.barsToSync then
-        return false
-    elseif not self.db.global.barsToSync[barName] then
-        return false
-    elseif not self.db.global.barsToSync[barName][playerID] then
-        return false
-    else
-        return next(self.db.global.barsToSync[barName][playerID]) ~= nil
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   RemoveFrameChildren
     Purpose:    Remove all children from a frame.
 -----------------------------------------------------------------------------]]
@@ -724,20 +459,38 @@ function ABSync:RemoveFrameChildren(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   SetBarToShare
+    Function:   ConfirmBar
+    Purpose:    Verify the bar exists in the current scan data by checking for one button as child data to the bar.
+-----------------------------------------------------------------------------]]
+function ABSync:ConfirmBar(barName)
+    -- initialize variables
+    local barFound = false
+
+    -- loop over current scan data and see if one button exists
+    for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName]) do
+        barFound = true
+        -- only need to loop once
+        break
+    end
+
+    -- finally return
+    return barFound
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ShareBar
     Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
-function ABSync:SetBarToShare(barName, value)
+function ABSync:ShareBar(barName, value)
     --@debug@
-    -- print(("(%s) Key: %s, Value: %s"):format("SetBarToShare", tostring(barName), tostring(value)))
+    -- print(("(%s) Key: %s, Value: %s"):format("ShareBar", tostring(barName), tostring(value)))
     --@end-debug@
 
     -- initialize variables
     local barName = barName or L["Unknown"]
-    local playerID = self:GetPlayerNameKey()
 
     -- check for input barName, if it doesn't exist then let user know and return false
-    if not self.db.global.barsToSync[barName] then
+    if not ActionBarSyncDB.global.barsToSync[barName] then
         -- initialize missing key dialog
         StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
             text = (L["actionbarsync_invalid_key_text"]):format(barName),
@@ -754,18 +507,7 @@ function ABSync:SetBarToShare(barName, value)
     -- self:InstantiateDB(barName)
 
     -- track if bar is found in profile.currentBarData
-    local barFound = false
-    
-    -- make sure currentBarData exists and has button data
-    local buttonCount = 0
-    for _ in pairs(self.db.char.currentBarData[barName]) do
-        buttonCount = buttonCount + 1
-        -- only need to loop once
-        break
-    end
-    if buttonCount > 0 then
-        barFound = true
-    end
+    local barFound = self:ConfirmBar(barName)
 
     -- if currentBarData is emtpy then let user know they must trigger a sync first
     if barFound == false then
@@ -790,88 +532,68 @@ function ABSync:SetBarToShare(barName, value)
     -- if the value is true, add the bar data to the buttonsToSync table under the barsToSync[barName] table
     if value == true then
         -- add the bar data
-        self.db.global.barsToSync[barName][playerID] = self.db.char.currentBarData[barName]
+        ActionBarSyncDB.global.barsToSync[barName][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName]
     else
         -- remove all the button data
-        self.db.global.barsToSync[barName][playerID] = {}
+        ActionBarSyncDB.global.barsToSync[barName][self.currentPlayerServerSpec] = {}
     end
 
     -- update the check boxes in the share area
     ABSync:UpdateShareRegion()
 
     --@debug@
-    -- if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToShare", barName, (value and "Yes" or "No"))) end
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetBarToSync
-    Purpose:    Check if a specific bar is set to sync for a specific player.
------------------------------------------------------------------------------]]
--- TODO: change from profile db to name-server-spec db
-function ABSync:GetBarToSync(barName, playerID)
-    if not self.db.profile.barsToSync then
-        return false
-    elseif not self.db.profile.barsToSync[barName] then
-        return false
-    else
-        return self.db.profile.barsToSync[barName] == playerID
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   SetBarToSync
+    Function:   MarkBarToSync
     Purpose:    Update the db for current profile when the user changes the values in the options on which bars to sync.
 -----------------------------------------------------------------------------]]
-function ABSync:SetBarToSync(key, value)
+function ABSync:MarkBarToSync(key, value)
     --@debug@
-    print(("Key: %s, Value: %s"):format(tostring(key), tostring(value)))
+    if self:GetDevMode() == true then print(("Key: %s, Value: %s"):format(tostring(key), tostring(value))) end
     --@end-debug@
 
     -- initialize variables
     local barName = L["Unknown"]
 
-    -- initialize missing key dialog
-    StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
-        text = (L["actionbarsync_invalid_key_text"]):format(key),
-        button1 = L["ok"],
-        timeout = 15,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
-    -- check profile.actionBars
-    if not self.db.profile.actionBars then
-        self.db.profile.actionBars = {}
-    end
-
     -- check for input key, if it doesn't exist then let user know and return false
-    if not self.db.profile.actionBars[key] then
+    if not ActionBarSyncDB.global.actionBars[key] then
+        -- initialize missing key dialog
+        StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
+            text = (L["actionbarsync_invalid_key_text"]):format(key),
+            button1 = L["ok"],
+            timeout = 15,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+
         StaticPopup_Show("ACTIONBARSYNC_INVALID_KEY")
         return false
     end
 
     -- set bar name
-    barName = self.db.profile.actionBars[key]
+    barName = ActionBarSyncDB.global.actionBars[key]
     
     -- track if bar is found in currentBarData
     local barFound = false
 
     -- check for profile.barsToSync
-    if not self.db.profile.barsToSync then
-        self.db.profile.barsToSync = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync = {}
     end
 
     -- check for the barName in profile.barsToSync
-    if not self.db.profile.barsToSync[barName] then
-        self.db.profile.barsToSync[barName] = false
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] = false
     end
 
     -- set the bar to sync on input value to the profile: true or false based on the value passed into this function
-    self.db.profile.barsToSync[barName] = value
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] = value
 
     --@debug@ let the user know the value is changed only when developing though
-    if self.db.char.isDevMode == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("SetBarToSync", barName, (value and "Yes" or "No"))) end
+    if self:GetDevMode() == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("MarkBarToSync", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -881,13 +603,14 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     -- translate action bar number into action bar name
-    actionBar = self.db.global.actionBars[actionBar]
+    actionBar = ActionBarSyncDB.global.actionBars[actionBar]
+
     --@debug@
-    -- if self.db.char.isDevMode == true then self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton))) end
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton))) end
     --@end-debug@
 
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
-    local buttonID = self.db.global.actionButtonTranslation[actionBar][actionButton]
+    local buttonID = ActionBarSyncDB.global.actionButtonTranslation[actionBar][actionButton]
 
     -- get action details
     local actionDetails = self:GetActionData(actionID, actionType)
@@ -944,10 +667,10 @@ function ABSync:BeginRestore(button)
     self:GetActionBarData()
 
     -- trigger message
-    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(self.db.char.restore.choice.backupDttm), self.db.char.restore.choice.actionBar))
+    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar))
 
     -- trigger the update with the backup date time and a true value for isRestore
-    self:UpdateActionBars(self.db.char.restore.choice.backupDttm, true)
+    self:UpdateActionBars(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm, true)
 
     -- enable button
     button:Enable()
@@ -963,58 +686,11 @@ end
         4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
 -----------------------------------------------------------------------------]]
 function ABSync:BeginSync()
-    -- add dialog to ask for backup reason
-    StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
-        text = L["Enter a name for this backup:"],
-        button1 = L["ok"],
-        button2 = L["cancel"],
-        hasEditBox = true,
-        maxLetters = 64,
-        OnAccept = function(self)
-            -- capture the reason
-            local backupReason = self.EditBox:GetText()
-            -- start the actual backup passing in needed data
-            local backupdttm = ABSync:TriggerBackup(backupReason)
-            -- sync the bars
-            ABSync:UpdateActionBars(backupdttm)
-        end, 
-        OnCancel = function(self)
-            StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
-        end,
-        OnShow = function(self)
-            self.EditBox:SetText(L["Default Name"])
-            self.EditBox:SetFocus()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
-    -- add dialog to let user know sync was cancelled
-    StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
-        text = L["actionbarsync_sync_cancelled_text"],
-        button1 = L["ok"],
-        timeout = 15,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
-    -- add dialog to let user know they must select bars to sync first
-    StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
-        text = L["actionbarsync_no_syncbars_text"],
-        button1 = L["ok"],
-        timeout = 15,
-        whileDead = true,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
     -- track testing
     local barsToSync = false
     
     -- count entries
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
         if syncOn ~= false then
             barsToSync = true
             break
@@ -1023,9 +699,56 @@ function ABSync:BeginSync()
 
     -- if no data found, show a message and return
     if not barsToSync then
+        -- add dialog to let user know they must select bars to sync first
+        StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
+            text = L["actionbarsync_no_syncbars_text"],
+            button1 = L["ok"],
+            timeout = 15,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+
         StaticPopup_Show("ACTIONBARSYNC_NO_SYNCBARS")
+
+    -- if data found, proceed with backup; ask user for backup note
     else
-        -- if data found, proceed with backup; ask user for backup note
+        -- add dialog to let user know sync was cancelled
+        StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
+            text = L["actionbarsync_sync_cancelled_text"],
+            button1 = L["ok"],
+            timeout = 15,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+
+        -- add dialog to ask for backup name
+        StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
+            text = L["Enter a name for this backup:"],
+            button1 = L["ok"],
+            button2 = L["cancel"],
+            hasEditBox = true,
+            maxLetters = 64,
+            OnAccept = function(self)
+                -- capture the name
+                local backupName = self.EditBox:GetText()
+                -- start the actual backup passing in needed data
+                local backupdttm = ABSync:TriggerBackup(backupName)
+                -- sync the bars
+                ABSync:UpdateActionBars(backupdttm)
+            end, 
+            OnCancel = function(self)
+                StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
+            end,
+            OnShow = function(self)
+                self.EditBox:SetText(L["Default Name"])
+                self.EditBox:SetFocus()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
         StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
     end
 end
@@ -1046,8 +769,8 @@ function ABSync:TriggerBackup(note)
     local errors = {}
 
     -- make sure data path exists
-    if not self.db.char.backup then
-        self.db.char.backup = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].backup then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup = {}
     end
 
     -- force bar refresh
@@ -1058,10 +781,10 @@ function ABSync:TriggerBackup(note)
 
     -- for completeness sake, make sure records are found to be synced...this is actually done in the calling parent but if I decide to call this function elsewhere better check!
     local syncDataFound = false
-    for barName, syncOn in pairs(self.db.profile.barsToSync) do
+    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
         if syncOn ~= false then
             --@debug@
-            if self.db.char.isDevMode == true then self:Print((L["triggerbackup_notify"]):format(barName)) end
+            if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print((L["triggerbackup_notify"]):format(barName)) end
             --@end-debug@
 
             -- make sync data found
@@ -1071,7 +794,7 @@ function ABSync:TriggerBackup(note)
             backupData[barName] = {}
 
             -- get the current bar data for the current barName; not the profile bar data to sync
-            for buttonID, buttonData in pairs(self.db.char.currentBarData[barName]) do
+            for buttonID, buttonData in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName]) do
                 backupData[barName][buttonID] = buttonData
             end
         end
@@ -1084,15 +807,15 @@ function ABSync:TriggerBackup(note)
 
     -- count number of backups
     local backupCount = 0
-    for _ in pairs(self.db.char.backup) do
+    for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         backupCount = backupCount + 1
     end
 
     -- if more than 9 then remove the oldest 1
     -- next retrieves the key of the first entry in the backup table and then sets it to nil which removes it
     while backupCount > 9 do
-        local oldestBackup = next(self.db.char.backup)
-        self.db.char.backup[oldestBackup] = nil
+        local oldestBackup = next(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup)
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[oldestBackup] = nil
         backupCount = backupCount - 1
     end
 
@@ -1103,7 +826,7 @@ function ABSync:TriggerBackup(note)
         error = errors,
         data = backupData,
     }
-    table.insert(self.db.char.backup, backupEntry)
+    table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup, backupEntry)
 
     -- finally return a value
     return backupdttm
@@ -1156,18 +879,18 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     if isRestore == false then
         -- compare the global barsToSync data to the user's current action bar data
         -- loop over only the bars the character wants to sync
-        for barName, sharedby in pairs(self.db.profile.barsToSync) do
+        for barName, sharedby in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
             if sharedby ~= false then
                 -- print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
                 -- loop over the shared data
-                for buttonID, buttonData in pairs(self.db.global.barsToSync[barName][sharedby]) do
+                for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barName][sharedby]) do
                     -- loop over checkValues
                     for _, testit in ipairs(checkValues) do
-                        if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
+                        if buttonData[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit] then
                             differencesFound = true
                             table.insert(differences, {
-                                shared = self.db.global.barsToSync[barName][sharedby][buttonID],
-                                current = self.db.char.currentBarData[barName][buttonID],
+                                shared = ActionBarSyncDB.global.barsToSync[barName][sharedby][buttonID],
+                                current = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID],
                                 barName = barName,
                                 sharedBy = sharedby,
                             })
@@ -1179,7 +902,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
         end
     else
         -- loop over the backup data looking for the specific entry
-        for _, backupRow in ipairs(self.db.char.backup) do
+        for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
             -- print("here1")
             -- verify the row has the matching date/time
             if backupRow.dttm == backupdttm then
@@ -1192,15 +915,15 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                         -- loop over checkValues
                         for _, testit in ipairs(checkValues) do
                             --@debug@
-                            -- print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(self.db.char.currentBarData[barName][buttonID][testit])))
+                            -- print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
                             --@end-debug@
                             -- compare values
-                            if buttonData[testit] ~= self.db.char.currentBarData[barName][buttonID][testit] then
+                            if buttonData[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit] then
                                 -- print("here6")
                                 differencesFound = true
                                 table.insert(differences, {
                                     shared = buttonData,
-                                    current = self.db.char.currentBarData[barName][buttonID],
+                                    current = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID],
                                     barName = barName,
                                     sharedBy = L["restore"],
                                 })
@@ -1214,9 +937,9 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
 
     -- capture last diff data
     if isRestore == true then
-        self.db.char.lastDiffDataRestore = differences
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffDataRestore = differences
     else
-        self.db.char.lastDiffData = differences
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData = differences
     end
 
     return differences, differencesFound
@@ -1232,7 +955,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     if not isRestore or isRestore == nil then isRestore = false end
 
     --@debug@
-    if self.db.char.isDevMode == true then self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No")) end
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No")) end
     --@end-debug@
 
     -- store differences
@@ -1277,7 +1000,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             }
 
             --@debug@
-            -- if self.db.char.isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
+            -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
             --@end-debug@
 
             -- track if something was updated to action bar
@@ -1298,7 +1021,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
                     err.id = diffData.shared.blizData.baseID
                     --@debug@
-                    if self.db.char.isDevMode == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
+                    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
                     --@end-debug@
                 end
 
@@ -1380,10 +1103,10 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             elseif err.type == "macro" then
                 -- parse out character and server
                 local sharedByWithOutSpec = self:GetSharedByWithOutSpec(diffData.sharedBy)
-                -- print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetPlayerNameFormatted(true)))
+                -- print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetKeyPlayerServer(true)))
 
                 -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
-                if diffData.shared.macroType == ABSync.MacroType.character and sharedByWithOutSpec ~= self:GetPlayerNameFormatted(true) then
+                if diffData.shared.macroType == ABSync.MacroType.character and sharedByWithOutSpec ~= self:GetKeyPlayerServer(true) then
                     err["msg"] = L["charactermacro"]
                     table.insert(errors, err)
                 
@@ -1462,7 +1185,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
         -- count number of sync error records
         local syncErrorCount = 0
-        for _ in pairs(self.db.char.syncErrors) do
+        for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
             syncErrorCount = syncErrorCount + 1
         end
 
@@ -1470,34 +1193,34 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- since we use table.insert it always adds records to the end of the table and the oldest is at the top so keep deleting until we get to 9 records
         -- because we will insert one after this step
         while syncErrorCount > 9 do
-            table.remove(self.db.char.syncErrors, 1)
+            table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, 1)
             syncErrorCount = syncErrorCount - 1
         end
 
         -- store errors
         if #errors > 0 then
             --@debug@
-            if self.db.char.isDevMode == true then self:Print((L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
+            if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print((L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
             --@end-debug@
 
             -- make sure syncErrors exists
-            if not self.db.char.syncErrors then
-                self.db.char.syncErrors = {}
+            if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
+                ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
             end
             
             -- write to db
-            table.insert(self.db.char.syncErrors, {
+            table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
                 key = backupdttm,
                 errors = errors
             })
 
             -- make sure lastSyncErrorDttm exists
-            if not self.db.char.lastSyncErrorDttm then
-                self.db.char.lastSyncErrorDttm = ""
+            if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
+                ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = ""
             end
 
             -- update lastSyncErrorDttm
-            self.db.char.lastSyncErrorDttm = backupdttm
+            ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
 
             -- trigger update for options UI
             -- LibStub("AceConfigRegistry-3.0"):NotifyChange(ABSync.optionLocName)
@@ -1636,7 +1359,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         self:Print((L["Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...lots more text."]):format(btnName, tostring(actionType)))
 
         -- add to scan errors
-        self.db.char.scanErrors = {
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].scanErrors = {
             actionID = actionID,
             btnName = btnName,
             actionType = actionType,
@@ -1656,7 +1379,7 @@ end
 function ABSync:RefreshMountDB()
     -- get playerID
     -- no need to include spec in playerID for mount db since the mounts are not spec-specific
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetKeyPlayerServer()
 
     -- clear the existing mount database
     ActionBarSyncMountDB[playerID] = {}
@@ -1716,7 +1439,7 @@ end
 function ABSync:ClearMountDB()
     -- get playerID
     -- no need to include spec in playerID for mount db since the mounts are not spec-specific
-    local playerID = self:GetPlayerNameFormatted()
+    local playerID = self:GetKeyPlayerServer()
 
     -- clear the existing mount database
     ActionBarSyncMountDB[playerID] = {}
@@ -1735,18 +1458,18 @@ function ABSync:GetActionBarData()
     local WoW10 = StdFuncs:IsWoW10()
 
     -- reset actionBars
-    self.db.global.actionBars = {}
-    self.db.profile.actionBars = {}
+    ActionBarSyncDB.global.actionBars = {}
+    ActionBarSyncDB.global.actionBars = {}
     
     -- reset currentBarData
-    self.db.char.currentBarData = {}
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
 
     -- get player unique id
-    local playerID = self:GetPlayerNameKey()
+    local playerID = self:GetKeyPlayerServerSpec()
 
     -- track scan errors
     local errs = {
-        lastScan = self.db.char.lastActionBarScanDttm,
+        lastScan = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionBarScanDttm,
         data = {}
     }
     
@@ -1775,7 +1498,7 @@ function ABSync:GetActionBarData()
 
                 -- check if barName is already in the global actionBars data
                 local barNameInserted = false
-                for _, name in ipairs(self.db.global.actionBars) do
+                for _, name in ipairs(ActionBarSyncDB.global.actionBars) do
                     if name == barName then
                         barNameInserted = true
                         break
@@ -1784,12 +1507,12 @@ function ABSync:GetActionBarData()
 
                 -- add the bar name to the global actionBars table if it doesn't exist
                 if barNameInserted == false then
-                    table.insert(self.db.global.actionBars, barName)
+                    table.insert(ActionBarSyncDB.global.actionBars, barName)
                 end
 
                 -- check if barName is already in the profile actionBars data
                 barNameInserted = false
-                for _, name in ipairs(self.db.profile.actionBars) do
+                for _, name in ipairs(ActionBarSyncDB.global.actionBars) do
                     if name == barName then
                         barNameInserted = true
                         break
@@ -1798,12 +1521,12 @@ function ABSync:GetActionBarData()
 
                 -- add the bar name to the profile actionBars table if it doesn't exist
                 if barNameInserted == false then
-                    table.insert(self.db.profile.actionBars, barName)
+                    table.insert(ActionBarSyncDB.global.actionBars, barName)
                 end                
 
                 -- check if barName is already in currentBarData
                 local barNameInserted = false
-                for name, _ in pairs(self.db.char.currentBarData) do
+                for name, _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData) do
                     if name == barName then
                         barNameInserted = true
                         break
@@ -1812,43 +1535,43 @@ function ABSync:GetActionBarData()
 
                 -- add the bar name to the currentBarData table if it doesn't exist
                 if barNameInserted == false then
-                    self.db.char.currentBarData[barName] = {}
+                    ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName] = {}
                 end
 
                 -- insert the info table into the current action bar data
-                self.db.char.currentBarData[barName][tostring(actionID)] = buttonData
+                ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][tostring(actionID)] = buttonData
 
                 -- insert details into button translation table
-                if not self.db.global.actionButtonTranslation[barName] then
-                    self.db.global.actionButtonTranslation[barName] = {}
+                if not ActionBarSyncDB.global.actionButtonTranslation[barName] then
+                    ActionBarSyncDB.global.actionButtonTranslation[barName] = {}
                 end
-                self.db.global.actionButtonTranslation[barName][buttonData.barPosn] = buttonData.actionID
+                ActionBarSyncDB.global.actionButtonTranslation[barName][buttonData.barPosn] = buttonData.actionID
             end
         end
     end
 
     -- sort the actionBars table
-    table.sort(self.db.global.actionBars, function(a, b)
+    table.sort(ActionBarSyncDB.global.actionBars, function(a, b)
         return a < b
     end)
 
     -- update db
-    self.db.char.lastScan = date("%Y-%m-%d %H:%M:%S")
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = date("%Y-%m-%d %H:%M:%S")
     
     -- sync keys of actionBars to barsToSync and barOwner
-    for _, barName in ipairs(self.db.global.actionBars) do
+    for _, barName in ipairs(ActionBarSyncDB.global.actionBars) do
        self:InstantiateDB(barName)
     end
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
-    -- for barName, barData in pairs(self.db.global.barsToSync) do
-    for barName, barData in pairs(self.db.global.barsToSync) do
+    -- for barName, barData in pairs(ActionBarSyncDB.global.barsToSync) do
+    for barName, barData in pairs(ActionBarSyncDB.global.barsToSync) do
         -- if the bar data table for the current player is empty set checked to false, otherwise, true; next() checks the next record of a table and if it's nil then its empty and we want a false value for empty tables; true means its populated because the use decided to share it
         local checked = next(barData[playerID]) ~= nil
         -- self:Print(("Bar Name: %s, Character: %s, is shared? %s"):format(barName, playerID, tostring(checked)))
 
         -- call existing function when the share check boxes are clicked; pass in existing checked value
-        self:SetBarToShare(barName, checked)
+        self:ShareBar(barName, checked)
     end
 
     -- trigger update for options UI
@@ -1856,7 +1579,7 @@ function ABSync:GetActionBarData()
 
     -- let user know its done
     --@debug@
-    if self.db.char.isDevMode == true then self:Print(L["getactionbardata_final_notification"]) end
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["getactionbardata_final_notification"]) end
     --@end-debug@
 end
 
@@ -1866,7 +1589,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:EnableDevelopment()
     -- enable development mode
-    self.db.char.isDevMode = true
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = true
 
     -- force close the window
     self.ui.frame.mainFrame:Hide()
@@ -1880,13 +1603,13 @@ end
     Purpose:    Disable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
 function ABSync:DisableDevelopment()
-    if self.db.profile.mytab == "developer" then
+    if ActionBarSyncDB.profile.mytab == "developer" then
         -- switch to default tab if the user is on the developer tab
-        self.db.profile.mytab = "introduction"
+        ActionBarSyncDB.profile.mytab = "introduction"
     end
 
     -- disable development mode
-    self.db.char.isDevMode = false
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = false
 
     -- force close the window
     self.ui.frame.mainFrame:Hide()
@@ -1908,18 +1631,16 @@ function ABSync:SlashCommand(text)
     end
     -- get args
     for arg in string.gmatch(self:GetArgs(text), "%S+") do
-        if arg:lower() == "options" then
-            LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
-        elseif arg:lower() == "sync" then
+        if arg:lower() == "sync" then
             self:BeginSync()
         elseif arg:lower() == "enablemodedeveloper" then
-            if not self.db.char.isDevMode or self.db.char.isDevMode == false then
+            if not ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode or ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == false then
                 self:EnableDevelopment()
             else
                 self:DisableDevelopment()
             end
         elseif arg:lower() == "refreshmountdb" then
-            if self.db.char.isDevMode == true then
+            if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
                 self:RefreshMountDB()
             end
         elseif arg:lower() == "fonts" then
@@ -1968,11 +1689,11 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:EventPlayerLogout()
     --@debug@
-    if self.db.char.isDevMode == true then self:Print(L["registerevents_player_logout"]) end
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["registerevents_player_logout"]) end
     --@end-debug@
 
     -- clear currentBarData and actionBars when not in developer mode
-    if self.db.char.isDevMode == false then
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == false then
         ABSync.db.profile.currentBarData = {}
         ABSync:ClearMountDB()
     end
@@ -1983,7 +1704,7 @@ end
     Purpose:    Register all events for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:RegisterEvents()
-    if self.db.char.isDevMode == true then self:Print(L["registerevents_starting"]) end
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["registerevents_starting"]) end
 	-- Hook to Action Bar On Load Calls
 	-- self:Hook("ActionBarController_OnLoad", true)
 	-- Hook to Action Bar On Event Calls
@@ -1991,13 +1712,13 @@ function ABSync:RegisterEvents()
     
     self:RegisterEvent("ADDON_LOADED", function()
         --@debug@
-        if self.db.char.isDevMode == true then self:Print(L["registerevents_addon_loaded"]) end
+        if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["registerevents_addon_loaded"]) end
         --@end-debug@
     end)
 
     self:RegisterEvent("PLAYER_LOGIN", function()
         --@debug@
-        if self.db.char.isDevMode == true then self:Print(L["registerevents_player_login"]) end
+        if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["registerevents_player_login"]) end
         --@end-debug@
 
         self:EventPlayerLogin()
@@ -2008,14 +1729,14 @@ function ABSync:RegisterEvents()
         -- only run these commands if this is the initial login
         if isInitialLogin == true then
             --@debug@
-            if self.db.char.isDevMode == true then ABSync:Print(L["registerevents_player_entering_world"]) end
+            if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then ABSync:Print(L["registerevents_player_entering_world"]) end
             --@end-debug@
 
             -- run db initialize again but pass in barName to make sure all keys are setup for this barName
             ABSync:InstantiateDB(nil)
 
             -- get action bar data automatically if user has opted in through the settings checkbox
-            if ABSync.db.profile.autoGetActionBarData or ABSync.db.char.lastScan == L["never"] then
+            if ABSync.db.profile[self.currentPlayerServer].autoGetActionBarData or ABSync.db.char[self.currentPlayerServerSpec].lastScan == L["never"] then
                 ABSync:GetActionBarData()
             end
         end
@@ -2027,7 +1748,7 @@ function ABSync:RegisterEvents()
 
     self:RegisterEvent("VARIABLES_LOADED", function()
         --@debug@
-        if self.db.char.isDevMode == true then self:Print(L["registerevents_variables_loaded"]) end
+        if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["registerevents_variables_loaded"]) end
         --@end-debug@
     end)
 
@@ -2071,7 +1792,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:OnEnable()
     -- Check the DB
-    if not self.db then
+    if not ActionBarSyncDB then
         self:Print(L["onenable_db_not_found"])
     end
 
@@ -2105,7 +1826,7 @@ end
 --     local characterList = {}
 
 --     -- loop over the bar characters
---     for charName, charData in pairs(self.db.profiles) do
+--     for charName, charData in pairs(ActionBarSyncDB.profiles) do
 --         table.insert(characterList, charName)
 --     end
 
@@ -2163,7 +1884,7 @@ end
 -----------------------------------------------------------------------------]]
 -- function ABSync:UpdateShareTab(playerID, funcName)
 --     -- update the data in the lastScan edit box
---     self.ui.editbox.lastScan:SetText(self.db.char.lastScan or L["noscancompleted"])
+--     self.ui.editbox.lastScan:SetText(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or L["noscancompleted"])
 
 --     -- update the action bar list
 --     self.ui.group.shareFrame:ReleaseChildren()
@@ -2204,8 +1925,8 @@ function ABSync:InsertLookupHistoryRows(parent, columns)
     parent:AddChild(rowGroup)
 
     -- add lookup history rows
-    if #self.db.char.lookupHistory > 0 then
-        for _, histRow in ipairs(self.db.char.lookupHistory) do
+    if #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory > 0 then
+        for _, histRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory) do
             -- print("here1")
             for _, colDef in ipairs(columns) do
                 local label = AceGUI:Create("Label")
@@ -2267,7 +1988,7 @@ function ABSync:CreateBackupListFrame(parent)
 
     -- add the available backups
     local trackInserts = 0
-    for _, backupRow in ipairs(self.db.char.backup) do
+    for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         local checkbox = AceGUI:Create("CheckBox")
         checkbox:SetLabel(self:FormatDateString(backupRow.dttm))
         checkbox:SetValue(false)
@@ -2316,7 +2037,7 @@ function ABSync:ShowUI()
     ABSync.ui.contentFrame = contentFrame
 
     -- show initial tab
-    local tabkey = self.db.profile.mytab or "introduction"
+    local tabkey = ActionBarSyncDB.profile.mytab or "introduction"
     self:ShowTabContent(tabkey)
     local buttonID = ABSync.uitabs["buttonref"][tabkey]
     PanelTemplates_SetTab(ABSync.uitabs["tabframe"], buttonID)
@@ -2339,31 +2060,31 @@ function ABSync:ShowTabContent(tabKey)
     
     -- switch to the selected tab
     if tabKey == "about" then
-        self.db.profile.mytab = "about"
+        ActionBarSyncDB.profile.mytab = "about"
         -- tabs\About.lua
         self:CreateAboutFrame(ABSync.ui.contentFrame)
     elseif tabKey == "introduction" then
-        self.db.profile.mytab = "introduction"
+        ActionBarSyncDB.profile.mytab = "introduction"
         -- tabs\Introduction.lua
         self:CreateIntroductionFrame(ABSync.ui.contentFrame)
     elseif tabKey == "sharesync" then
-        self.db.profile.mytab = "sharesync"
+        ActionBarSyncDB.profile.mytab = "sharesync"
         -- tabs\ShareSync.lua
         self:CreateShareSyncFrame(ABSync.ui.contentFrame)
     elseif tabKey == "last_sync_errors" then
-        self.db.profile.mytab = "last_sync_errors"
+        ActionBarSyncDB.profile.mytab = "last_sync_errors"
         -- tabs\LastSyncErrors.lua
         self:CreateLastSyncErrorFrame(ABSync.ui.contentFrame)
     elseif tabKey == "lookup" then
-        self.db.profile.mytab = "lookup"
+        ActionBarSyncDB.profile.mytab = "lookup"
         -- tabs\Lookup.lua
         self:CreateLookupFrame(ABSync.ui.contentFrame)
     elseif tabKey == "backup" then
-        self.db.profile.mytab = "backup"
+        ActionBarSyncDB.profile.mytab = "backup"
         -- tabs\Restore.lua
         self:CreateBackupFrame(ABSync.ui.contentFrame)
     elseif tabKey == "developer" then
-        self.db.profile.mytab = "developer"
+        ActionBarSyncDB.profile.mytab = "developer"
         -- tabs\Developer.lua
         self:CreateDeveloperFrame(ABSync.ui.contentFrame)
     end
@@ -2434,7 +2155,7 @@ function ABSync:CreateTabSystem(parent)
         local tabname = ABSync.uitabs.tabs[tabkey]
         
         -- if developer mode disabled, skip the developer tab, otherwise add the tab
-        if tabkey ~= "developer" or (tabkey == "developer" and self.db.char.isDevMode == true) then
+        if tabkey ~= "developer" or (tabkey == "developer" and ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true) then
             table.insert(tabData, { name = tabname, key = tabkey })
         end
     end
@@ -2486,7 +2207,7 @@ function ABSync:CreateTabSystem(parent)
     PanelTemplates_SetTab(tabFrame, 1)
     
     -- initialize first tab to users last, if not set to introduction
-    local initialTab = ABSync.uitabs["buttonref"][self.db.profile.mytab or "introduction"]
+    local initialTab = ABSync.uitabs["buttonref"][ActionBarSyncDB.profile.mytab or "introduction"]
     if tabButtons[initialTab] then
         PanelTemplates_SelectTab(tabButtons[1])
         for j = 2, #tabButtons do

@@ -27,7 +27,7 @@ local StdFuncs = ABSync:NewModule("StandardFunctions")
 
 **Database Access:**
 - Uses `AceDB-3.0` with profile/global/character storage patterns
-- Access via `self.db.profile.setting`, `self.db.global.data`, `self.db.char.characterData`
+- Access via `ActionBarSyncDB.profile.setting`, `ActionBarSyncDB.global.data`, `ActionBarSyncDB.char[self.currentPlayerServerSpec].characterData`
 - SavedVariables: `ActionBarSyncDB`, `ActionBarSyncMountDB` (defined in `.toc`)
 
 **UI Framework:**
@@ -81,7 +81,7 @@ L["initialized"] = "Initialized"                    -- Debug messages
 **Debug Mode:**
 ```lua
 --@debug@ 
-if self.db.char.isDevMode == true then self:Print(L["initialized"]) end
+if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["initialized"]) end
 --@end-debug@
 ```
 
@@ -92,13 +92,13 @@ if self.db.char.isDevMode == true then self:Print(L["initialized"]) end
 ## Data Flow & Synchronization
 
 **Action Bar Data Structure:**
-- Stored in `self.db.global.barsToSync[barName][playerID][buttonID]`
+- Stored in `ActionBarSyncDB.global.barsToSync[barName][playerID][buttonID]`
 - Uses WoW's action bar naming: `"Action"` (bar 1), `"MultiBarBottomLeft"` (bar 2), etc.
 - Translated via `ABSync.blizzardTranslate` lookup table
 
 **Sync Process:**
 1. Scan current character's action bars via `ABSync:ScanActionBars()`
-2. Store in global database with player identifier `ABSync:GetPlayerNameKey()`
+2. Store in global database with player identifier `ABSync:GetKeyPlayerServerSpec()`
 3. Compare with other characters' data in ShareSync tab
 4. Apply selected changes via sync functions
 
@@ -125,7 +125,7 @@ ABSync.constants.colors = {
 - Public API: `ABSync:MethodName()` 
 - Getters/Setters: `ABSync:GetLastActionName()`, `ABSync:SetLastActionName()`
 - UI Creation: `ABSync:CreateCheckbox()`, `ABSync:UpdateShareRegion()`
-- Data Access: `ABSync:GetPlayerNameKey()`, `ABSync:GetActionData()`
+- Data Access: `ABSync:GetKeyPlayerServerSpec()`, `ABSync:GetActionData()`
 
 **Error Handling:**
 - Uses localized error messages stored in `L["actionbarsync_*_text"]` keys

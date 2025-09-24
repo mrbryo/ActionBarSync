@@ -4,9 +4,9 @@
 -----------------------------------------------------------------------------]]
 function ABSync:SyncOnValueChanged(value, barName, playerID)
     if value == true then
-        self.db.profile.barsToSync[barName] = playerID
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] = playerID
     else
-        self.db.profile.barsToSync[barName] = false
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] = false
     end
 end
 
@@ -45,7 +45,7 @@ function ABSync:UpdateShareRegion()
     -- only run when the shareContent frame exists
     if self.ui.frame.shareContent then
         -- current player ID
-        local currentPlayerID = self:GetPlayerNameKey()
+        local currentPlayerID = self:GetKeyPlayerServerSpec()
 
         -- loop over data and add checkboxes per character and action bar combo where they are enabled
         -- track if anything was added or not
@@ -61,12 +61,12 @@ function ABSync:UpdateShareRegion()
         self:RemoveFrameChildren(self.ui.frame.shareContent)
 
         -- primary loop is actionBars as it's sorted
-        if self.db.global.actionBars ~= nil then
-            for _, barName in ipairs(self.db.global.actionBars) do
+        if ActionBarSyncDB.global.actionBars ~= nil then
+            for _, barName in ipairs(ActionBarSyncDB.global.actionBars) do
                 -- verify bar exists in global.barsToSync
-                if self.db.global.barsToSync[barName] ~= nil then
+                if ActionBarSyncDB.global.barsToSync[barName] ~= nil then
                     -- loop over the barName in global.barsToSync
-                    for playerID, buttonData in pairs(self.db.global.barsToSync[barName]) do
+                    for playerID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barName]) do
                         -- to see if enabled the buttonData must be a table and have at least 1 record
                         -- count variable
                         local foundData = false
@@ -151,10 +151,10 @@ function ABSync:CreateShareCheckboxes(parent)
     local funcName = "CreateShareCheckboxes"
 
     -- get the player ID for the current profile
-    local playerID = self:GetPlayerNameKey()
+    local playerID = self:GetKeyPlayerServerSpec()
 
     -- get action bar names
-    local actionBars = ABSync:GetActionBarNames(ABSync.profiletype["global"])
+    local actionBars = ABSync:GetBarNames()
 
     -- track y offset
     local offsetY = 10
@@ -163,7 +163,7 @@ function ABSync:CreateShareCheckboxes(parent)
     for _, checkboxName in pairs(actionBars) do
         -- create a checkbox for each action bar
         local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, playerID), function(self, button, checked)
-            ABSync:SetBarToShare(checkboxName, checked)
+            ABSync:ShareBar(checkboxName, checked)
         end)
 
         -- position the checkbox
@@ -215,7 +215,7 @@ end
     Purpose:    Update the last scan label with the latest scan date/time.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLastScanLabel()
-    self.ui.label.lastScan:SetText(self:FormatDateString(self.db.char.lastScan))
+    self.ui.label.lastScan:SetText(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan))
 end
 
 --[[---------------------------------------------------------------------------
@@ -310,13 +310,13 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
     
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", self.db.profile.autoResetMountFilters, function(checked)
+    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", ActionBarSyncDB.profile.autoResetMountFilters, function(checked)
         ABSync.db.profile.autoResetMountFilters = checked
     end)
-    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, self.db.profile.checkOnLogon)
+    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ActionBarSyncDB.profile.checkOnLogon)
 
     -- create checkbox for sync on login
-    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", self.db.profile.checkOnLogon, function(checked)
+    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", ActionBarSyncDB.profile.checkOnLogon, function(checked)
         ABSync.db.profile.checkOnLogon = checked
         self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
     end)

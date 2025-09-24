@@ -53,7 +53,7 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
     -- print("Width: " .. tostring(rowGroup:GetWidth()))
 
     --@debug@
-    -- if self.db.char.isDevMode == true then
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
     --     local fakelabel = rowGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     --     fakelabel:SetText("Fake Info")
     --     fakelabel:SetPoint("TOPLEFT", rowGroup, "TOPLEFT", 0, 0)
@@ -170,15 +170,15 @@ function ABSync:CreateLastSyncErrorFrame(parent)
     -- print(("%s Region - Width: %d"):format("Scroll Content", scrollContent:GetWidth()))
 
     --@debug@
-    -- if self.db.char.isDevMode == true then
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
     --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
     --     local testdttmkey = date("%Y%m%d%H%M%S")
-    --     self.db.char.lastSyncErrorDttm = testdttmkey
+    --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
     --     local testerrors = {}
     --     for i = 1, 10 do
     --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
     --     end
-    --     table.insert(self.db.char.syncErrors, {
+    --     table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
     --         key = testdttmkey,
     --         errors = testerrors
     --     })
@@ -187,16 +187,16 @@ function ABSync:CreateLastSyncErrorFrame(parent)
 
     -- verify if we a last sync error
     local errorsExist = false
-    if not self.db.char then
+    if not ActionBarSyncDB.char then
         errorsExist = false
     else
-        local lastDateTime = self.db.char.lastSyncErrorDttm or L["never"]
+        local lastDateTime = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm or L["never"]
         if lastDateTime ~= nil and lastDateTime ~= L["never"] then
             errorsExist = true
         end
     end
     --@debug@
-    -- if self.db.char.isDevMode == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
     --@end-debug@
 
     -- instantiate initial y offset
@@ -223,10 +223,10 @@ function ABSync:CreateLastSyncErrorFrame(parent)
             buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
     ]]
     if errorsExist == true then
-        for _, errorRcd in ipairs(self.db.char.syncErrors) do
+        for _, errorRcd in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
             -- print("here1")
             -- continue to next row if key doesn't match
-            if errorRcd.key == self.db.char.lastSyncErrorDttm then
+            if errorRcd.key == ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
                 -- print("here2")
                 -- loop over the rows
                 for _, errorRow in ipairs(errorRcd.errors) do

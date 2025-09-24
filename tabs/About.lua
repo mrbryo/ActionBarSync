@@ -100,7 +100,7 @@ function ABSync:CreateAboutFrame(parent)
     --     "mrbryo",
     -- }
     --@debug@
-    -- if self.db.char.isDevMode == true then
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
     --     englishTranslators = {
     --         "mrbryo",
     --         "Johnny",

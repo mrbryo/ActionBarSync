@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------]]
 function ABSync:MountJournalFilterBackup()
     -- backup current filter settings
-    self.db.char.mountJournalFilters = {
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters = {
         collected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED),
         notCollected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED),
         unusable = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE),
@@ -38,10 +38,10 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:MountJournalFilterRestore()
     -- restore previous filter settings
-    if self.db.char.mountJournalFilters then
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, self.db.char.mountJournalFilters.collected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, self.db.char.mountJournalFilters.notCollected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, self.db.char.mountJournalFilters.unusable)
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters then
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.collected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.notCollected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.unusable)
     end
 end
 

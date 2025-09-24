@@ -89,7 +89,7 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     frame:Show()
     
     --@debug@
-    if self.db.char.isDevMode == true then 
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then 
         self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
@@ -177,7 +177,7 @@ Usage example:
 
     local lastScanBox = CreateEditBox(scanFrame, 250, 20, true)
     lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
-    lastScanBox:SetText(self.db.char.lastScan or "Never")
+    lastScanBox:SetText(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or "Never")
 -----------------------------------------------------------------------------]]
 function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")

@@ -13,7 +13,7 @@ function ABSync:LookupAction()
     local actionID = self:GetLastActionID()
 
     --@debug@
-    if self.db.char.isDevMode == true then self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID)) end
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID)) end
     --@end-debug@
 
     -- instantiate lookup storage
@@ -211,7 +211,7 @@ function ABSync:CreateTopRegion(parent)
     actionBarLabel:SetText(actionBarLabelText)
 
     -- action bar drop down
-    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetActionBarValues(), self:GetLastActionBar(), function(key)
+    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetBarValues(), self:GetLastActionBar(), function(key)
         ABSync:SetLastActionBar(key)
     end)
     actionBarDropDown:SetWidth(controlWidth)
@@ -227,7 +227,7 @@ function ABSync:CreateTopRegion(parent)
     actionBtnLabel:SetText(actionBtnLabelText)
 
     -- action button drop down
-    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetActionButtonValues(), self:GetLastActionButton(), function(key)
+    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetButtonValues(), self:GetLastActionButton(), function(key)
         ABSync:SetLastActionButton(key)
     end)
     actionBtnDropDown:SetWidth(controlWidth)
@@ -281,7 +281,7 @@ function ABSync:AddRow(parent, data, columns, offsetY, isHeader)
     -- print("Width: " .. tostring(rowGroup:GetWidth()))
 
     --@debug@
-    -- if self.db.char.isDevMode == true then
+    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
     --     local fakelabel = rowGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     --     fakelabel:SetText("Fake Info")
     --     fakelabel:SetPoint("TOPLEFT", rowGroup, "TOPLEFT", 0, 0)
@@ -352,8 +352,8 @@ function ABSync:UpdateLookupHistory()
     self:RemoveFrameChildren(ABSync.ui.scroll.lookupHistory)
 
     -- if 1 or more rows loop and add a row for each history record
-    if #self.db.char.lookupHistory > 0 then
-        for _, histRow in ipairs(self.db.char.lookupHistory) do
+    if #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory > 0 then
+        for _, histRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory) do
             local rowHeight = self:AddRow(ABSync.ui.scroll.lookupHistory, histRow, ABSync.columns.lookupHistory, offsetY, false)
             offsetY = offsetY + rowHeight
         end

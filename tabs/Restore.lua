@@ -5,7 +5,7 @@
 function ABSync:LoadBackupActionBars(parent, backupKey)
     -- find the backup record
     local found = false
-    for _, backupRow in ipairs(self.db.char.backup) do
+    for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         if backupRow.dttm == backupKey then
             -- loop over the action bars in the backup record and create a checkbox for each one
             local newData = {}
@@ -14,7 +14,7 @@ function ABSync:LoadBackupActionBars(parent, backupKey)
             end
 
             -- update list
-            self.ui.dropdown.actionBarSelection:UpdateItems(newData, self.db.char.restore.choice.actionBar)
+            self.ui.dropdown.actionBarSelection:UpdateItems(newData, ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar)
 
             -- set found to true
             found = true
@@ -49,10 +49,10 @@ function ABSync:LoadBackups()
     -- add the available backups
     local trackInserts = 0
     local offsetY = 5
-    for _, backupRow in ipairs(self.db.char.backup) do
+    for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         -- check for selected value
         local isChecked = false
-        if self.db.char.restore.choice.backupDttm == backupRow.dttm then
+        if ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm == backupRow.dttm then
             -- set the new checkbox to be checked since the dttm values match
             isChecked = true
 
@@ -68,14 +68,14 @@ function ABSync:LoadBackups()
             -- if checked, load the action bars for this backup into the action bar selection scroll region
             if value == true then
                 -- track choice by character
-                ABSync.db.char.restore.choice.backupDttm = backupRow.dttm
+                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = backupRow.dttm
 
                 -- update the drop down with action bars for this backup
                 ABSync:LoadBackupActionBars(ABSync.ui.scroll.backups, backupRow.dttm)
             else
                 -- blank out selected backup
-                ABSync.db.char.restore.choice.backupDttm = L["none"]
-                ABSync.db.char.restore.choice.actionBar = L["none"]
+                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = L["none"]
+                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = L["none"]
 
                 -- clear dropdown and choice
                 ABSync:ClearActionBarDropDown()
@@ -174,7 +174,7 @@ function ABSync:CreateRestoreFrame(parent)
     self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, items, "none", function(key)
         -- track choice by character
         if key ~= "none" and key ~= nil then
-            ABSync.db.char.restore.choice.actionBar = key
+            ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = key
             --@debug@
             -- print("(ActionBarDropdownOnClick) Selected Action Bar to Restore:", key)
             --@end-debug@

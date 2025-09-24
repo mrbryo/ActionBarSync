@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------]]
 
 -- Instantiate variable to hold functionality!
-local ABSync = LibStub("AceAddon-3.0"):NewAddon("Action Bar Sync", "AceHook-3.0", "AceConsole-3.0", "AceEvent-3.0") -- "AceConfig-3.0"
+local ABSync = LibStub("AceAddon-3.0"):NewAddon("Action Bar Sync", "AceConsole-3.0", "AceEvent-3.0") -- "AceConfig-3.0"
 _G.ABSync = ABSync
 
 -- Option and Localization Name
