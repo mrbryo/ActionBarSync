@@ -808,6 +808,7 @@ end
     Function:   GetBarToSync
     Purpose:    Check if a specific bar is set to sync for a specific player.
 -----------------------------------------------------------------------------]]
+-- TODO: change from profile db to name-server-spec db
 function ABSync:GetBarToSync(barName, playerID)
     if not self.db.profile.barsToSync then
         return false

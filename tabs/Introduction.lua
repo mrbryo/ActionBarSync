@@ -3,6 +3,9 @@
     Purpose:    Create the Introduction frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateIntroductionFrame(parent)
+    -- standard variables
+    local padding = ABSync.constants.ui.generic.padding
+
     -- get instructions
     local instructions = {
         "Open the options and set the correct profile. I suggest to leave the default which is for your current character.",
@@ -67,7 +70,7 @@ function ABSync:CreateIntroductionFrame(parent)
     faqInsetFrame:SetWidth(instructionsScrollContent:GetWidth())
     faqInsetFrame:SetPoint("TOPLEFT", faqTitle, "BOTTOMLEFT", 0, 0)
     faqInsetFrame:SetPoint("TOPRIGHT", faqTitle, "BOTTOMRIGHT", 0, 0)
-    faqInsetFrame:SetPoint("BOTTOM", instructionsFrame, "BOTTOM", 0, 15)
+    faqInsetFrame:SetPoint("BOTTOM", instructionsFrame, "BOTTOM", 0, 0)
 
     -- create faq scroll frame
     local faqScroll = CreateFrame("ScrollFrame", nil, faqInsetFrame, "UIPanelScrollFrameTemplate")

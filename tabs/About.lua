@@ -6,10 +6,13 @@ function ABSync:CreateAboutFrame(parent)
     -- get language data
     local L = self.localeData
 
+    -- standard variables
+    local padding = ABSync.constants.ui.generic.padding
+
     -- create main frame
     local aboutFrame = CreateFrame("Frame", nil, parent)
-    aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -10)
-    aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
+    aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
+    aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
 
     -- tooltip text
     data = {
