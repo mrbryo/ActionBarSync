@@ -53,7 +53,7 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
     -- print("Width: " .. tostring(rowGroup:GetWidth()))
 
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
+    -- if self:GetDevMode() == true then
     --     local fakelabel = rowGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     --     fakelabel:SetText("Fake Info")
     --     fakelabel:SetPoint("TOPLEFT", rowGroup, "TOPLEFT", 0, 0)
@@ -101,7 +101,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateLastSyncErrorFrame(parent)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
@@ -170,7 +170,7 @@ function ABSync:CreateLastSyncErrorFrame(parent)
     -- print(("%s Region - Width: %d"):format("Scroll Content", scrollContent:GetWidth()))
 
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
+    -- if self:GetDevMode() == true then
     --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
     --     local testdttmkey = date("%Y%m%d%H%M%S")
     --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
@@ -190,13 +190,13 @@ function ABSync:CreateLastSyncErrorFrame(parent)
     if not ActionBarSyncDB.char then
         errorsExist = false
     else
-        local lastDateTime = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm or L["never"]
-        if lastDateTime ~= nil and lastDateTime ~= L["never"] then
+        local lastDateTime = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm or L["Never"]
+        if lastDateTime ~= nil and lastDateTime ~= L["Never"] then
             errorsExist = true
         end
     end
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
+    -- if self:GetDevMode() == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
     --@end-debug@
 
     -- instantiate initial y offset

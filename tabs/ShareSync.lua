@@ -150,9 +150,6 @@ function ABSync:CreateShareCheckboxes(parent)
     -- for debugging
     local funcName = "CreateShareCheckboxes"
 
-    -- get the player ID for the current profile
-    local playerID = self:GetKeyPlayerServerSpec()
-
     -- get action bar names
     local actionBars = ABSync:GetBarNames()
 
@@ -162,7 +159,7 @@ function ABSync:CreateShareCheckboxes(parent)
     -- loop over the action bars and create a checkbox for each one
     for _, checkboxName in pairs(actionBars) do
         -- create a checkbox for each action bar
-        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, playerID), function(self, button, checked)
+        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, self.currentPlayerServerSpec), function(self, button, checked)
             ABSync:ShareBar(checkboxName, checked)
         end)
 
@@ -215,6 +212,8 @@ end
     Purpose:    Update the last scan label with the latest scan date/time.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLastScanLabel()
+    -- print(self.currentPlayerServerSpec)
+    -- print(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan)
     self.ui.label.lastScan:SetText(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan))
 end
 
@@ -241,8 +240,8 @@ end
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateShareSyncTopFrameContent(parent)
-    -- get language data
-    local L = self.localeData
+    -- set language variable
+    local L = self.L
     
     -- debugging
     local funcName = "CreateShareSyncTopFrameContent"

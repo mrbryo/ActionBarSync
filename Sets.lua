@@ -3,6 +3,18 @@
 -----------------------------------------------------------------------------]]
 
 --[[---------------------------------------------------------------------------
+    Function:   GetDevMode
+    Purpose:    Get the development mode status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetDevMode(value)
+    -- make sure the current player key is set
+    if not self.currentPlayerServerSpec then return end
+
+    -- set the dev mode value
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = value
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetKeyPlayerServer
     Purpose:    Get a formatted value with player and server name.
 -----------------------------------------------------------------------------]]
@@ -40,18 +52,22 @@ function ABSync:SetKeyPlayerServerSpec()
     local specializationIndex = C_SpecializationInfo.GetSpecialization()
     
     --@debug@
-    print("Current spec index: " .. tostring(specializationIndex))
+    -- print("Current spec index: " .. tostring(specializationIndex))
     --@end-debug@
 
     -- get the name of the current spec number
     local specId, specName, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
 
     --@debug@
-    print("Current spec name: " .. tostring(specName))
+    -- print("Current spec name: " .. tostring(specName))
     --@end-debug@
 
     -- finally return the special key
-    self.currentPlayerServerSpec = ("%s-%s-%s"):format(unitName, unitServer, specName)
+    if not specName then
+        self.currentPlayerServerSpec = L["Unknown"]
+    else
+        self.currentPlayerServerSpec = ("%s-%s-%s"):format(unitName, unitServer, specName) or nil
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -101,5 +117,13 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastSyncedOnChar()
     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = date("%Y-%m-%d %H:%M:%S")
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetTab
+    Purpose:    Set the current selected tab in the options.
+-----------------------------------------------------------------------------]]
+function ABSync:SetTab(key)
+    ActionBarSyncDB.profile[self.currentPlayerServer].mytab = key
 end
 

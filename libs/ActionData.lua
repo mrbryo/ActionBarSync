@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------]]
 function ABSync:GetSpellDetails(spellID)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- special handling for Switch Flight Style
     -- if spellID == 460002 then spellID = 436854 end
@@ -43,8 +43,8 @@ end
     Purpose:    Check if the current character has a specific spell.
 -----------------------------------------------------------------------------]]
 function ABSync:CharacterHasSpell(spellID)
-    -- get language data
-    local L = self.localeData
+    -- set language variable
+    local L = self.L
 
     -- find the spell in the player's spell book
     local spellBookItemSlotIndex, spellBookItemSpellBank = C_SpellBook.FindSpellBookSlotForSpell(spellID)
@@ -60,9 +60,9 @@ function ABSync:CharacterHasSpell(spellID)
 
     -- finally return yes or no
     if spellBookItemSlotIndex > 0 then
-        return L["yes"]
+        return L["Yes"]
     else
-        return L["no"]
+        return L["No"]
     end
 end
 
@@ -98,8 +98,8 @@ end
     Purpose:    Retrieve item information based on the item ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetItemDetails(itemID)
-    -- get language data
-    local L = self.localeData
+    -- set language variable
+    local L = self.L
 
     -- fetch blizzard item details
     local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
@@ -131,7 +131,7 @@ function ABSync:GetItemDetails(itemID)
             isFavorite = toyIsFavorite,
             hasFanfare = toyHasFanfare,
             quality = toyItemQuality,
-            usable = toyUsable and L["yes"] or L["no"],
+            usable = toyUsable and L["Yes"] or L["No"],
             index = toyInfo.index or -1,
             toyID = toyInfo.id or -1,
         }
@@ -163,7 +163,7 @@ function ABSync:GetItemDetails(itemID)
         isToy = isToy,
         toyData = toyData,
         userItemCount = itemCount,
-        hasItem = (itemCount > 0 or toyData.usable) and L["yes"] or L["no"],
+        hasItem = (itemCount > 0 or toyData.usable) and L["Yes"] or L["No"],
     }
 end
 
@@ -173,16 +173,16 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetMacroDetails(macroID)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- get macro information: name, iconTexture, body
     -- isLocal removed in patch 3.0.2
     local macroName, iconTexture, body = GetMacroInfo(macroID)
 
     -- macro type: general or character
-    local macroType = ABSync.MacroType.general
+    local macroType = ABSync.macroType.general
     if tonumber(macroID) > 120 then
-        macroType = ABSync.MacroType.character
+        macroType = ABSync.macroType.character
     end
 
     -- finally return the data collected
@@ -194,7 +194,7 @@ function ABSync:GetMacroDetails(macroID)
         },
         macroType = macroType,
         id = macroID,
-        hasMacro = macroName and L["yes"] or L["no"],
+        hasMacro = macroName and L["Yes"] or L["No"],
     }
 end
 
@@ -204,7 +204,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetPetDetails(petID)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- requires a pet GUID
     local allPetIDs = C_PetJournal.GetOwnedPetIDs()
@@ -251,7 +251,7 @@ function ABSync:GetPetDetails(petID)
         },
         petID = petID,
         name = name or L["Unknown"],
-        hasPet = name and L["yes"] or L["no"]
+        hasPet = name and L["Yes"] or L["No"]
     }
 end
 
@@ -260,8 +260,8 @@ end
     Purpose:    Retrieve mount information based on the action ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetMountinfo(mountID)
-    -- get language data
-    local L = self.localeData
+    -- set language variable
+    local L = self.L
 
     -- first call to get mount information based on the action bar action id
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
@@ -310,7 +310,7 @@ function ABSync:GetMountinfo(mountID)
     end
 
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
+    -- if self:GetDevMode() == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
     --@end-debug@
 
     -- finally return the spell name

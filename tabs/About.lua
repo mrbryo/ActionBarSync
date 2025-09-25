@@ -3,8 +3,8 @@
     Purpose:    Create the About frame for the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateAboutFrame(parent)
-    -- get language data
-    local L = self.localeData
+    -- set language variable
+    local L = self.L
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
@@ -100,7 +100,7 @@ function ABSync:CreateAboutFrame(parent)
     --     "mrbryo",
     -- }
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
+    -- if self:GetDevMode() == true then
     --     englishTranslators = {
     --         "mrbryo",
     --         "Johnny",

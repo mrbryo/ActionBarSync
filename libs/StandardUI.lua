@@ -89,7 +89,7 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     frame:Show()
     
     --@debug@
-    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then 
+    if self:GetDevMode() == true then 
         self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end

@@ -81,7 +81,7 @@ L["initialized"] = "Initialized"                    -- Debug messages
 **Debug Mode:**
 ```lua
 --@debug@ 
-if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print(L["initialized"]) end
+if self:GetDevMode() == true then self:Print(L["initialized"]) end
 --@end-debug@
 ```
 

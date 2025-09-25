@@ -98,24 +98,31 @@ end
     Purpose:    Get the developer mode for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetDevMode()
+    -- set language variable
+    local L = self.L
+
     -- get player unique key; if not already set
-    if not self.currentPlayerServerSpec then
-        self.currentPlayerServerSpec = self:GetKeyPlayerServerSpec()
+    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= L["Unknown"] then
+        return false
     end
 
     -- check dev mode exists, if not set it to false
-    if not ActionBarSyncDB.global then
-        ActionBarSyncDB.global = {}
+    if not ActionBarSyncDB.char then
+        ActionBarSyncDB.char = {}
     end
-    if not ActionBarSyncDB.global[self.currentPlayerServerSpec] then
-        ActionBarSyncDB.global[self.currentPlayerServerSpec] = {}
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec] = {}
     end
-    if not ActionBarSyncDB.global[self.currentPlayerServerSpec].isDevMode then
-        ActionBarSyncDB.global[self.currentPlayerServerSpec].isDevMode = false
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = false
     end
 
+    --@debug@
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = true
+    --@end-debug@
+
     -- finally return the dev mode value
-    return ActionBarSyncDB.global[self.currentPlayerServerSpec].isDevMode
+    return ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode
 end
 
 --[[---------------------------------------------------------------------------
@@ -126,9 +133,9 @@ function ABSync:GetKeyPlayerServer(nospace)
     -- verify variable's are setup
     self:SetKeyPlayerServer()
 
-    if not nospace then nospace = false end
+    if not nospace then nospace = true end
 
-    if nospace == false then
+    if nospace == true then
         return self.currentPlayerServer
     else
         return self.currentPlayerServerWithSpace
@@ -205,7 +212,7 @@ function ABSync:GetLastSyncedOnChar()
 
     -- check for nil or blank
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced or ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced == "" or ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced == nil then
-        response = L["never"]
+        response = L["Never"]
 
     -- return the last synced time
     else
@@ -215,4 +222,12 @@ function ABSync:GetLastSyncedOnChar()
 
     -- finally return data
     return response
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetTab
+    Purpose:    Get the current selected tab in the options.
+-----------------------------------------------------------------------------]]
+function ABSync:GetTab()
+    return ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
 end

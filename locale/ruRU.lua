@@ -3,19 +3,18 @@
     Language: Russian (ruRU)
 -----------------------------------------------------------------------------]]
 
--- Addon ID
-local optionLocName = _G.ABSync.optionLocName
+-- make sure locales variable exists
+if not ABSync.locales then
+    ABSync.locales = {}
+end
 
--- instantiate the new locale
-local L = LibStub("AceLocale-3.0"):NewLocale(optionLocName, "ruRU")
+-- add the locale
+ABSync.locales["ruRU"] = {}
+local L = ABSync.locales["ruRU"]
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="ruRU", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
 
 --@do-not-package@ 
 --[[ leaving all for development purposes, export from curseforge ]]
-
-
-
-
 --@end-do-not-package@

@@ -3,19 +3,18 @@
     Language: Spanish (esES)
 -----------------------------------------------------------------------------]]
 
--- Addon ID
-local optionLocName = _G.ABSync.optionLocName
+-- make sure locales variable exists
+if not ABSync.locales then
+    ABSync.locales = {}
+end
 
--- instantiate the new locale
-local L = LibStub("AceLocale-3.0"):NewLocale(optionLocName, "esES")
+-- add the locale
+ABSync.locales["esES"] = {}
+local L = ABSync.locales["esES"]
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="esES", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
 
 --@do-not-package@ 
 --[[ leaving all for development purposes, export from curseforge ]]
-
-
-
-
 --@end-do-not-package@

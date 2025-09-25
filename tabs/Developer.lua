@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------]]
 function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
@@ -114,7 +114,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateDeveloperFrame(parent)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding

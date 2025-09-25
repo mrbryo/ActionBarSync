@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------]]
 function ABSync:LookupAction()
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- get the action type
     local actionType = self:GetLastActionType()
@@ -13,7 +13,7 @@ function ABSync:LookupAction()
     local actionID = self:GetLastActionID()
 
     --@debug@
-    if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID)) end
+    if self:GetDevMode() == true then self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID)) end
     --@end-debug@
 
     -- instantiate lookup storage
@@ -21,7 +21,7 @@ function ABSync:LookupAction()
         type = actionType,
         id = actionID,
         name = L["Unknown"],
-        has = L["no"]
+        has = L["No"]
     }
 
     -- perform lookup based on type
@@ -50,7 +50,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateTopRegion(parent)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- set standard values
     local labelWidth = 75
@@ -281,7 +281,7 @@ function ABSync:AddRow(parent, data, columns, offsetY, isHeader)
     -- print("Width: " .. tostring(rowGroup:GetWidth()))
 
     --@debug@
-    -- if ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode == true then
+    -- if self:GetDevMode() == true then
     --     local fakelabel = rowGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     --     fakelabel:SetText("Fake Info")
     --     fakelabel:SetPoint("TOPLEFT", rowGroup, "TOPLEFT", 0, 0)
@@ -369,7 +369,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- set standard values
     local labelWidth = 75
@@ -435,7 +435,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateLookupFrame(parent)
     -- get language data
-    local L = self.localeData
+    local L = self.L
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding

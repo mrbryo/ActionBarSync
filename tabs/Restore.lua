@@ -74,8 +74,8 @@ function ABSync:LoadBackups()
                 ABSync:LoadBackupActionBars(ABSync.ui.scroll.backups, backupRow.dttm)
             else
                 -- blank out selected backup
-                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = L["none"]
-                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = L["none"]
+                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = L["None"]
+                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = L["None"]
 
                 -- clear dropdown and choice
                 ABSync:ClearActionBarDropDown()

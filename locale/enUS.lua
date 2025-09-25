@@ -3,14 +3,14 @@
     Language: English (US)
 -----------------------------------------------------------------------------]]
 
--- Addon ID
-local optionLocName = _G.ABSync.optionLocName
+-- make sure locales variable exists
+if not ABSync.locales then
+    ABSync.locales = {}
+end
 
--- switch to true when releasing it
-local silent = false
-
--- instantiate the new locale
-local L = LibStub("AceLocale-3.0"):NewLocale(optionLocName, "enUS", true, silent)
+-- add the locale
+ABSync.locales["enUS"] = {}
+local L = ABSync.locales["enUS"]
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="enUS", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
@@ -79,8 +79,8 @@ L["mountlookupresult"] = [=[Mount Lookup Result
 ID: %s
 Name: %s
 Has: %s]=]
-L["never"] = "Never"
-L["no"] = "No"
+L["Never"] = "Never"
+L["No"] = "No"
 L["noerrorsfound"] = "No Errors Found"
 L["noowner"] = "No Owner"
 L["No Scan Completed"] = "No Scan Completed"
@@ -89,18 +89,14 @@ L["notinbags"] = "Not in Bags"
 L["objectname"] = "Action Name"
 L["objectnamedesc"] = "Enter the exact name of the action you want to look up."
 L["ok"] = "OK"
-L["onenable_db_not_found"] = "Database Not Found? Strange...please reload the UI. If error returns, restart the game."
+L["Database Not Found? Strange...please reload the UI. If error returns, restart the game."] = "Database Not Found? Strange...please reload the UI. If error returns, restart the game."
 L["petlookupresult"] = [=[Pet Lookup Result
 ID: %s
 Name: %s
 Has: %s]=]
 L["profilesync"] = "Sync to My UI"
-L["registerevents_addon_loaded"] = "Event - ADDON_LOADED"
-L["registerevents_player_entering_world"] = "Event - PLAYER_ENTERING_WORLD"
-L["registerevents_player_login"] = "Event - PLAYER_LOGIN"
-L["registerevents_player_logout"] = "Event - PLAYER_LOGOUT"
+L["Event - s%"] = "Event - s%"
 L["registerevents_starting"] = "Registering Events..."
-L["registerevents_variables_loaded"] = "Event - VARIABLES_LOADED"
 L["scan"] = "Scan"
 L["slashcommand_none_setup_yet"] = "No Slash Commands Setup Yet"
 L["spell"] = "Spell"
@@ -139,7 +135,7 @@ L["updateactionbars_pet_not_found"] = "(%s) Pet with ID %s not found."
 L["updateactionbars_player_doesnot_have_spell"] = "(%s) Player does not have spell '%s' with ID '%s'."
 L["updateactionbars_spell_not_found"] = "(%s) Spell with ID %s for button %s not found."
 L["updateactionbars_user_doesnot_have_item"] = "(%s) User does not have item '%s' with ID '%s' in their bags."
-L["yes"] = "Yes"
+L["Yes"] = "Yes"
 L["actionbarsync_mount_issue_text"] = "%d out of %d mount issues occurred. The functionality from Blizzard to assign mounts to an action bar requires those mounts to be visible in the Mount Journal. The issues this addon has encountered could be caused by the current Mount Journal filters. Either reset the filters to default or click the button 'Reset Mount Journal Filters' (only makes collected and usable mounts visible) and try the sync again."
 L["charactermacro"] = "Character specific macro's can't be shared. To share a macro, it must be moved or copied to the General Macro tab in the macro interface."
 L["notapplicable"] = "Not Applicable"
@@ -162,7 +158,7 @@ L["Last Sync Errors"] = "Last Sync Errors"
 L["Lookup & Assign"] = "Lookup & Assign"
 L["Saved!"] = "Saved!"
 L["History"] = "History"
-L["none"] = "None"
+L["None"] = "None"
 L["restore"] = "Restore"
 L["Default Name"] = "Default Name"
 L["Unknown issue when trying to pickup and/or place the spell."] = "Unknown issue when trying to pickup and/or place the spell."

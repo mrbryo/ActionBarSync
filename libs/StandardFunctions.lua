@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------]]
 
 -- Instantiate Library as a Module
-local StdFuncs = ABSync:NewModule("StandardFunctions")
+local StdFuncs = ABSync:AddModule("StandardFunctions")
 
 -- set a boolean value by checking if wow version 10 or higher
 function StdFuncs:IsWoW10()
