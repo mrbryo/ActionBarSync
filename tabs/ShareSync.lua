@@ -14,36 +14,39 @@ end
     Function:   CreateSyncCheckbox
     Purpose:    Create a checkbox for syncing action bars.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateSyncCheckbox(parent, barName, playerID, currentPlayerID, padding, offsetY)
-    -- set barName to green and playerID to orange
-    local label = self.constants.colors.green .. barName .. "|r from |cffffa500" .. playerID .. "|r"
+function ABSync:CreateSyncCheckbox(parent, globalID, barName, playerID, currentPlayerID, padding)
+    -- define labels for enabled and disabled states; set barName to green and playerID to orange
+    local labelEnabled = ("%s%s|r from |cffffa500%s|r"):format(self.constants.colors.green, barName, playerID)
+    -- set whole label to gray
+    local labelDisabled = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
 
-    -- change color to all gray because syncing to yourself as same spec is not allowed
-    if playerID == currentPlayerID then
-        label = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
-    end
-
-    -- create a checkbox
-    local checkbox = self:CreateCheckbox(parent, label, self:GetBarToSync(barName, playerID), function(self, button, checked)
+    -- create the checkbox since not found globally
+    local checkbox = self:CreateCheckbox(parent, "-", self:IsSyncSet(barName, playerID), checkBoxID, function(self, button, checked)
         ABSync:SyncOnValueChanged(checked, barName, playerID)
     end)
 
-    -- print(("CreateSyncCheckbox: playerID: %s, currentPlayerID: %s"):format(playerID, currentPlayerID))
+    -- print(("ProcessSyncCheckbox: playerID: %s, currentPlayerID: %s"):format(playerID, currentPlayerID))
     if playerID == currentPlayerID then
+        checkbox.Text:SetText(labelDisabled)
         checkbox:Disable()
+    else
+        checkbox.Text:SetText(labelEnabled)
+        checkbox:Enable()
     end
-    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -offsetY - 5)
 
     return checkbox
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   UpdateShareRegion
-    Purpose:    Update the share region with checkboxes for each action bar and character combo that has data.
+    Function:   UpdateSyncRegion
+    Purpose:    Update the sync region with checkboxes for each action bar and character combo that has data.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateShareRegion()
-    -- only run when the shareContent frame exists
-    if self.ui.frame.shareContent then
+function ABSync:UpdateSyncRegion(callingFunction)
+    --@debug@
+    self:Print(("UpdateSyncRegion called from: %s"):format(callingFunction or "Unknown"))
+    --@end-debug@
+    -- only run when the syncContent frame exists
+    if self.ui.frame.syncContent then
         -- current player ID
         local currentPlayerID = self:GetKeyPlayerServerSpec()
 
@@ -52,17 +55,18 @@ function ABSync:UpdateShareRegion()
         local sharedActionBarsAdded = false
 
         -- track y offset for checkboxes
-        local offsetY = 10
+        local offsetY = 0
 
         -- standard padding
         local padding = ABSync.constants.ui.generic.padding
 
-        -- remove all existing children from the shareContent frame
-        self:RemoveFrameChildren(self.ui.frame.shareContent)
+        -- remove all existing children from the syncContent frame
+        self:RemoveFrameChildren(parent)
 
         -- primary loop is actionBars as it's sorted
         if ActionBarSyncDB.global.actionBars ~= nil then
-            for _, barName in ipairs(ActionBarSyncDB.global.actionBars) do
+            -- for _, barName in ipairs(ActionBarSyncDB.global.actionBars) do
+            for barKey, barName in pairs(ABSync.barNameLanguageTranslate) do
                 -- verify bar exists in global.barsToSync
                 if ActionBarSyncDB.global.barsToSync[barName] ~= nil then
                     -- loop over the barName in global.barsToSync
@@ -81,9 +85,10 @@ function ABSync:UpdateShareRegion()
 
                         -- create a checkbox if data is found
                         if foundData == true then
-                            local checkbox = self:CreateSyncCheckbox(self.ui.frame.shareContent, barName, playerID, currentPlayerID, padding, offsetY)
+                            local checkbox = self:ProcessSyncCheckbox(parent, barKey, barName, playerID, currentPlayerID, padding, offsetY)
                             sharedActionBarsAdded = true
                             offsetY = offsetY + checkbox:GetHeight()
+                            -- print(("(UpdateSyncRegion) Added checkbox for %s from %s with height %d."):format(barName, playerID, checkbox:GetHeight()))
                         end
                     end
                 end
@@ -92,10 +97,177 @@ function ABSync:UpdateShareRegion()
 
         -- if no shared action bars were added, then add a label to indicate that
         if sharedActionBarsAdded == false then
-            local noDataLabel = self.ui.frame.shareContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            noDataLabel:SetPoint("TOPLEFT", self.ui.frame.shareContent, "TOPLEFT", padding + 5, -padding - 5)
+            local noDataLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            noDataLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -padding - 5)
             noDataLabel:SetText("No Shared Action Bars Found")
         end
+
+        -- adjust the height of the scroll content frame based on the number of checkboxes added
+        -- local contentHeight = math.max(offsetY + padding, parent:GetHeight())
+        -- parent:SetHeight(contentHeight)
+        -- self:Print(("(UpdateSyncRegion) self.ui.frame.syncContent Height: %d"):format(contentHeight))
+    end
+end
+
+function ABSync:GetCheckboxGlobalName(barKey)
+    -- translate the bar key into the variable name friendly action bar name
+    local fixedBarName = self.barNameTranslate[barKey]
+
+    -- if not found report issue to user
+    -- TODO: add to issues in saved variables as well
+    if not fixedBarName then
+        fixedBarName = "UnknownBarName" .. self:GetRandom6DigitNumber()
+        self:Print("(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: " .. fixedBarName)
+    end
+
+    -- get global name for the checkbox
+    return self:GetObjectName("CheckboxSync" .. fixedBarName .. self:GetKeyPlayerServerSpec(true))
+end
+
+function ABSync:ProcessSyncRegion(callingFunction)
+    --@debug@
+    local funcName = "ProcessSyncRegion"
+    self:Print(("(%s) called from: %s"):format(funcName, callingFunction or "Unknown"))
+    --@end-debug@
+    -- current player ID
+    local currentPlayerID = self:GetKeyPlayerServerSpec()
+
+    -- track if anything was added or not
+    local objectsTouched = false
+
+    -- track y offset for checkboxes
+    local offsetY = 10
+
+    -- standard padding
+    local padding = ABSync.constants.ui.generic.padding
+
+    -- only run when the syncContent frame exists
+    if self.ui.frame.syncContent then
+        -- loop over shared action bars
+        for _, barKey in ipairs(ABSync.actionBarOrder) do
+            -- get the bar name from the key
+            local barName = ABSync.barNameLanguageTranslate[barKey]
+            
+            -- verify bar exists in global.barsToSync
+            if ActionBarSyncDB.global.barsToSync[barName] ~= nil then
+                -- loop over the barName in global.barsToSync
+                for playerID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barName]) do
+                    -- to see if enabled, the buttonData must be a table and have at least 1 record
+                    -- count variable
+                    local foundData = false
+                    
+                    -- make sure buttonData is a table
+                    if type(buttonData) == "table" then
+                        -- next returns the first key in the table or nil if the table is empty
+                        if next(buttonData) then
+                            foundData = true
+                        end
+                    end
+
+                    -- create a checkbox if data is found
+                    if foundData == true then                    
+                        -- track current checkbox
+                        local checkbox = {}
+
+                        -- get global checkbox variable name
+                        local checkboxGlobalID = self:GetCheckboxGlobalName(barKey)
+
+                        -- does the checkbox already exist?
+                        if _G[checkboxGlobalID] then
+                            --@debug@
+                            -- print(("Checkbox %s already exists, reusing it."):format(checkboxGlobalID))
+                            --@end-debug@
+                            checkbox = _G[checkboxGlobalID]
+                        else
+                            --@debug@
+                            -- print(("Checkbox %s does not exist, creating it."):format(checkboxGlobalID))
+                            --@end-debug@
+                            checkbox = self:CreateSyncCheckbox(self.ui.frame.syncContent, checkboxGlobalID, barName, playerID, currentPlayerID, padding)
+                        end
+
+                        -- update checkbox position
+                        checkbox:SetPoint("TOPLEFT", self.ui.frame.syncContent, "TOPLEFT", padding + 5, -offsetY - 5)
+                        offsetY = offsetY + checkbox:GetHeight()
+
+                        -- indicate something was added or touched
+                        objectsTouched = true
+                    end
+                end
+            end
+        end
+
+        -- if no shared action bars were added, then add a label to indicate that
+        if sharedActionBarsAdded == false then
+            local noDataLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            noDataLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -padding - 5)
+            noDataLabel:SetText("No Shared Action Bars Found")
+        end
+
+
+
+
+
+
+
+
+
+        -- -- loop over data and add checkboxes per character and action bar combo where they are enabled
+        -- -- track if anything was added or not
+        -- local sharedActionBarsAdded = false
+
+        -- -- track y offset for checkboxes
+        -- local offsetY = 10
+
+        -- -- standard padding
+        -- local padding = ABSync.constants.ui.generic.padding
+
+        -- -- primary loop is actionBars as it's sorted
+        -- if ABSync.actionBarOrder then
+        --     -- for _, barName in ipairs(ActionBarSyncDB.global.actionBars) do
+        --     for _, barKey in ipairs(ABSync.actionBarOrder) do
+        --         -- get the bar name from the key
+        --         local barName = ABSync.barNameLanguageTranslate[barKey]
+
+        --         -- verify bar exists in global.barsToSync
+        --         if ActionBarSyncDB.global.barsToSync[barName] ~= nil then
+        --             -- loop over the barName in global.barsToSync
+        --             for playerID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barName]) do
+        --                 -- to see if enabled the buttonData must be a table and have at least 1 record
+        --                 -- count variable
+        --                 local foundData = false
+                        
+        --                 -- make sure buttonData is a table
+        --                 if type(buttonData) == "table" then
+        --                     -- next returns the first key in the table or nil if the table is empty
+        --                     if next(buttonData) then
+        --                         foundData = true
+        --                     end
+        --                 end
+
+        --                 -- create a checkbox if data is found
+        --                 if foundData == true then
+        --                     local checkbox = self:ProcessSyncCheckbox(parent, barKey, barName, playerID, currentPlayerID, padding, offsetY)
+        --                     sharedActionBarsAdded = true
+        --                     offsetY = offsetY + checkbox:GetHeight()
+        --                     -- print(("(UpdateSyncRegion) Added Checkbox with Name: %s"):format(checkbox:GetName()))
+        --                     -- print(("(UpdateSyncRegion) Added checkbox for %s from %s with height %d."):format(barName, playerID, checkbox:GetHeight()))
+        --                 end
+        --             end
+        --         end
+        --     end
+        -- end
+
+        -- if no shared action bars were added, then add a label to indicate that
+        -- if sharedActionBarsAdded == false then
+        --     local noDataLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        --     noDataLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -padding - 5)
+        --     noDataLabel:SetText("No Shared Action Bars Found")
+        -- end
+
+        -- adjust the height of the scroll content frame based on the number of checkboxes added
+        -- local contentHeight = math.max(offsetY + padding, parent:GetHeight())
+        -- parent:SetHeight(contentHeight)
+        -- self:Print(("(UpdateSyncRegion) self.ui.frame.syncContent Height: %d"):format(contentHeight))
     end
 end
 
@@ -126,18 +298,21 @@ function ABSync:CreateSyncFromFrameContent(parent)
     scrollContainer:SetPoint("BOTTOMRIGHT", insetFrame, "BOTTOMRIGHT", -27, 5)
     
     -- create scroll content frame
-    self.ui.frame.shareContent = CreateFrame("Frame", nil, scrollContainer)
-    self.ui.frame.shareContent:SetWidth(scrollContainer:GetWidth() - padding)
-    self.ui.frame.shareContent:SetHeight(scrollContainer:GetHeight() - padding)
-    scrollContainer:SetScrollChild(self.ui.frame.shareContent)
+    self.ui.frame.syncContent = CreateFrame("Frame", nil, scrollContainer)
+    self.ui.frame.syncContent:SetWidth(scrollContainer:GetWidth() - padding)
+    self.ui.frame.syncContent:SetHeight(scrollContainer:GetHeight() - padding)
+    --@debug@
+    -- print("(CreateSyncFromFrameContent) self.ui.frame.syncContent Height: " .. tostring(self.ui.frame.syncContent:GetHeight()))
+    --@end-debug@
+    scrollContainer:SetScrollChild(self.ui.frame.syncContent)
 
     -- load checkboxes
-    self:UpdateShareRegion()
+    self:ProcessSyncRegion("CreateSyncFromFrameContent")
 
     -- --@debug@
     -- -- for adding 20 rows of fake data
     -- for i = 1, 20 do
-    --     scrollFrame:AddChild(self:CreateSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
+    --     scrollFrame:AddChild(self:ProcessSyncCheckbox(("Test Bar %d"):format(i), "Test Player"))
     -- end
     -- --@end-debug@
 end
@@ -150,16 +325,25 @@ function ABSync:CreateShareCheckboxes(parent)
     -- for debugging
     local funcName = "CreateShareCheckboxes"
 
-    -- get action bar names
-    local actionBars = ABSync:GetBarNames()
-
     -- track y offset
     local offsetY = 10
     
     -- loop over the action bars and create a checkbox for each one
-    for _, checkboxName in pairs(actionBars) do
+    for _, checkboxID in pairs(ABSync.actionBarOrder) do
+        --@debug@
+        -- print(("(%s) Processing checkboxID: %s"):format(funcName, tostring(checkboxID)))
+        --@end-debug@
+        -- get the checkbox name
+        local checkboxName = self.barNameLanguageTranslate[checkboxID]
+        --@debug@
+        -- print(("(%s) checkboxName: %s"):format(funcName, tostring(checkboxName)))
+        --@end-debug@
         -- create a checkbox for each action bar
-        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, self.currentPlayerServerSpec), function(self, button, checked)
+        local checkboxFrameID = self:GetObjectName("CheckboxShare" .. self.barNameTranslate[checkboxID])
+        --@debug@
+        -- print(("(%s) Creating checkbox for '%s' with ID '%s'"):format(funcName, checkboxName, checkboxFrameID))
+        --@end-debug@
+        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, self.currentPlayerServerSpec), checkboxFrameID, function(self, button, checked)
             ABSync:ShareBar(checkboxName, checked)
         end)
 
@@ -201,6 +385,9 @@ function ABSync:CreateShareFrameContent(parent)
     local scrollContent = CreateFrame("Frame", nil, scrollContainer)
     scrollContent:SetWidth(scrollContainer:GetWidth() - padding)
     scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
+    --@debug@
+    -- print("(CreateShareFrameContent) scrollContent Height: " .. tostring(scrollContent:GetHeight()))
+    --@end-debug@
     scrollContainer:SetScrollChild(scrollContent)
 
     -- initial add of checkboxes
@@ -214,7 +401,10 @@ end
 function ABSync:UpdateLastScanLabel()
     -- print(self.currentPlayerServerSpec)
     -- print(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan)
-    self.ui.label.lastScan:SetText(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan))
+    local lastScan = self:GetLastScan()
+    local formatString = self:FormatDateString(lastScan)
+    print("UpdateLastScanLabel Value: " .. formatString)
+    self.ui.label.lastScan:SetText(formatString)
 end
 
 --[[---------------------------------------------------------------------------
@@ -222,7 +412,7 @@ end
     Purpose:    Update the last sync label with the latest sync date/time.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLastSyncLabel()
-    self.ui.label.lastSync:SetText(self:FormatDateString(self:GetLastSyncedOnChar()))
+    self.ui.label.lastSync:SetText(self:FormatDateString(self:GetLastSynced()))
 end
 
 function ABSync:UpdateCheckboxState(checkbox, checked)
@@ -272,12 +462,16 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self.ui.label.lastScan:SetJustifyH("LEFT")
     self:UpdateLastScanLabel()
 
+    -- set minimum width for last scan label
+    local lastScanWidth = (self.ui.label.lastScan:GetWidth() > 140) and self.ui.label.lastScan:GetWidth() or 140
+    self.ui.label.lastScan:SetWidth(lastScanWidth)
+
     -- scan button
     local scanButton = self:CreateStandardButton(regionContent, "Scan Now", 100, function(self, button, down)
         ABSync:UpdateCheckboxState(self, false) -- disable button while scanning
         ABSync:GetActionBarData()
         ABSync:UpdateLastScanLabel()
-        ABSync:UpdateShareRegion()
+        ABSync:UpdateSyncRegion(self.ui.frame.syncContent, "CreateShareSyncTopFrameContent:ScanButton")
         ABSync:UpdateCheckboxState(self, true) -- re-enable button after scan is complete
     end)
     scanButton:SetPoint("LEFT", self.ui.label.lastScan, "RIGHT", padding, 0)

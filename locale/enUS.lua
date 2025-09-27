@@ -17,14 +17,14 @@ local L = ABSync.locales["enUS"]
 
 --@do-not-package@ 
 --[[ leaving all for development purposes, export from curseforge ]]
-L["actionbar1"] = "Action Bar 1"
-L["actionbar2"] = "Action Bar 2"
-L["actionbar3"] = "Action Bar 3"
-L["actionbar4"] = "Action Bar 4"
-L["actionbar5"] = "Action Bar 5"
-L["actionbar6"] = "Action Bar 6"
-L["actionbar7"] = "Action Bar 7"
-L["actionbar8"] = "Action Bar 8"
+L["Action Bar 1"] = "Action Bar 1"
+L["Action Bar 2"] = "Action Bar 2"
+L["Action Bar 3"] = "Action Bar 3"
+L["Action Bar 4"] = "Action Bar 4"
+L["Action Bar 5"] = "Action Bar 5"
+L["Action Bar 6"] = "Action Bar 6"
+L["Action Bar 7"] = "Action Bar 7"
+L["Action Bar 8"] = "Action Bar 8"
 L["Enter a name for this backup:"] = "Enter a name for this backup:"
 L["actionbarsync_invalid_key_text"] = "Action Bar Key '%s' is not valid. Please open an issue and include the key and which action bar you checked. Get links on the About tab in options."
 L["actionbarsync_no_diffs_found_text"] = "For the action bars flagged for syncing, no differences were found."
@@ -95,8 +95,8 @@ ID: %s
 Name: %s
 Has: %s]=]
 L["profilesync"] = "Sync to My UI"
-L["Event - s%"] = "Event - s%"
-L["registerevents_starting"] = "Registering Events..."
+L["Event - %s"] = "Event - %s"
+L["Registering Events..."] = "Registering Events..."
 L["scan"] = "Scan"
 L["slashcommand_none_setup_yet"] = "No Slash Commands Setup Yet"
 L["spell"] = "Spell"
@@ -165,4 +165,5 @@ L["Unknown issue when trying to pickup and/or place the spell."] = "Unknown issu
 L["Switch Flight Style cannot be synced because it is a zone ability, not a normal spell."] = "Switch Flight Style cannot be synced because it is a zone ability, not a normal spell."
 L["Warning"] = "Warning"
 L["This tab is used for development purposes only."] = "This tab is used for development purposes only. If you are a user and using anything on this tab, then please use at your own risk. Please do not open tickets about this tab unless you believe it's causing issues with standard functionality."
+L["Specialization Changed"] = "Specialization Changed"
 --@end-do-not-package@

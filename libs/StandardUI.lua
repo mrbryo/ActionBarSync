@@ -141,20 +141,12 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateStandardButton
-    Purpose:    Replace AceGUI buttons with standard buttons.
+    Purpose:    Standardize button creation.
     Arguments:  parent   - The parent frame to attach this frame to
                 text     - The button text
                 width    - The width of the button
                 onClick  - Callback function when the button is clicked
     Returns:    The created Button frame.
-
-Usage example:
-
-    local scanButton = CreateStandardButton(shareFrame, "Scan Now", 100, function()
-        ABSync:GetActionBarData()
-        -- Update UI
-    end)
-    scanButton:SetPoint("TOPLEFT", shareFrame, "TOPLEFT", 10, -10)
 -----------------------------------------------------------------------------]]
 function ABSync:CreateStandardButton(parent, text, width, onClick)
     local button = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
@@ -166,18 +158,12 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateEditBox
-    Purpose:    Replace AceGUI edit boxes with standard edit boxes.
+    Purpose:    Standardize edit box creation.
     Arguments:  parent   - The parent frame to attach this frame to
                 width    - The width of the edit box
                 height   - The height of the edit box
                 readOnly - Boolean to set if the edit box is read-only
     Returns:    The created EditBox frame.
-
-Usage example:
-
-    local lastScanBox = CreateEditBox(scanFrame, 250, 20, true)
-    lastScanBox:SetPoint("TOPLEFT", scanFrame, "TOPLEFT", 10, -40)
-    lastScanBox:SetText(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or "Never")
 -----------------------------------------------------------------------------]]
 function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
@@ -235,19 +221,16 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateCheckbox
-    Purpose:    Replace AceGUI checkboxes with standard check buttons.
+    Purpose:    Standardize checkbox creation.
     Arguments:  parent       - The parent frame to attach this frame to
                 text         - The label text for the checkbox
                 initialValue - The initial checked state (true/false)
                 onChanged    - Callback function when the checkbox state changes
     Returns:    The created CheckButton frame.
-
-Usage example:
-
 ----------------------------------------------------------------------------]]
-function ABSync:CreateCheckbox(parent, text, initialValue, OnClick)
+function ABSync:CreateCheckbox(parent, text, initialValue, frameName, OnClick)
     -- create checkbox
-    local checkbox = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
+    local checkbox = CreateFrame("CheckButton", frameName, parent, "ChatConfigCheckButtonTemplate")
 
     -- set its label
     checkbox.Text:SetText(text)
@@ -267,65 +250,16 @@ function ABSync:CreateCheckbox(parent, text, initialValue, OnClick)
     return checkbox
 end
 
-ABSync.uniqueID = {
-    dropdown = 0,
-    checkbox = 0,
-    button = 0,
-    editbox = 0,
-}
-
-ABSync.uniqueIDPrefix = {
-    dropdown = "DD",
-    checkbox = "CB",
-    button = "BTN",
-    editbox = "EB",
-}
-
-ABSync.uiframetype = {
-    dropdown = "dropdown",
-    checkbox = "checkbox",
-    button = "button",
-    editbox = "editbox",
-}
-
-function ABSync:GetUniqueID(type, increment)
-    if not ABSync.uniqueID[type] then
-        ABSync.uniqueID[type] = 0
-    end
-
-    if increment then
-        ABSync.uniqueID[type] = ABSync.uniqueID[type] + 1
-    end
-
-    return "ActionBarSyncUIObjectType" .. self.uniqueIDPrefix[type] .. "Nbr" .. ABSync.uniqueID[type]
-end
-
 --[[---------------------------------------------------------------------------
     Function:   CreateDropdown
-    Purpose:    Replace AceGUI dropdowns with standard dropdown menus.
+    Purpose:    Standardize dropdown creation.
     Arguments:  parent          - The parent frame to attach this frame to
                 items           - A table of items for the dropdown (key-value pairs)
                 initialValue    - The initial selected value
                 onSelectionChanged - Callback function when the selection changes
     Returns:    The created Dropdown frame.
-    
-Usage example:
-
-    local actionTypeDropdown = CreateDropdown(lookupFrame, 
-        ABSync:GetActionTypeValues(),
-        ABSync:GetLastActionType(),
-        function(value)
-            ABSync:SetLastActionType(value)
-        end
-    )
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, items, initialValue, onChange, frameName)
-    -- check frameName
-    if not frameName then
-        frameName = self:GetUniqueID(self.uiframetype.dropdown, true)
-        -- print("Generated unique frameName for dropdown:", frameName)
-    end
-
+function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
     -- create dropdown and set it up
     local dropdown = CreateFrame("DropdownButton", frameName, parent, "WowStyle1DropdownTemplate")
     
@@ -391,112 +325,5 @@ function ABSync:CreateDropdown(parent, items, initialValue, onChange, frameName)
     -- return the created dropdown
     return dropdown
 end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateInlineGroup
-    Purpose:    Replace AceGUI inline groups with standard frames with a title.
-    Arguments:  parent - The parent frame to attach this frame to
-                title  - The title text for the group
-                width  - The width of the group
-                height - The height of the group
-    Returns:    The created Frame.
------------------------------------------------------------------------------]]
-function ABSync:CreateInlineGroup(parent, width, height)
-    local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    frame:SetSize(width or 200, height or 100)
-    
-    return frame
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateCustomDialog
-    Purpose:    Create a custom dialog frame with adjustable size.
-    Arguments:  parent      - The parent frame (optional, defaults to UIParent)
-                title       - The title text for the dialog (optional)
-                width       - The width of the dialog
-                height      - The height of the dialog
-                enableDrag  - Boolean, whether the dialog is draggable (optional)
-                showOK      - Boolean, show OK button (optional)
-                showCancel  - Boolean, show Cancel button (optional)
-                onOK        - Function, called when OK is clicked (optional)
-                onCancel    - Function, called when Cancel is clicked (optional)
-    Returns:    The created dialog frame.
------------------------------------------------------------------------------]]
---[[
-function ABSync:CreateCustomDialog(parent, title, width, height, enableDrag, showOK, showCancel, onOK, onCancel)
-    -- check parameters
-    parent = parent or UIParent
-    enableDrag = enableDrag or false
-    showOK = showOK or false
-    showCancel = showCancel or false
-
-    -- create the dialog frame with basic settings
-    local dialog = CreateFrame("Frame", nil, parent, "BasicFrameTemplateWithInset")
-    dialog:SetSize(width or 400, height or 200)
-    dialog:SetPoint("CENTER")
-    dialog:SetFrameStrata("DIALOG")
-    dialog:EnableMouse(true)
-    
-    if enableDrag then
-        dialog:SetMovable(true)
-        dialog:RegisterForDrag("LeftButton")
-        dialog:SetScript("OnDragStart", dialog.StartMoving)
-        dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
-    end
-
-    -- Set title if provided
-    if title then
-        if dialog.TitleText then
-            dialog.TitleText:SetText(title)
-        else
-            local titleText = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            titleText:SetPoint("TOP", dialog, "TOP", 0, -8)
-            titleText:SetText(title)
-            dialog.TitleText = titleText
-        end
-    end
-
-    -- OK and Cancel buttons
-    local buttonSpacing = 10
-    local buttonWidth = 80
-    local buttonHeight = 22
-    local bottomPadding = 16
-    local buttonToFramePadding = 20
-    local lastButton = nil
-
-    -- setup OK button
-    if showOK == true then
-        local okButton = CreateFrame("Button", nil, dialog, "GameMenuButtonTemplate")
-        okButton:SetSize(buttonWidth, buttonHeight)
-        okButton:SetText("OK")
-        okButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -buttonToFramePadding, bottomPadding)
-        okButton:SetScript("OnClick", function()
-            if onOK then onOK(dialog) end
-            dialog:Hide()
-        end)
-        lastButton = okButton
-        dialog.okButton = okButton
-    end
-
-    -- setup Cancel button
-    if showCancel == true then
-        local cancelButton = CreateFrame("Button", nil, dialog, "GameMenuButtonTemplate")
-        cancelButton:SetSize(buttonWidth, buttonHeight)
-        cancelButton:SetText("Cancel")
-        if lastButton then
-            cancelButton:SetPoint("RIGHT", lastButton, "LEFT", -buttonSpacing, 0)
-        else
-            cancelButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -buttonToFramePadding, bottomPadding)
-        end
-        cancelButton:SetScript("OnClick", function()
-            if onCancel then onCancel(dialog) end
-            dialog:Hide()
-        end)
-        dialog.cancelButton = cancelButton
-    end
-
-    -- return the dialog for further adjustments
-    return dialog
-end]]
 
 -- EOF

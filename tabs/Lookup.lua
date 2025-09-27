@@ -180,7 +180,7 @@ function ABSync:CreateTopRegion(parent)
     actionNameLabel:SetWidth(colOneWidth)
 
     -- action type row; drop down for selecting action type
-    local actionTypeDropDown = self:CreateDropdown(rowType, self:GetActionTypeValues(), self:GetLastActionType(), function(key)
+    local actionTypeDropDown = self:CreateDropdown(rowType, self:GetActionTypeValues(), self:GetLastActionType(), self:GetObjectName("DropdownActionType"), function(key)
         ABSync:SetLastActionType(key)
     end)
     --@debug@
@@ -211,7 +211,7 @@ function ABSync:CreateTopRegion(parent)
     actionBarLabel:SetText(actionBarLabelText)
 
     -- action bar drop down
-    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetBarValues(), self:GetLastActionBar(), function(key)
+    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetBarValues(), self:GetLastActionBar(), self:GetObjectName("DropdownActionBar"), function(key)
         ABSync:SetLastActionBar(key)
     end)
     actionBarDropDown:SetWidth(controlWidth)
@@ -227,7 +227,7 @@ function ABSync:CreateTopRegion(parent)
     actionBtnLabel:SetText(actionBtnLabelText)
 
     -- action button drop down
-    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetButtonValues(), self:GetLastActionButton(), function(key)
+    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetButtonValues(), self:GetLastActionButton(), self:GetObjectName("DropdownActionButton"), function(key)
         ABSync:SetLastActionButton(key)
     end)
     actionBtnDropDown:SetWidth(controlWidth)

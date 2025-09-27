@@ -7,7 +7,6 @@
 ## X-Curse-Project-ID: 1141659
 ## X-Curse-Project-Name: Action Bar Sync
 ## SavedVariables: ActionBarSyncDB, ActionBarSyncMountDB
-## SavedVariablesPerCharacter:
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
 
 ## Initialize Addon

@@ -61,7 +61,7 @@ function ABSync:LoadBackups()
         end
 
         -- create a checkbox for each backup
-        local checkbox = self:CreateCheckbox(self.ui.scroll.backups, self:FormatDateString(backupRow.dttm), isChecked, function(self, button, value)
+        local checkbox = self:CreateCheckbox(self.ui.scroll.backups, self:FormatDateString(backupRow.dttm), isChecked, self:GetObjectName("CheckboxBackup" .. backupRow.dttm), function(self, button, value)
             -- clear all other checkboxes
             ABSync:UncheckAllChildCheckboxes(ABSync.ui.scroll.backups, self)
             
@@ -171,7 +171,7 @@ function ABSync:CreateRestoreFrame(parent)
     -- create drop down based on selected backup, initially it will have a fake value
     -- local actionBarSelection = CreateDropdown(insetFrame, "Select an Action Bar to Restore", 150, nil)
     local items = {["none"] = "No Backups Selected"}
-    self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, items, "none", function(key)
+    self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
         -- track choice by character
         if key ~= "none" and key ~= nil then
             ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = key

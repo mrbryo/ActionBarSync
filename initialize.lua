@@ -11,9 +11,9 @@ ABSync = {
 	hasPlayerEnteredWorld = false,
 	modules = {},
 	events = {},
-	-- chatCommands = {},
 	name = "Action Bar Sync",
 	version = "@project-version@",
+	prefix = "ActionBarSyncUIObject",
 
 	-- addon ui columns
 	columns = {},

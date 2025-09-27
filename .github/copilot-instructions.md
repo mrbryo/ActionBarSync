@@ -124,7 +124,7 @@ ABSync.constants.colors = {
 **Function Naming:**
 - Public API: `ABSync:MethodName()` 
 - Getters/Setters: `ABSync:GetLastActionName()`, `ABSync:SetLastActionName()`
-- UI Creation: `ABSync:CreateCheckbox()`, `ABSync:UpdateShareRegion()`
+- UI Creation: `ABSync:CreateCheckbox()`, `ABSync:UpdateSyncRegion()`
 - Data Access: `ABSync:GetKeyPlayerServerSpec()`, `ABSync:GetActionData()`
 
 **Error Handling:**

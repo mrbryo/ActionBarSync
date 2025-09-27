@@ -8,11 +8,10 @@ function ABSync:CreateIntroductionFrame(parent)
 
     -- get instructions
     local instructions = {
-        "Open the options and set the correct profile. I suggest to leave the default which is for your current character.",
-        "On the |cff00ff00Share|r tab, click the |cff00ff00Scan Now|r button. An initial scan is required for the addon to function.",
-        "Optional, on the |cff00ff00Share|r tab, select which action bars to share.",
-        "On the |cff00ff00Sync|r tab, select the shared action bars from other characters to update this character's action bars.",
-        "On the |cff00ff00Sync|r tab, once the previous step is done, click the |cff00ff00Sync Now|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00Auto Sync on Login|r option.",
+        "This step shouldn't be necessary. On the |cff00ff00Share/Sync|r tab click the |cff00ff00Scan Now|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00Scan Now|r button will be removed.",
+        "Optional (because this may be one of your source characters), on the |cff00ff00Share/Sync|r tab, select which action bars to share.",
+        "On the |cff00ff00Share/Sync|r tab, select the shared action bars from other characters to update this character's action bars.",
+        "On the |cff00ff00Share/Sync|r tab, once the previous step is done, click the |cff00ff00Sync Now|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00Auto Sync on Login|r option.",
         "Done!",
     }
 
@@ -106,16 +105,6 @@ function ABSync:CreateIntroductionFrame(parent)
         -- calculate height needed for wrapped text
         local textHeight = stepLabel:GetStringHeight()
         currentY = currentY - textHeight - spacing
-
-        -- add special button for step 1
-        if i == 1 then
-            local step1Button = ABSync:CreateStandardButton(instructionsScrollContent, "Open Options", 150, function()
-                LibStub("AceConfigDialog-3.0"):Open(ABSync.optionLocName)
-            end)
-            step1Button:SetPoint("TOPLEFT", stepLabel, "BOTTOMLEFT", 15, -10)
-            
-            currentY = currentY - step1Button:GetHeight() - spacing -- Account for button height
-        end
     end
 
     -- update height of content scroll frame for instructions
@@ -144,26 +133,6 @@ function ABSync:CreateIntroductionFrame(parent)
         local textHeight = stepLabel:GetStringHeight()
         currentY = currentY - textHeight - spacing
     end
-
-    -- Add FAQ section
-    -- local faqFrame = self:CreateInlineGroup(instructionsContent, instructionsContent:GetWidth() - 20, 100)
-    -- faqFrame:SetPoint("TOPLEFT", instructionsContent, "TOPLEFT", 10, currentY)
-
-    -- Add FAQ content
-    -- local faqLabel = faqFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    -- faqLabel:SetPoint("TOPLEFT", faqFrame, "TOPLEFT", 15, -25)
-    -- faqLabel:SetPoint("TOPRIGHT", faqFrame, "TOPRIGHT", -15, -25)
-    -- faqLabel:SetText("New addon and no common questions yet. This is a placeholder.")
-    -- faqLabel:SetJustifyH("LEFT")
-    -- faqLabel:SetWordWrap(true)
-
-    -- Update FAQ frame height based on content
-    -- local faqHeight = faqLabel:GetStringHeight() + 40
-    -- faqFrame:SetHeight(faqHeight)
-    -- currentY = currentY - faqHeight - 20
-
-    -- Set the content frame height to accommodate all content
-    -- instructionsContent:SetHeight(math.abs(currentY) + 20)
 
     return instructionsFrame
 end

@@ -3,6 +3,85 @@
 -----------------------------------------------------------------------------]]
 
 --[[---------------------------------------------------------------------------
+    Function:   GetArgs
+    Purpose:    Parse a string by spaces and return all the values as a table.
+    Arguments:  text - The input string to parse
+    Returns:    Table of parsed arguments
+-----------------------------------------------------------------------------]]
+function ABSync:GetArgs(text)
+    -- set language variable
+    local L = self.L
+    
+    -- initialize return table
+    local args = {}
+    
+    -- check if text is valid
+    if not text or text == "" then
+        return args
+    end
+    
+    -- trim leading and trailing whitespace
+    text = string.gsub(text, "^%s*(.-)%s*$", "%1")
+    
+    -- if still empty after trim, return empty table
+    if text == "" then
+        return args
+    end
+    
+    -- parse the string by spaces
+    for arg in string.gmatch(text, "%S+") do
+        table.insert(args, arg)
+    end
+    
+    --@debug@
+    if self:GetDevMode() == true then 
+        self:Print(("Parsed %d arguments from: '%s'"):format(#args, text))
+    end
+    --@end-debug@
+    
+    -- finally return the parsed arguments
+    return args
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetAutoResetMountFilters
+    Purpose:    Get the auto reset mount filters status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetAutoResetMountFilters()
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return false end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        return ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters
+    else
+        self:Print(("Error Getting Auto Reset Mount Filters for %s!"):format(tostring(self.currentPlayerServer)))
+        return false
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetAutoScanData
+    Purpose:    Get the auto scan data status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetAutoScanData()
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return false end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        return ActionBarSyncDB.profile[self.currentPlayerServer].autoGetActionBarData
+    else
+        self:Print("Error Getting Auto Sync Data!")
+        return false
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetBarCountCurrentScan
     Purpose:    Get the count of action bars from player last scan.
 -----------------------------------------------------------------------------]]
@@ -80,10 +159,10 @@ function ABSync:GetBarToShare(barName, playerID)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetBarToSync
+    Function:   IsSyncSet
     Purpose:    Check if a specific bar is set to sync for a specific player.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarToSync(barName, playerID)
+function ABSync:IsSyncSet(barName, playerID)
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
         return false
     elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] then
@@ -100,10 +179,18 @@ end
 function ABSync:GetDevMode()
     -- set language variable
     local L = self.L
+    local defaultValue = false
+    --@debug@
+    -- override for development purposes
+    defaultValue = true
+    --@end-debug@
 
     -- get player unique key; if not already set
     if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= L["Unknown"] then
-        return false
+        --@debug@
+        self:Print("(GetDevMode) Error: currentPlayerServerSpec not set!")
+        --@end-debug@
+        return defaultValue
     end
 
     -- check dev mode exists, if not set it to false
@@ -118,11 +205,34 @@ function ABSync:GetDevMode()
     end
 
     --@debug@
-    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = true
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = defaultValue
     --@end-debug@
 
     -- finally return the dev mode value
     return ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetFramePosition
+    Purpose:    Retrieve the position of a frame from the profile database.
+    Parameters: frameName - the name of the frame
+-----------------------------------------------------------------------------]]
+function ABSync:GetFramePosition(frameName)
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return false end
+    
+    -- set language variable
+    local L = self.L
+
+    -- ensure profile DB structure exists
+    local isSet = self:SetupProfileDB()
+    
+    if isSet == true then
+        -- retrieve position data
+        return ActionBarSyncDB.profile[self.currentPlayerServer].ui.positions[frameName] or L["Unknown"]
+    else
+        return L["Unknown"]
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -146,12 +256,30 @@ end
     Function:   GetKeyPlayerServerSpec
     Purpose:    Get a formatted value with player, server and current spec names.
 -----------------------------------------------------------------------------]]
-function ABSync:GetKeyPlayerServerSpec()
+function ABSync:GetKeyPlayerServerSpec(nohyphen)
+    -- check inputs
+    if not nohyphen then nohyphen = false end
+
     -- verify variable is setup
     self:SetKeyPlayerServerSpec()
 
     -- finally return the special key
-    return self.currentPlayerServerSpec
+    if nohyphen then
+        return self.currentPlayerServerSpecNoHyphens
+    else
+        return self.currentPlayerServerSpec
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetText
+    Purpose:    Get localized text for a given key.
+
+    Not used yet!
+-----------------------------------------------------------------------------]]
+function ABSync:GetText(key)
+    local L = self.L
+    return L[key] or key
 end
 
 --[[---------------------------------------------------------------------------
@@ -203,25 +331,77 @@ function ABSync:GetLastActionType()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetLastSyncedOnChar
+    Function:   GetLastScan
+    Purpose:    Get the last scan date/time for the action bars.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastScan()
+    -- make sure the current player spec key is set
+    if not self.currentPlayerServerSpec then return false end
+    
+    -- set language variable
+    local L = self.L
+
+    -- make sure data structure exists
+    local isSet = self:SetupCharDB()
+
+    if isSet == true then
+        return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or L["Never"]
+    else
+        self:Print(("Error Getting Last Scan for %s!"):format(tostring(self.currentPlayerServerSpec)))
+        return false
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastSynced
     Purpose:    Get the last synced time for the action bars to update the Last Synced field in the options for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastSyncedOnChar()
-    -- store response
-    local response = ""
+function ABSync:GetLastSynced()
+    -- make sure the current player spec key is set
+    if not self.currentPlayerServerSpec then return false end
+    
+    -- set language variable
+    local L = self.L
 
-    -- check for nil or blank
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced or ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced == "" or ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced == nil then
-        response = L["Never"]
+    -- make sure data structure exists
+    local isSet = self:SetupCharDB()
 
-    -- return the last synced time
+    if isSet == true then
+        return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced or L["Never"]
     else
-        -- if last synced time exists then return the formatted date
-        response = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced
+        self:Print(("Error Getting Last Synced for %s!"):format(tostring(self.currentPlayerServerSpec)))
+        return false
     end
+end
 
-    -- finally return data
-    return response
+--[[---------------------------------------------------------------------------
+    Function:   GetObjectName
+    Purpose:    Create frame object name with addon prefix.
+-----------------------------------------------------------------------------]]
+function ABSync:GetObjectName(postfix)
+    if not postfix then postfix = "UnknownObjectName" end
+    return ("%s%s"):format(ABSync.prefix, postfix)
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetRandom6DigitNumber
+    Purpose:    Generate a random 6-digit number.
+    Returns:    A random number between 100000 and 999999
+-----------------------------------------------------------------------------]]
+function ABSync:GetRandom6DigitNumber()
+    -- set language variable
+    local L = self.L
+    
+    -- generate random 6-digit number (100000 to 999999)
+    local randomNumber = math.random(100000, 999999)
+    
+    --@debug@
+    -- if self:GetDevMode() == true then
+    --     self:Print(("Generated random 6-digit number: %d"):format(randomNumber))
+    -- end
+    --@end-debug@
+    
+    return randomNumber
 end
 
 --[[---------------------------------------------------------------------------
@@ -229,5 +409,17 @@ end
     Purpose:    Get the current selected tab in the options.
 -----------------------------------------------------------------------------]]
 function ABSync:GetTab()
-    return ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        local tabValue = ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
+        --@debug@
+        print("Getting tab: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
+        --@end-debug@
+        return tabValue
+    else
+        self:Print(("Error Getting Tab for %s!"):format(tostring(self.currentPlayerServer)))
+        return "introduction"
+    end
 end
