@@ -67,7 +67,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:ProcessSyncRegion(callingFunction)
     --@debug@
-    self:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
+    -- self:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
     --@end-debug@
     -- current player ID
     local currentPlayerID = self:GetKeyPlayerServerSpec()
@@ -140,15 +140,12 @@ function ABSync:ProcessSyncRegion(callingFunction)
                         end
 
                         -- adjust text and checkbox state based on current player and player assigned to the checkbox
-                        print(("ProcessSyncCheckbox: playerID: %s, currentPlayerID: %s"):format(playerID, currentPlayerID))
                         if playerID == currentPlayerID then
                             checkbox.Text:SetText(labelDisabled)
                             checkbox:Disable()
-                            print(("Disabling checkbox for %s since playerID matches currentPlayerID."):format(checkboxGlobalID))
                         else
                             checkbox.Text:SetText(labelEnabled)
                             checkbox:Enable()
-                            print(("Enabling checkbox for %s since playerID does not match currentPlayerID."):format(checkboxGlobalID))
                         end
 
                         -- update checkbox position
@@ -160,7 +157,6 @@ function ABSync:ProcessSyncRegion(callingFunction)
 
                         -- make checkbox visible if it isn't
                         if not checkbox:IsVisible() then
-                            -- print(("Checkbox - Show: %s"):format(checkboxGlobalID))
                             checkbox:Show()
                         end
 
@@ -242,34 +238,59 @@ function ABSync:CreateSyncFromFrameContent(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateShareCheckboxes
+    Function:   ProcessShareCheckboxes
     Purpose:    Create checkboxes for each action bar to select which action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareCheckboxes(parent)
+function ABSync:ProcessShareCheckboxes(callingFunction)
     -- for debugging
-    local funcName = "CreateShareCheckboxes"
+    local funcName = "ProcessShareCheckboxes"
+    --@debug@
+    -- notify of function call
+    self:Print(("(%s) called from: %s"):format(funcName, callingFunction or "Unknown"))
+    --@end-debug@
 
     -- track y offset
     local offsetY = 10
+
+    -- set the parent
+    local parent = ActionBarSyncShareScrollContent
     
     -- loop over the action bars and create a checkbox for each one
     for _, checkboxID in pairs(ABSync.actionBarOrder) do
         --@debug@
         -- print(("(%s) Processing checkboxID: %s"):format(funcName, tostring(checkboxID)))
         --@end-debug@
+        -- get variable friendly name for the action bar
+        local varName = self.barNameTranslate[checkboxID]
+        
         -- get the checkbox name
         local checkboxName = self.barNameLanguageTranslate[checkboxID]
         --@debug@
         -- print(("(%s) checkboxName: %s"):format(funcName, tostring(checkboxName)))
         --@end-debug@
         -- create a checkbox for each action bar
-        local checkboxFrameID = self:GetObjectName("CheckboxShare" .. self.barNameTranslate[checkboxID])
+        local checkboxFrameID = self:GetObjectName(ABSync.constants.objectNames.shareCheckboxes .. varName)
         --@debug@
         -- print(("(%s) Creating checkbox for '%s' with ID '%s'"):format(funcName, checkboxName, checkboxFrameID))
         --@end-debug@
-        local checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, self.currentPlayerServerSpec), checkboxFrameID, function(self, button, checked)
-            ABSync:ShareBar(checkboxName, checked)
-        end)
+        -- instantiate variable to hold checkbox
+        local checkBox = nil
+
+        -- see if it exists already
+        if _G[checkboxFrameID] ~= nil then
+            --@debug@
+            -- print(("(%s) Reusing existing checkbox for '%s' with ID '%s'"):format(funcName, checkboxName, checkboxFrameID))
+            --@end-debug@
+            -- associate existing checkbox
+            checkBox = _G[checkboxFrameID]
+
+            -- update the checked state
+            checkBox:SetChecked(self:GetBarToShare(checkboxName, self.currentPlayerServerSpec))
+        else
+            checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxName, self.currentPlayerServerSpec), checkboxFrameID, function(self, button, checked)
+                ABSync:ShareBar(checkboxName, checked)
+            end)
+        end
 
         -- position the checkbox
         checkBox:SetPoint("TOPLEFT", parent, "TOPLEFT", 15, -offsetY - 5)
@@ -306,7 +327,7 @@ function ABSync:CreateShareFrameContent(parent)
     scrollContainer:SetPoint("BOTTOMRIGHT", insetFrame, "BOTTOMRIGHT", -27, 5)
 
     -- create scroll content frame
-    local scrollContent = CreateFrame("Frame", nil, scrollContainer)
+    local scrollContent = CreateFrame("Frame", "ActionBarSyncShareScrollContent", scrollContainer)
     scrollContent:SetWidth(scrollContainer:GetWidth() - padding)
     scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
     --@debug@
@@ -315,7 +336,7 @@ function ABSync:CreateShareFrameContent(parent)
     scrollContainer:SetScrollChild(scrollContent)
 
     -- initial add of checkboxes
-    self:CreateShareCheckboxes(scrollContent)
+    self:ProcessShareCheckboxes("CreateShareFrameContent")
 end
 
 --[[---------------------------------------------------------------------------

@@ -29,6 +29,18 @@ ABSync = {
 		checkbox = {},
 	},
 
+	-- action bar keys and their order
+    actionBarOrder = {
+        "actionbar1",
+        "actionbar2",
+        "actionbar3",
+        "actionbar4",
+        "actionbar5",
+        "actionbar6",
+        "actionbar7",
+        "actionbar8",
+    },
+
 	-- colors
 	constants = {
 		colors = {
@@ -53,6 +65,7 @@ ABSync = {
 		},
 		objectNames = {
 			tabContentFrame = "TabContentFrame",
+			shareCheckboxes = "ShareCheckboxes",
 		}
 	},
 

@@ -66,16 +66,6 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["actionbar7"] = ABSync.L["Action Bar 7"],
         ["actionbar8"] = ABSync.L["Action Bar 8"],
     }
-    ABSync.actionBarOrder = {
-        "actionbar1",
-        "actionbar2",
-        "actionbar3",
-        "actionbar4",
-        "actionbar5",
-        "actionbar6",
-        "actionbar7",
-        "actionbar8",
-    }
     ABSync.columns = {
     	lookupHistory = {
 			{ name = "Type", key = "type", width = 0.20 },      -- 20
@@ -1717,11 +1707,19 @@ function ABSync:OnSpecializationChanged(event, ...)
     --@end-debug@
     
     -- force close if the UI is open, then reopen
-    if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
-        self:Print("Specialization Changed - Refreshing UI")
-        ActionBarSyncMainFrame:Hide()
-        -- display the frame
-        C_Timer.After(2, function() ActionBarSyncMainFrame:Show() end)
+    -- if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
+    --     self:Print("Specialization Changed - Refreshing UI")
+    --     ActionBarSyncMainFrame:Hide()
+    --     -- display the frame
+    --     C_Timer.After(2, function() ActionBarSyncMainFrame:Show() end)
+    -- end
+
+    -- update content
+    if ABSync:GetTab() == "sharesync" then
+        ABSync:UpdateLastScanLabel()
+        ABSync:UpdateLastSyncLabel()
+        ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
+        ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
     end
 end
 
@@ -2154,11 +2152,8 @@ function ABSync:CreateMainFrame()
         if ABSync:GetTab() == "sharesync" then
             ABSync:UpdateLastScanLabel()
             ABSync:UpdateLastSyncLabel()
-            -- if ActionBarSyncShareCheckboxes then
-            --     C_Timer.After(1, function()
+            ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
             ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
-            --     end)
-            -- end
         end
     end)
     
