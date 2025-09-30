@@ -50,6 +50,9 @@ ABSync = {
 			generic = {
 				padding = 10
 			}
+		},
+		objectNames = {
+			tabContentFrame = "TabContentFrame",
 		}
 	},
 
@@ -75,6 +78,15 @@ ABSync = {
 			"lookup",
 			"backup",
 			"developer",
+		},
+		["varnames"] = {
+			["about"] = "About",
+			["introduction"] = "Introduction",
+			["sharesync"] = "ShareSync",
+			["last_sync_errors"] = "LastSyncErrors",
+			["lookup"] = "Lookup",
+			["backup"] = "Backup",
+			["developer"] = "Developer",
 		},
 		["buttons"] = {},
 		["buttonref"] = {},

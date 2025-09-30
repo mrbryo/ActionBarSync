@@ -166,4 +166,10 @@ L["Switch Flight Style cannot be synced because it is a zone ability, not a norm
 L["Warning"] = "Warning"
 L["This tab is used for development purposes only."] = "This tab is used for development purposes only. If you are a user and using anything on this tab, then please use at your own risk. Please do not open tickets about this tab unless you believe it's causing issues with standard functionality."
 L["Specialization Changed"] = "Specialization Changed"
---@end-do-not-package@
+L["About"] = "About"
+L["Introduction"] = "Introduction"
+L["Share/Sync"] = "Share/Sync"
+L["Last Sync Errors"] = "Last Sync Errors"
+L["Lookup & Assign"] = "Lookup & Assign"
+L["Backup/Restore"] = "Backup/Restore"
+L["Developer"] = "Developer"

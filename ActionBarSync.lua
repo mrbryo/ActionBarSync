@@ -35,9 +35,6 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
     -- initialize language
     ABSync:InitializeLocalization()
 
-    -- set language variable
-    local L = ABSync.L
-
     -- add variables which require translation
     ABSync.blizzardTranslate = {
 		["MultiBarBottomLeft"] = "actionbar2",
@@ -60,14 +57,14 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["actionbar8"] = "ActionBar8",
     }
     ABSync.barNameLanguageTranslate = {
-        ["actionbar1"] = L["Action Bar 1"],
-        ["actionbar2"] = L["Action Bar 2"],
-        ["actionbar3"] = L["Action Bar 3"],
-        ["actionbar4"] = L["Action Bar 4"],
-        ["actionbar5"] = L["Action Bar 5"],
-        ["actionbar6"] = L["Action Bar 6"],
-        ["actionbar7"] = L["Action Bar 7"],
-        ["actionbar8"] = L["Action Bar 8"],
+        ["actionbar1"] = ABSync.L["Action Bar 1"],
+        ["actionbar2"] = ABSync.L["Action Bar 2"],
+        ["actionbar3"] = ABSync.L["Action Bar 3"],
+        ["actionbar4"] = ABSync.L["Action Bar 4"],
+        ["actionbar5"] = ABSync.L["Action Bar 5"],
+        ["actionbar6"] = ABSync.L["Action Bar 6"],
+        ["actionbar7"] = ABSync.L["Action Bar 7"],
+        ["actionbar8"] = ABSync.L["Action Bar 8"],
     }
     ABSync.actionBarOrder = {
         "actionbar1",
@@ -88,20 +85,20 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 		}
     }
     ABSync.actionTypeLookup = {
-		["spell"] = L["spell"],
-		["item"] = L["item"],
-		["macro"] = L["macro"],
-		["summonpet"] = L["summonpet"],
-		["summonmount"] = L["summonmount"]
+		["spell"] = ABSync.L["spell"],
+		["item"] = ABSync.L["item"],
+		["macro"] = ABSync.L["macro"],
+		["summonpet"] = ABSync.L["summonpet"],
+		["summonmount"] = ABSync.L["summonmount"]
     }
     ABSync.uitabs["tabs"] = {
-        ["about"] = "About",
-        ["introduction"] = "Introduction",
-        ["sharesync"] = "Share/Sync",
-        ["last_sync_errors"] = "Last Sync Errors",
-        ["lookup"] = "Lookup & Assign",
-        ["backup"] = "Backup/Restore",
-        ["developer"] = "Developer",
+        ["about"] = ABSync.L["About"],
+        ["introduction"] = ABSync.L["Introduction"],
+        ["sharesync"] = ABSync.L["Share/Sync"],
+        ["last_sync_errors"] = ABSync.L["Last Sync Errors"],
+        ["lookup"] = ABSync.L["Lookup & Assign"],
+        ["backup"] = ABSync.L["Backup/Restore"],
+        ["developer"] = ABSync.L["Developer"],
     }
 
     -- Instantiate Standard Functions
@@ -109,7 +106,7 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 
     -- Check the DB
     if not ActionBarSyncDB then
-        ABSync:Print(L["Database Not Found? Strange...please reload the UI. If error returns, restart the game."])
+        ABSync:Print(ABSync.L["Database Not Found? Strange...please reload the UI. If error returns, restart the game."])
     end
 
     -- Register Events using native system
@@ -156,7 +153,7 @@ function ABSync:InstantiateDBChar(barName)
 
     -- character last sync error date/time, represents the date/time of the errors captured
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = L["Never"]
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = self.L["Never"]
     end
 
     -- character last share scan error data
@@ -198,10 +195,10 @@ function ABSync:InstantiateDBChar(barName)
         ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
     end
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = L["None"]
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = self.L["None"]
     end
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar = L["None"]
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar = self.L["None"]
     end
 
     -- instantiate barsToSync under the character spec profile
@@ -331,8 +328,8 @@ function ABSync:GetActionData(actionID, actionType)
     -- store results
     local lookupInfo = {
         data = {},
-        name = L["Unknown"],
-        has = L["No"]
+        name = self.L["Unknown"],
+        has = self.L["No"]
     }
 
     if actionType == "spell" then
@@ -385,13 +382,10 @@ end
     Function:   FormatDateString
     Purpose:    Convert a date string from YYYYMMDDHHMISS or YYYY-MM-DD HH:MI:SS format to YYYY, Mon DD HH:MI:SS format.
 -----------------------------------------------------------------------------]]
-function ABSync:FormatDateString(dateString)
-    -- set language variable
-    local L = self.L
-    
+function ABSync:FormatDateString(dateString)    
     -- validate input
-    if dateString == L["Never"] then
-        return L["Never"]
+    if dateString == self.L["Never"] then
+        return ABSync.L["Never"]
     elseif not dateString or type(dateString) ~= "string" then
         return "Invalid Date"
     end
@@ -493,14 +487,14 @@ function ABSync:ShareBar(barName, value)
     -- print(("(%s) Key: %s, Value: %s"):format("ShareBar", tostring(barName), tostring(value)))
     --@end-debug@
     -- initialize variables
-    local barName = barName or L["Unknown"]
+    local barName = barName or ABSync.L["Unknown"]
 
     -- check for input barName, if it doesn't exist then let user know and return false
     if not ActionBarSyncDB.global.barsToSync[barName] then
         -- initialize missing key dialog
         StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
-            text = (L["actionbarsync_invalid_key_text"]):format(barName),
-            button1 = L["ok"],
+            text = (ABSync.L["actionbarsync_invalid_key_text"]):format(barName),
+            button1 = ABSync.L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 2,
@@ -515,9 +509,9 @@ function ABSync:ShareBar(barName, value)
     -- if currentBarData is emtpy then let user know they must trigger a sync first
     if barFound == false then
         StaticPopupDialogs["ACTIONBARSYNC_NO_SCAN"] = {
-            text = (L["actionbarsync_no_scan_text"]):format(barName),
-            button1 = L["ok"],
-            button2 = L["cancel"],
+            text = (ABSync.L["actionbarsync_no_scan_text"]):format(barName),
+            button1 = ABSync.L["ok"],
+            button2 = ABSync.L["cancel"],
             timeout = 0,
             hideOnEscape = true,
             preferredIndex = 2,
@@ -559,14 +553,14 @@ function ABSync:MarkBarToSync(key, value)
     --@end-debug@
 
     -- initialize variables
-    local barName = L["Unknown"]
+    local barName = self.L["Unknown"]
 
     -- check for input key, if it doesn't exist then let user know and return false
     if not ActionBarSyncDB.global.actionBars[key] then
         -- initialize missing key dialog
         StaticPopupDialogs["ACTIONBARSYNC_INVALID_KEY"] = {
-            text = (L["actionbarsync_invalid_key_text"]):format(key),
-            button1 = L["ok"],
+            text = (ABSync.L["actionbarsync_invalid_key_text"]):format(key),
+            button1 = ABSync.L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -704,8 +698,8 @@ function ABSync:BeginSync()
     if not barsToSync then
         -- add dialog to let user know they must select bars to sync first
         StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
-            text = L["actionbarsync_no_syncbars_text"],
-            button1 = L["ok"],
+            text = self.L["actionbarsync_no_syncbars_text"],
+            button1 = self.L["ok"],
             timeout = 15,
             whileDead = true,
             hideOnEscape = true,
@@ -718,8 +712,8 @@ function ABSync:BeginSync()
     else
         -- add dialog to let user know sync was cancelled
         StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
-            text = L["actionbarsync_sync_cancelled_text"],
-            button1 = L["ok"],
+            text = self.L["actionbarsync_sync_cancelled_text"],
+            button1 = self.L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -727,9 +721,9 @@ function ABSync:BeginSync()
 
         -- add dialog to ask for backup name
         StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
-            text = L["Enter a name for this backup:"],
-            button1 = L["ok"],
-            button2 = L["cancel"],
+            text = self.L["Enter a name for this backup:"],
+            button1 = self.L["ok"],
+            button2 = self.L["cancel"],
             hasEditBox = true,
             maxLetters = 64,
             OnAccept = function(self)
@@ -744,7 +738,7 @@ function ABSync:BeginSync()
                 StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
             end,
             OnShow = function(self)
-                self.EditBox:SetText(L["Default Name"])
+                self.EditBox:SetText(ABSync.L["Default Name"])
                 self.EditBox:SetFocus()
             end,
             timeout = 0,
@@ -787,7 +781,7 @@ function ABSync:TriggerBackup(note)
     for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
         if syncOn ~= false then
             --@debug@
-            if self:GetDevMode() == true then self:Print((L["triggerbackup_notify"]):format(barName)) end
+            if self:GetDevMode() == true then self:Print((ABSync.L["triggerbackup_notify"]):format(barName)) end
             --@end-debug@
 
             -- make sync data found
@@ -805,7 +799,7 @@ function ABSync:TriggerBackup(note)
 
     -- add error if no sync data found
     if syncDataFound == false then
-        table.insert(errors, L["triggerbackup_no_sync_data_found"])
+        table.insert(errors, ABSync.L["triggerbackup_no_sync_data_found"])
     end
 
     -- count number of backups
@@ -825,7 +819,7 @@ function ABSync:TriggerBackup(note)
     -- add backup to db
     local backupEntry = {
         dttm = backupdttm,
-        note = note or L["triggerbackup_no_note_provided"],
+        note = note or ABSync.L["triggerbackup_no_note_provided"],
         error = errors,
         data = backupData,
     }
@@ -928,7 +922,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                                     shared = buttonData,
                                     current = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID],
                                     barName = barName,
-                                    sharedBy = L["restore"],
+                                    sharedBy = self.L["restore"],
                                 })
                             end
                         end
@@ -957,9 +951,6 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     -- check parameters
     if not isRestore or isRestore == nil then isRestore = false end
 
-    -- set language variable
-    local L = self.L
-
     --@debug@
     if self:GetDevMode() == true then self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No")) end
     --@end-debug@
@@ -971,8 +962,8 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     if differencesFound == false then
         -- show popup telling user no differences found
         StaticPopupDialogs["ACTIONBARSYNC_NO_DIFFS_FOUND"] = {
-            text = L["actionbarsync_no_diffs_found_text"],
-            button1 = L["ok"],
+            text = self.L["actionbarsync_no_diffs_found_text"],
+            button1 = self.L["ok"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -990,7 +981,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- loop over differences and apply changes
         for _, diffData in ipairs(differences) do
             -- create readable button name
-            -- local buttonName = (L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
+            -- local buttonName = (ABSync.L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
 
             -- instantiate standard error fields
             local err = {
@@ -1000,7 +991,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 type = diffData.shared.actionType,
                 name = diffData.shared.name,
                 id = diffData.shared.sourceID,
-                link = diffData.shared.blizData.link or L["Unknown"],
+                link = diffData.shared.blizData.link or ABSync.L["Unknown"],
                 sharedby = diffData.sharedBy,
                 msg = ""
             }
@@ -1015,7 +1006,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             --[[ process based on type ]]
 
             -- if unknown then shared action bar has no button there, if current char has a button in that position remove it
-            if err.type == L["Unknown"] and diffData.current.name ~= L["Unknown"] then
+            if err.type == self.L["Unknown"] and diffData.current.name ~= self.L["Unknown"] then
                 -- call function to remove a buttons action
                 self:RemoveButtonAction(err.buttonID)
 
@@ -1038,16 +1029,16 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 --@debug@
                 -- print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
                 --@end-debug@
-                if hasSpell == L["No"] then
+                if hasSpell == self.L["No"] then
                     -- update message to show character doesn't have the spell
-                    err["msg"] = L["unavailable"]
+                    err["msg"] = self.L["unavailable"]
 
                     -- insert the error record into tracking table
                     table.insert(errors, err)
 
                 -- proceed if player has the spell
                 -- make sure we have a name that isn't unknown
-                elseif err.name ~= L["Unknown"] then
+                elseif err.name ~= self.L["Unknown"] then
                     -- set the action bar button to the spell
                     C_Spell.PickupSpell(err.id)
                     PlaceAction(tonumber(err.buttonID))
@@ -1058,7 +1049,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- else should never trigger but set message to not found and add to tracking table
                 else
-                    err["msg"] = L["notfound"]
+                    err["msg"] = self.L["notfound"]
                     table.insert(errors, err)
                 end
 
@@ -1073,7 +1064,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- if the user has the item, then add it to their action bar as long as the name is not unknown
                 if itemCount > 0 then
                     -- item exists
-                    if err.name ~= L["Unknown"] and diffData.shared.isToy == false then
+                    if err.name ~= self.L["Unknown"] and diffData.shared.isToy == false then
                         -- set the action bar button to the item
                         C_Item.PickupItem(err.id)
                         PlaceAction(tonumber(err.buttonID))
@@ -1084,7 +1075,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                     -- else should never trigger but just in case set message to not found and add to tracking table
                     else
-                        err["msg"] = L["notfound"]
+                        err["msg"] = self.L["notfound"]
                         table.insert(errors, err)
                     end
 
@@ -1103,7 +1094,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- if player doesn't have item then log as error
                 else
-                    err["msg"] = L["notinbags"]
+                    err["msg"] = self.L["notinbags"]
                     table.insert(errors, err)
                 end
             elseif err.type == "macro" then
@@ -1113,11 +1104,11 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
                 if diffData.shared.macroType == ABSync.macroType.character and sharedByWithOutSpec ~= self:GetKeyPlayerServer(true) then
-                    err["msg"] = L["charactermacro"]
+                    err["msg"] = self.L["charactermacro"]
                     table.insert(errors, err)
                 
                 -- if macro name is found proceed
-                elseif err.name ~= L["Unknown"] then
+                elseif err.name ~= self.L["Unknown"] then
                     -- set the action bar button to the macro
                     PickupMacro(err.name)
                     PlaceAction(tonumber(err.buttonID))
@@ -1134,7 +1125,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- if macro name or id is not found then record error
                 else
-                    err["msg"] = L["notfound"]
+                    err["msg"] = self.L["notfound"]
                     table.insert(errors, err)
                 end
             elseif err.type == "summonpet" then
@@ -1148,7 +1139,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     -- button was updated
                     buttonUpdated = true
                 else
-                    err["msg"] = L["notfound"]
+                    err["msg"] = self.L["notfound"]
                     table.insert(errors, err)
                 end
             elseif err.type == "summonmount" then
@@ -1163,7 +1154,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     -- button was updated
                     buttonUpdated = true
                 else
-                    err["msg"] = L["notfound"]
+                    err["msg"] = self.L["notfound"]
                     table.insert(errors, err)
 
                     -- update mount issue flag
@@ -1177,7 +1168,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             -- proper response if action type is not recognized
             else
                 -- add error about unknown item type
-                err["msg"] = L["unknownitemtype"]
+                err["msg"] = self.L["unknownitemtype"]
                 table.insert(errors, err)
                 print("Unknown Item Type: " .. tostring(err.type))
             end
@@ -1206,7 +1197,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- store errors
         if #errors > 0 then
             --@debug@
-            if self:GetDevMode() == true then self:Print((L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
+            if self:GetDevMode() == true then self:Print((ABSync.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
             --@end-debug@
 
             -- make sure syncErrors exists
@@ -1232,8 +1223,8 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- show popup if mount issue is true
         if mountIssue == true then
             StaticPopupDialogs["ACTIONBARSYNC_MOUNT_ISSUE"] = {
-                text = (L["actionbarsync_mount_issue_text"]):format(mountIssueCount, mountCount),
-                button1 = L["ok"],
+                text = (ABSync.L["actionbarsync_mount_issue_text"]):format(mountIssueCount, mountCount),
+                button1 = ABSync.L["ok"],
                 timeout = 0,
                 whileDead = true,
                 hideOnEscape = true,
@@ -1261,19 +1252,16 @@ function ABSync:GetActionButtonData(actionID, btnName)
     -- get action type and ID information
     local actionType, infoID, subType = GetActionInfo(actionID)
 
-    -- set language variable
-    local L = self.L
-
     -- instantiate the return table
     local returnData = {
         blizData = {},
-        actionType = actionType or L["Unknown"],
-        subType = subType or L["Unknown"],
+        actionType = actionType or ABSync.L["Unknown"],
+        subType = subType or ABSync.L["Unknown"],
         actionID = actionID,
         originalSourceID = infoID,
         buttonID = buttonID,
         btnName = btnName,
-        name = L["Unknown"],
+        name = ABSync.L["Unknown"],
         icon = -1,
         sourceID = -1,
         unknownActionType = false,
@@ -1362,7 +1350,7 @@ function ABSync:GetActionButtonData(actionID, btnName)
         -- actually unknown, this addon doesn't know what to do with it!
         -- add unknown action type property
         returnData.unknownActionType = true
-        self:Print((L["Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...lots more text."]):format(btnName, tostring(actionType)))
+        self:Print((ABSync.L["Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...lots more text."]):format(btnName, tostring(actionType)))
 
         -- add to scan errors
         ActionBarSyncDB.char[self.currentPlayerServerSpec].scanErrors = {
@@ -1491,20 +1479,20 @@ function ABSync:GetActionBarData()
         -- need to know if this changes based on language!
         if string.find(btnName, "^ActionButton%d+$") or string.find(btnName, "^MultiBarBottomLeftButton%d+$") or string.find(btnName, "^MultiBarBottomRightButton%d+$") or string.find(btnName, "^MultiBarLeftButton%d+$") or string.find(btnName, "^MultiBarRightButton%d+$") or string.find(btnName, "^MultiBar%d+Button%d+$") then
             -- make up a name for each bar using the button names by removing the button number
-            local barName = string.gsub(btnName, L["Button%d+$"], "")
+            local barName = string.gsub(btnName, ABSync.L["Button%d+$"], "")
             --@debug@
             -- self:Print(("Processing Button Name: %s, Bar Name: %s"):format(btnName, barName))
             --@end-debug@
 
             -- translate and replace barName into the blizzard visible name in settings for the bars
             local blizzardTranslate = ABSync.blizzardTranslate[barName]
-            local barName = self.barNameLanguageTranslate[blizzardTranslate] or L["Unknown"]
+            local barName = self.barNameLanguageTranslate[blizzardTranslate] or ABSync.L["Unknown"]
             --@debug@
             -- print(("Bar Name after translation: %s"):format(barName))
             --@end-debug@
 
             -- skip bar if unknown
-            if barName == L["Unknown"] then
+            if barName == ABSync.L["Unknown"] then
                 self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
 
             -- continue if barname is known
@@ -1598,7 +1586,7 @@ function ABSync:GetActionBarData()
 
     -- let user know its done
     --@debug@
-    if self:GetDevMode() == true then self:Print(L["getactionbardata_final_notification"]) end
+    if self:GetDevMode() == true then self:Print(ABSync.L["getactionbardata_final_notification"]) end
     --@end-debug@
 end
 
@@ -1679,7 +1667,7 @@ function ABSync:SlashCommand(text)
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
         --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
         --     local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
-        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or L["Unknown"]))
+        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or ABSync.L["Unknown"]))
         -- elseif arg:lower() == "test" then
             -- local mountIDs = C_MountJournal.GetMountIDs()
             -- for midx, mountID in ipairs(mountIDs) do
@@ -1698,11 +1686,8 @@ end
     Purpose:    Handle functionality which is best or must wait for the PLAYER_LOGOUT event.
 -----------------------------------------------------------------------------]]
 function ABSync:EventPlayerLogout()
-    -- set language variable
-    local L = self.L
-
     --@debug@
-    if self:GetDevMode() == true then self:Print(L["registerevents_player_logout"]) end
+    if self:GetDevMode() == true then self:Print(ABSync.L["registerevents_player_logout"]) end
     --@end-debug@
 
     -- clear currentBarData and actionBars when not in developer mode
@@ -1727,7 +1712,7 @@ function ABSync:OnSpecializationChanged(event, ...)
     
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print(L["Specialization Changed"])
+        self:Print(ABSync.L["Specialization Changed"])
     end
     --@end-debug@
     
@@ -1753,8 +1738,8 @@ function ABSync:OnDisable()
         self.eventFrame:UnregisterAllEvents()
         self.eventFrame:SetScript("OnEvent", nil)
     end
-    
-    self:Print(L["disabled"])
+
+    self:Print(ABSync.L["disabled"])
 
     -- same clean up should occur when disabled
     ABSync:EventPlayerLogout()
@@ -1765,24 +1750,18 @@ end
     Purpose:    Register all events for the addon using native WoW event system.
 -----------------------------------------------------------------------------]]
 function ABSync:RegisterAddonEvents()
-    -- set language variable
-    local L = self.L
-
     --@debug@
-    if self:GetDevMode() == true then 
-        self:Print(L["Registering Events..."]) 
+    if self:GetDevMode() == true then
+        self:Print(ABSync.L["Registering Events..."]) 
     end
     --@end-debug@
 
     -- PLAYER_ENTERING_WORLD
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self, event, ...)
-        -- set language variable
-        local L = ABSync.L
-
         -- get event parameters
         local isInitialLogin, isReload = ...
         --@debug@
-        ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and L["Yes"] or L["No"], tostring(isReload) and L["Yes"] or L["No"]))
+        ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ABSync.L["Yes"] or ABSync.L["No"], tostring(isReload) and ABSync.L["Yes"] or ABSync.L["No"]))
         --@end-debug@
 
         -- only run these commands if this is the initial login
@@ -1791,7 +1770,7 @@ function ABSync:RegisterAddonEvents()
             ABSync:InstantiateDB(nil)
 
             -- get action bar data automatically if user has opted in through the settings checkbox
-            if ABSync:GetAutoScanData() == true or ABSync:GetLastScan() == L["Never"] then
+            if ABSync:GetAutoScanData() == true or ABSync:GetLastScan() == ABSync.L["Never"] then
                 ABSync:GetActionBarData()
             end
 
@@ -1913,14 +1892,14 @@ function ABSync:ShowUI(openDelaySeconds)
         ABSync:CreateTabSystem(ActionBarSyncMainFrame)
 
         -- create content area
-        local contentFrame = ABSync:CreateContentFrame(ActionBarSyncMainFrame)
-        ABSync.ui.contentFrame = contentFrame
+        ABSync:CreateContentFrame(ActionBarSyncMainFrame)
 
         -- show initial tab
-        local tabkey = self:GetTab()
-        self:ShowTabContent(tabkey)
-        local buttonID = ABSync.uitabs["buttonref"][tabkey]
-        PanelTemplates_SetTab(ABSync.uitabs["tabframe"], buttonID)
+        local tabKey = self:GetTab()
+        print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
+        self:ShowTabContent(tabKey)
+        local buttonID = ABSync.uitabs["buttonref"][tabKey]
+        PanelTemplates_SetTab(ActionBarSyncMainFrameTabs, buttonID)
     end
 
     -- Trigger any necessary updates
@@ -1938,43 +1917,55 @@ end
     Purpose:    Show the content for the selected tab.
 -----------------------------------------------------------------------------]]
 function ABSync:ShowTabContent(tabKey)
-    -- Clear content frame
-    for i = 1, ABSync.ui.contentFrame:GetNumChildren() do
-        local child = select(i, ABSync.ui.contentFrame:GetChildren())
-        child:Hide()
-        child:SetParent(nil)
+    -- get current tab to hide
+    local currentTab = self:GetTab()
+
+    -- get global variable friendly tab name
+    local varName = self.uitabs["varnames"][currentTab]
+
+    -- get the global name of the tab
+    local tabContentFrame = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. varName)
+
+    print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
+
+    -- hide the tab
+    if _G[tabContentFrame] then
+        _G[tabContentFrame]:Hide()
     end
+    
+    --@debug@
+    self:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
+    --@end-debug@
+
+    -- set the tab
+    self:SetTab(tabKey)
     
     -- switch to the selected tab
     if tabKey == "about" then
-        self:SetTab("about")
         -- tabs\About.lua
-        self:CreateAboutFrame(ABSync.ui.contentFrame)
+        self:ProcessAboutFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "introduction" then
-        self:SetTab("introduction")
         -- tabs\Introduction.lua
-        self:CreateIntroductionFrame(ABSync.ui.contentFrame)
+        self:ProcessIntroductionFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "sharesync" then
-        self:SetTab("sharesync")
         -- tabs\ShareSync.lua
-        self:CreateShareSyncFrame(ABSync.ui.contentFrame)
+        -- self:CreateShareSyncFrame(ActionBarSyncMainFrameTabContent)
     elseif tabKey == "last_sync_errors" then
-        self:SetTab("last_sync_errors")
         -- tabs\LastSyncErrors.lua
-        self:CreateLastSyncErrorFrame(ABSync.ui.contentFrame)
+        -- self:CreateLastSyncErrorFrame(ActionBarSyncMainFrameTabContent)
     elseif tabKey == "lookup" then
-        self:SetTab("lookup")
         -- tabs\Lookup.lua
-        self:CreateLookupFrame(ABSync.ui.contentFrame)
+        -- self:CreateLookupFrame(ActionBarSyncMainFrameTabContent)
     elseif tabKey == "backup" then
-        self:SetTab("backup")
         -- tabs\Restore.lua
-        self:CreateBackupFrame(ABSync.ui.contentFrame)
+        -- self:CreateBackupFrame(ActionBarSyncMainFrameTabContent)
     elseif tabKey == "developer" then
-        self:SetTab("developer")
         -- tabs\Developer.lua
-        self:CreateDeveloperFrame(ABSync.ui.contentFrame)
+        -- self:CreateDeveloperFrame(ActionBarSyncMainFrameTabContent)
     end
+
+    -- update tab buttons
+    self:UpdateTabButtons(tabKey)
 end
 
 --[[---------------------------------------------------------------------------
@@ -2109,7 +2100,7 @@ end
     Purpose:    Create the main frame for the addon UI.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateMainFrame()   
-    -- Get screen size
+    -- get screen size
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
 
@@ -2117,7 +2108,7 @@ function ABSync:CreateMainFrame()
     local frameWidth = screenWidth * 0.4
     local frameHeight = screenHeight * 0.4
     
-    -- Use PortraitFrameTemplate which is more reliable in modern WoW
+    -- use PortraitFrameTemplate which is more reliable in modern WoW
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
     frame:SetSize(frameWidth, frameHeight)
 
@@ -2160,7 +2151,7 @@ function ABSync:CreateMainFrame()
         end
     end)
     
-    -- Register frame for escape key handling using WoW's standard system
+    -- register frame for escape key handling using WoW's standard system
     tinsert(UISpecialFrames, "ActionBarSyncMainFrame")
     
     -- finally return the frame
@@ -2168,88 +2159,119 @@ function ABSync:CreateMainFrame()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UpdateTabButtons
+    Purpose:    Update the visual state of the tab buttons to reflect the active tab.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateTabButtons(tabKey)
+    local tabButtons = ABSync.uitabs["buttons"]
+    --@debug@
+    -- print(("(UpdateTabButtons) Tab Key: %s"):format(tostring(tabKey)))
+    --@end-debug@
+    -- fetch the button ID for the current tabKey
+    local buttonID = self.uitabs["buttonref"][tabKey]
+
+    -- update visual states for all tabs
+    for j, btn in ipairs(tabButtons) do
+        --@debug@
+        -- print(("(UpdateTabButtons) Processing Button ID: %d, Expected ID: %d"):format(btn:GetID(), buttonID))
+        --@end-debug@
+        if btn:GetID() == buttonID then
+            -- Active tab
+            PanelTemplates_SelectTab(btn)
+        else
+            -- Inactive tab
+            PanelTemplates_DeselectTab(btn)
+        end
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   CreateTabSystem
     Purpose:    Create a tab system at the bottom of the main frame.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateTabSystem(parent)
-    -- create a frame to hold the tabs
-    local tabFrame = CreateFrame("Frame", nil, parent)
-    -- Position tabs at the bottom of the frame like Collections Journal
-    tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
-    tabFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, -5)
-    tabFrame:SetHeight(30)
-    
-    local tabs = {}
-    local tabButtons = {}
-    
-    -- create tab data
-    local tabData = {}
-    for _, tabkey in ipairs(ABSync.uitabs.order) do
-        local tabname = ABSync.uitabs.tabs[tabkey]
+    -- instantiate variable for the main tab frame
+    local tabFrame = nil
+
+    -- check to see if tab system already exists
+    if not ActionBarSyncMainFrameTabs then
+        -- create a frame to hold the tabs
+        tabFrame = CreateFrame("Frame", "ActionBarSyncMainFrameTabs", parent)
         
-        -- if developer mode disabled, skip the developer tab, otherwise add the tab
-        if tabkey ~= "developer" or (tabkey == "developer" and self:GetDevMode() == true) then
-            table.insert(tabData, { name = tabname, key = tabkey })
-        end
+        -- position tabs at the bottom of the frame like Collections Journal
+        tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
+        tabFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, -5)
+        tabFrame:SetHeight(30)
+    else
+        tabFrame = ActionBarSyncMainFrameTabs
     end
+
+    -- track the tabs as we build them
+    local tabButtons = {}
+
+    -- keep track of tab count
+    local tabCount = 0
     
-    -- Create tab buttons using PanelTabButtonTemplate like Collections addon
-    for i, tab in ipairs(tabData) do
-        -- Use PanelTabButtonTemplate for authentic Collections UI styling
-        local button = CreateFrame("Button", nil, tabFrame, "PanelTabButtonTemplate")
-        button:SetID(i)
-        button:SetText(tab.name)
-        
-        -- Use PanelTemplates functions for proper tab behavior
-        PanelTemplates_TabResize(button, 0)
-        
-        button:SetScript("OnClick", function(self)
-            -- Use PanelTemplates to handle tab selection properly
-            PanelTemplates_SetTab(tabFrame, self:GetID())
+    -- create tab buttons using PanelTabButtonTemplate
+    for tabIndex, tabKey in ipairs(ABSync.uitabs.order) do
+        -- get global variable friendly tab name
+        local tabID = self.uitabs["varnames"][tabKey]
+
+        -- create the tab button ID
+        local tabButtonID = self:GetObjectName("TabButton" .. tabID)
+        print(("Creating Tab Button: %s"):format(tabButtonID))
+
+        -- create variable for button
+        local button = nil
+
+        -- if tabButtonID doesn't exist create it
+        if not _G[tabButtonID] then
+            -- use PanelTabButtonTemplate for authentic Collections UI styling
+            button = CreateFrame("Button", tabButtonID, tabFrame, "PanelTabButtonTemplate")
+            button:SetID(tabIndex)
+            local tabname = ABSync.uitabs.tabs[tabKey]
+            button:SetText(tabname)
+            self.uitabs["buttonref"][tabKey] = tabIndex
             
-            -- Update visual states for all tabs
-            for j, btn in ipairs(tabButtons) do
-                if j == self:GetID() then
-                    -- Active tab
-                    PanelTemplates_SelectTab(btn)
-                else
-                    -- Inactive tab
-                    PanelTemplates_DeselectTab(btn)
-                end
-            end
-            
-            ABSync:ShowTabContent(tab.key)
-        end)
-        
-        -- Position tabs horizontally with proper spacing for Collections style
-        if i == 1 then
+            -- use PanelTemplates functions for proper tab behavior
+            PanelTemplates_TabResize(button, 0)
+
+            -- set the buttons OnClick event
+            button:SetScript("OnClick", function(self)
+                --@debug@
+                -- ABSync:Print(("Tab Clicked: %s (ID: %d)"):format(tabname, self:GetID()))
+                --@end-debug@
+                -- use PanelTemplates to handle tab selection properly
+                PanelTemplates_SetTab(tabFrame, self:GetID())
+                
+                -- create the content for the tab
+                ABSync:ShowTabContent(tabKey)
+            end)
+        else
+            -- if it already exists just reference it
+            button = _G[tabButtonID]
+        end
+         
+        -- position tabs horizontally with proper spacing for Collections style
+        if tabIndex == 1 then
             button:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 11, 2)
         else
-            button:SetPoint("LEFT", tabButtons[i-1], "RIGHT", -15, 0)
+            button:SetPoint("LEFT", tabButtons[tabIndex-1], "RIGHT", -15, 0)
         end
-        
-        -- add button to table
-        tabButtons[i] = button
 
-        -- add translation keys to addon global
-        ABSync.uitabs["buttonref"][tab.key] = i
+        -- add button to table
+        tabButtons[tabIndex] = button
+
+        -- count the tabs
+        tabCount = tabCount + 1
     end
     
     -- Set up the tab frame with PanelTemplates
-    PanelTemplates_SetNumTabs(tabFrame, #tabData)
+    PanelTemplates_SetNumTabs(tabFrame, #tabButtons)
     PanelTemplates_SetTab(tabFrame, 1)
-    
+
     -- initialize first tab to users last, if not set to introduction (which is done in GetTab)
-    local initialTab = self.uitabs["buttonref"][self:GetTab()]
-    if tabButtons[initialTab] then
-        PanelTemplates_SelectTab(tabButtons[1])
-        for j = 2, #tabButtons do
-            PanelTemplates_DeselectTab(tabButtons[j])
-        end
-    end
-    
-    -- assign tab frame to addon global
-    ABSync.uitabs["tabframe"] = tabFrame
+    self:UpdateTabButtons()
 
     -- assign buttons to addon global
     ABSync.uitabs["buttons"] = tabButtons

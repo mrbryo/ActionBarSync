@@ -2,9 +2,23 @@
     Function:   CreateInstructionsFrame
     Purpose:    Create the Introduction frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateIntroductionFrame(parent)
+function ABSync:ProcessIntroductionFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
+
+    -- get global variable friendly tab name
+    local varName = self.uitabs["varnames"][tabKey]
+
+    -- get global tab name
+    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. varName)
+
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local instructionsFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return instructionsFrame
+    end
 
     -- get instructions
     local instructions = {
@@ -25,10 +39,10 @@ function ABSync:CreateIntroductionFrame(parent)
     local labelHeight = 30
     local labelCount = 2
 
-    -- create main instructions frame
-    local instructionsFrame = CreateFrame("Frame", nil, parent)
-    instructionsFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    -- place frame in parent
+    -- instructionsFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    -- instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    instructionsFrame:SetAllPoints(parent)
 
     -- create title for instructions frame
     local title = instructionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")

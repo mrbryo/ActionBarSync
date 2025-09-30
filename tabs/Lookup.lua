@@ -20,8 +20,8 @@ function ABSync:LookupAction()
     local lookupInfo = {
         type = actionType,
         id = actionID,
-        name = L["Unknown"],
-        has = L["No"]
+        name = self.L["Unknown"],
+        has = self.L["No"]
     }
 
     -- perform lookup based on type

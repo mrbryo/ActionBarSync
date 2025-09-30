@@ -191,7 +191,7 @@ function ABSync:CreateLastSyncErrorFrame(parent)
         errorsExist = false
     else
         local lastDateTime = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm or L["Never"]
-        if lastDateTime ~= nil and lastDateTime ~= L["Never"] then
+        if lastDateTime ~= nil and lastDateTime ~= self.L["Never"] then
             errorsExist = true
         end
     end

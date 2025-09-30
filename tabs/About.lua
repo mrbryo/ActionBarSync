@@ -1,18 +1,26 @@
 --[[---------------------------------------------------------------------------
-    Function:   CreateAboutFrame
+    Function:   ProcessAboutFrame
     Purpose:    Create the About frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateAboutFrame(parent)
-    -- set language variable
-    local L = self.L
-
+function ABSync:ProcessAboutFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create main frame
-    local aboutFrame = CreateFrame("Frame", nil, parent)
-    aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    -- get global tab name
+    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. tabKey)
+
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local aboutFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return aboutFrame
+    end
+
+    -- fit frame to parent
+    -- aboutFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
+    -- aboutFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    aboutFrame:SetAllPoints(parent)
 
     -- tooltip text
     data = {
@@ -120,47 +128,47 @@ function ABSync:CreateAboutFrame(parent)
     -- localizations by data structure
     local localeAuthors = {
         -- {
-        --     label = L["English"],
+        --     label = self.L["English"],
         --     people = englishTranslators
         -- },
         {
-            label = L["German"],
+            label = self.L["German"],
             people = {}
         },
         {
-            label = L["Spanish (Spain)"],
+            label = self.L["Spanish (Spain)"],
             people = {}
         },
         {
-            label = L["Spanish (Mexico)"],
+            label = self.L["Spanish (Mexico)"],
             people = {}
         },
         {
-            label = L["French"],
+            label = self.L["French"],
             people = {}
         },
         {
-            label = L["Italian"],
+            label = self.L["Italian"],
             people = {}
         },
         {
-            label = L["Korean"],
+            label = self.L["Korean"],
             people = {}
         },
         {
-            label = L["Portuguese (Brazil)"],
+            label = self.L["Portuguese (Brazil)"],
             people = {}
         },
         {
-            label = L["Russian"],
+            label = self.L["Russian"],
             people = {}
         },
         {
-            label = L["Chinese (Simplified)"],
+            label = self.L["Chinese (Simplified)"],
             people = {}
         },
         {
-            label = L["Chinese (Traditional)"],
+            label = self.L["Chinese (Traditional)"],
             people = {}
         },
     }

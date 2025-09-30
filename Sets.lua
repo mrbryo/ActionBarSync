@@ -133,7 +133,7 @@ function ABSync:SetKeyPlayerServerSpec()
 
     -- finally return the special key
     if not specName then
-        self.currentPlayerServerSpec = L["Unknown"]
+        self.currentPlayerServerSpec = self.L["Unknown"]
     else
         self.currentPlayerServerSpec = ("%s-%s-%s"):format(unitName, unitServer, specName) or nil
         self.currentPlayerServerSpecNoHyphens = ("%s%s%s"):format(unitName, unitServer, specName) or nil
@@ -198,7 +198,7 @@ function ABSync:SetLastScan(noscan)
     local isSet = self:SetupCharDB()
 
     -- get current date/time or set to "Never" if noscan is true
-    local value = noscan and L["Never"] or date("%Y-%m-%d %H:%M:%S")
+    local value = noscan and ABSync.L["Never"] or date("%Y-%m-%d %H:%M:%S")
 
     if isSet == true then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = value
@@ -228,7 +228,7 @@ function ABSync:SetLastSynced(nosync)
     local isSet = self:SetupCharDB()
     
     -- get current date/time or set to "Never" if nosync is true
-    local value = nosync and L["Never"] or date("%Y-%m-%d %H:%M:%S")
+    local value = nosync and ABSync.L["Never"] or date("%Y-%m-%d %H:%M:%S")
 
     if isSet == true then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = value
@@ -245,7 +245,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:SetTab(key)
     --@debug@
-    self:Print("Setting tab to: " .. tostring(key) .. " for " .. tostring(self.currentPlayerServer))
+    -- self:Print("(SetTab) Setting tab to: " .. tostring(key) .. " for " .. tostring(self.currentPlayerServer))
     --@end-debug@
     -- make sure the current player key is set
     if not self.currentPlayerServer then return end

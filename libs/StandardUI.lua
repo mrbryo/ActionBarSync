@@ -106,37 +106,74 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   CreateContentFrame
-    Purpose:    Create a scrollable content frame for tab content.
+    Purpose:    Create the frame for showing the content of each tab. Each tab will have its own frame which extends to this whole frame.
     Arguments:  parent - The parent frame to attach this frame to
     Returns:    The created ScrollFrame and its child Frame for content.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateContentFrame(parent)
-    -- add footer
-    local footer = CreateFrame("Frame", nil, parent)
-    footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-    footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    footer:SetHeight(40)
+    -- check to see if frame exists already
+    if not ActionBarSyncMainFrameTabContent then
+        -- add footer; must be created first and anchored in order to properly anchor the contentFrame above it
+        local footer = CreateFrame("Frame", "ActionBarSyncMainFrameFooter", parent)
+        footer:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+        footer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+        footer:SetHeight(40)
 
-    -- add button to show action bar guide
-    local guideButton = self:CreateStandardButton(footer, "Show Action Bar Guide", 150, function()
-        self:CreateBarIdentificationFrame(parent)
-    end)
-    guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
+        -- create main content frame
+        local contentFrame = CreateFrame("Frame", "ActionBarSyncMainFrameTabContent", parent)
+        contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
+        contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
+        
+        -- create close button
+        local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
+            parent:Hide()
+        end)
+        local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
+        closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
+    
+        -- add button to show action bar guide
+        local guideButton = self:CreateStandardButton(footer, "Show Action Bar Guide", 150, function()
+            self:CreateBarIdentificationFrame(parent)
+        end)
+        guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
 
-    -- create close button
-    local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
-        parent:Hide()
-    end)
-    local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
-    closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
+        
 
-    -- create a frame to hold the content
-    local contentFrame = CreateFrame("Frame", nil, parent)
-    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
-    contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
+        -- create a frame to hold the content
+        local contentFrame = CreateFrame("Frame", nil, parent)
+        contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
+        contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ProcessTabContentFrame
+    Purpose:    Create a standard content frame for a tab.
+    Arguments:  tabKey - When creating the content frame use this to name the frame to lookup the proper 'varname'.
+    Returns:    The created Frame for the tab content.
+-----------------------------------------------------------------------------]]
+function ABSync:ProcessTabContentFrame(tabKey, parent)
+    -- get global variable friendly tab name
+    local tabID = self.uitabs["varnames"][tabKey]
+
+    -- generate global frame name
+    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. tabID)
+
+    -- report back if it was newly created or not
+    local existed = false
+
+    -- create the content frame
+    local frame = nil
+    if not _G[frameName] then
+        frame = CreateFrame("Frame", frameName, parent)
+        frame:SetAllPoints(parent)
+    else
+        frame = _G[frameName]
+        existed = true
+    end
 
     -- return the created frame
-    return contentFrame
+    return frame, existed
 end
 
 --[[---------------------------------------------------------------------------

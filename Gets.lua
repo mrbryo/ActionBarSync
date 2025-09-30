@@ -186,7 +186,7 @@ function ABSync:GetDevMode()
     --@end-debug@
 
     -- get player unique key; if not already set
-    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= L["Unknown"] then
+    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= self.L["Unknown"] then
         --@debug@
         self:Print("(GetDevMode) Error: currentPlayerServerSpec not set!")
         --@end-debug@
@@ -415,7 +415,7 @@ function ABSync:GetTab()
     if isSet == true then
         local tabValue = ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
         --@debug@
-        print("Getting tab: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
+        print("(GetTab) ID: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
         --@end-debug@
         return tabValue
     else

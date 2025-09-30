@@ -290,7 +290,7 @@ function ABSync:GetMountinfo(mountID)
     }
 
     -- and get more data!!!
-    local mountCreatureDisplayInfoLink = L["Unknown"]
+    local mountCreatureDisplayInfoLink = self.L["Unknown"]
     if spellID then
         mountCreatureDisplayInfoLink = C_MountJournal.GetMountLink(spellID)
     end
