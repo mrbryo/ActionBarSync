@@ -6,9 +6,6 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- get global tab name
-    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. tabKey)
-
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local aboutFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
 
@@ -190,8 +187,8 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
 
     -- create title for about frame
     local title = aboutFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", aboutFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", 0, 0)
+    title:SetPoint("TOPLEFT", aboutFrame, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
     title:SetText("About")
@@ -267,9 +264,9 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
 
     -- right hand side frame
     local rightFrame = CreateFrame("Frame", nil, aboutFrame)
-    rightFrame:SetPoint("TOPLEFT", leftInsetFrame, "TOPRIGHT", 10, 0)
+    rightFrame:SetPoint("TOPLEFT", leftInsetFrame, "TOPRIGHT", padding, 0)
     rightFrame:SetPoint("BOTTOMLEFT", leftInsetFrame, "BOTTOMRIGHT", 0, 0)
-    rightFrame:SetPoint("RIGHT", aboutFrame, "RIGHT", 0, 0)
+    rightFrame:SetPoint("RIGHT", aboutFrame, "RIGHT", -padding, 0)
 
     -- right hand side label
     local rightLabel = rightFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -286,8 +283,8 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
 
     -- add scroll frame to right hand side
     local rightScrollFrame = CreateFrame("ScrollFrame", nil, rightInsetFrame, "UIPanelScrollFrameTemplate")
-    rightScrollFrame:SetPoint("TOPLEFT", rightInsetFrame, "TOPLEFT", 0, 0)
-    rightScrollFrame:SetPoint("BOTTOMRIGHT", rightInsetFrame, "BOTTOMRIGHT", -25, 0)
+    rightScrollFrame:SetPoint("TOPLEFT", rightInsetFrame, "TOPLEFT", 5, -5)
+    rightScrollFrame:SetPoint("BOTTOMRIGHT", rightInsetFrame, "BOTTOMRIGHT", -27, 5)
 
     -- add scroll content frame
     local rightScrollContentFrame = CreateFrame("Frame", nil, rightScrollFrame)

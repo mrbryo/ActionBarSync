@@ -96,20 +96,24 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateLastSyncErrorFrame
+    Function:   ProcessLastSyncErrorFrame
     Purpose:    Create the Last Sync Error frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateLastSyncErrorFrame(parent)
-    -- get language data
-    local L = self.L
+function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create main frame
-    local lastErrorGroup = CreateFrame("Frame", nil, parent)
-    lastErrorGroup:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    lastErrorGroup:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local lastErrorGroup, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return lastErrorGroup
+    end
+
+    -- set frame position
+    lastErrorGroup:SetAllPoints(parent)
 
     -- columns
     local columns = {
@@ -125,11 +129,11 @@ function ABSync:CreateLastSyncErrorFrame(parent)
 
     -- create title for frame
     local title = lastErrorGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", lastErrorGroup, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", lastErrorGroup, "TOPRIGHT", 0, 0)
+    title:SetPoint("TOPLEFT", lastErrorGroup, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", lastErrorGroup, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(L["Last Sync Errors"])
+    title:SetText(ABSync.L["Last Sync Errors"])
 
     -- create main content frame
     local contentFrame = CreateFrame("Frame", nil, lastErrorGroup, "InsetFrameTemplate")

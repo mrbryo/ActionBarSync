@@ -67,7 +67,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:ProcessSyncRegion(callingFunction)
     --@debug@
-    -- self:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
+    self:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
     --@end-debug@
     -- current player ID
     local currentPlayerID = self:GetKeyPlayerServerSpec()
@@ -110,22 +110,45 @@ function ABSync:ProcessSyncRegion(callingFunction)
                     -- get length of name
                     local nameLength = string.len(checkboxGlobalID)
 
+                    -- define labels for enabled and disabled states; set barName to green and playerID to orange
+                    local labelEnabled = ("%s%s|r from |cffffa500%s|r"):format(self.constants.colors.green, barName, playerID)
+
+                    -- set whole label to gray
+                    local labelDisabled = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
+
                     -- create a checkbox if data is found
                     if foundData == true then                    
                         -- track current checkbox
                         local checkbox = {}
 
                         -- does the checkbox already exist?
-                        if _G[checkboxGlobalID] then
+                        if _G[checkboxGlobalID] ~= nil then
                             --@debug@
-                            -- print(("Checkbox - Reuse: %s (%d)"):format(checkboxGlobalID, nameLength))
+                            print(("Checkbox - Reuse: %s (%d)"):format(checkboxGlobalID, nameLength))
                             --@end-debug@
                             checkbox = _G[checkboxGlobalID]
                         else
                             --@debug@
-                            -- print(("Checkbox - Create: %s (%d)"):format(checkboxGlobalID, nameLength))
+                            print(("Checkbox - Create: %s (%d)"):format(checkboxGlobalID, nameLength))
                             --@end-debug@
-                            checkbox = self:CreateSyncCheckbox(self.ui.frame.syncContent, checkboxGlobalID, barName, playerID, currentPlayerID, padding)
+                            -- checkbox = self:CreateSyncCheckbox(self.ui.frame.syncContent, checkboxGlobalID, barName, playerID, currentPlayerID, padding)
+                            
+                            -- create the checkbox since not found globally
+                            checkbox = self:CreateCheckbox(self.ui.frame.syncContent, "-", self:IsSyncSet(barName, playerID), checkboxGlobalID, function(self, button, checked)
+                                ABSync:SyncOnValueChanged(checked, barName, playerID)
+                            end)
+                        end
+
+                        -- adjust text and checkbox state based on current player and player assigned to the checkbox
+                        print(("ProcessSyncCheckbox: playerID: %s, currentPlayerID: %s"):format(playerID, currentPlayerID))
+                        if playerID == currentPlayerID then
+                            checkbox.Text:SetText(labelDisabled)
+                            checkbox:Disable()
+                            print(("Disabling checkbox for %s since playerID matches currentPlayerID."):format(checkboxGlobalID))
+                        else
+                            checkbox.Text:SetText(labelEnabled)
+                            checkbox:Enable()
+                            print(("Enabling checkbox for %s since playerID does not match currentPlayerID."):format(checkboxGlobalID))
                         end
 
                         -- update checkbox position
@@ -140,6 +163,9 @@ function ABSync:ProcessSyncRegion(callingFunction)
                             -- print(("Checkbox - Show: %s"):format(checkboxGlobalID))
                             checkbox:Show()
                         end
+
+                        -- update value
+                        checkbox:SetChecked(self:IsSyncSet(barName, playerID))
 
                     -- if no data found then remove the checkbox if it exists
                     else
@@ -161,6 +187,10 @@ function ABSync:ProcessSyncRegion(callingFunction)
             noDataLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", padding + 5, -padding - 5)
             noDataLabel:SetText("No Shared Action Bars Found")
         end
+    else
+        --@debug@
+        self:Print(("(%s) self.ui.frame.syncContent does not exist, cannot process sync region."):format("ProcessSyncRegion"))
+        --@end-debug@
     end
 end
 
@@ -425,25 +455,31 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateShareSyncFrame
+    Function:   ProcessShareSyncFrame
     Purpose:    Create the share frame for selecting action bars to share.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateShareSyncFrame(parent)
+function ABSync:ProcessShareSyncFrame(parent, tabKey)
     -- for debugging
-    local funcName = "CreateShareSyncFrame"
+    local funcName = "ProcessShareSyncFrame"
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create main frame
-    local mainShareFrame = CreateFrame("Frame", nil, parent)
-    mainShareFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    mainShareFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local mainShareFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return mainShareFrame
+    end
+
+    -- set frame position
+    mainShareFrame:SetAllPoints(parent)
 
     -- create title for share frame
     local title = mainShareFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", mainShareFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", mainShareFrame, "TOPRIGHT", 0, 0)
+    title:SetPoint("TOPLEFT", mainShareFrame, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", mainShareFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
     title:SetText("Share & Sync")

@@ -428,30 +428,34 @@ function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateLookupFrame
+    Function:   ProcessLookupFrame
     Purpose:    Create the lookup frame for displaying action lookups.
     Arguments:  parent  - The parent frame to attach this frame to
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:CreateLookupFrame(parent)
-    -- get language data
-    local L = self.L
+function ABSync:ProcessLookupFrame(parent, tabKey)
 
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create main frame which fills the parent with type fill
-    local mainFrame = CreateFrame("Frame", nil, parent)
-    mainFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    mainFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local mainFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return mainFrame
+    end
+
+    -- set frame position
+    mainFrame:SetAllPoints(parent)
 
     -- create the title
     local title = mainFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", 0, 0)
+    title:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(L["Lookup & Assign"])
+    title:SetText(ABSync.L["Lookup & Assign"])
 
     -- create main content frame
     local mainContentFrame = CreateFrame("Frame", nil, mainFrame)

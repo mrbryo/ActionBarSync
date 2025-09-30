@@ -195,22 +195,28 @@ function ABSync:CreateRestoreFrame(parent)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateBackupFrame
+    Function:   ProcessBackupFrame
     Purpose:    Create the backup frame for displaying and restoring backups.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateBackupFrame(parent)
+function ABSync:ProcessBackupFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create backup top level frame, child to the tab
-    local backupFrame = CreateFrame("Frame", nil, parent)
-    backupFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
-    backupFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local backupFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return backupFrame
+    end
+
+    -- set frame position
+    backupFrame:SetAllPoints(parent)
 
     -- create title for backup frame
     local title = backupFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", backupFrame, "TOPLEFT", 0, 0)
-    title:SetPoint("TOPRIGHT", backupFrame, "TOPRIGHT", 0, 0)
+    title:SetPoint("TOPLEFT", backupFrame, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", backupFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
     title:SetText("Backup and Restore")

@@ -153,8 +153,17 @@ end
     Returns:    The created Frame for the tab content.
 -----------------------------------------------------------------------------]]
 function ABSync:ProcessTabContentFrame(tabKey, parent)
+    --@debug@
+    -- print(("(ProcessTabContentFrame) Called with tabKey: %s"):format(tostring(tabKey)))
+    --@end-debug@
     -- get global variable friendly tab name
-    local tabID = self.uitabs["varnames"][tabKey]
+    local tabID = self.uitabs["varnames"][tabKey] or ABSync.L["Unknown"]
+
+    -- check if nil
+    if tabID == ABSync.L["Unknown"] then
+        self:Print(("Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."):format(tostring(tabKey)))
+        return nil, false
+    end
 
     -- generate global frame name
     local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. tabID)

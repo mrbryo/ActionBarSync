@@ -29,7 +29,7 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 	end
 
 	--@debug@
-	ABSync:Print(("%s loaded for Addon: %s"):format(event, addonName))
+	-- ABSync:Print(("%s loaded for Addon: %s"):format(event, addonName))
 	--@end-debug@
 
     -- initialize language
@@ -1569,14 +1569,14 @@ function ABSync:GetActionBarData()
     end
 
     -- sync the updated data into the sync settings only when the same character is triggering the update
-    for barName, barData in pairs(ActionBarSyncDB.global.barsToSync) do
-        -- if the bar data table for the current player is empty set checked to false, otherwise, true; next() checks the next record of a table and if it's nil then its empty and we want a false value for empty tables; true means its populated because the use decided to share it
-        local checked = next(barData[self.currentPlayerServerSpec]) ~= nil
-        -- self:Print(("Bar Name: %s, Character: %s, is shared? %s"):format(barName, self.currentPlayerServerSpec, tostring(checked)))
+    -- for barName, barData in pairs(ActionBarSyncDB.global.barsToSync) do
+    --     -- if the bar data table for the current player is empty set checked to false, otherwise, true; next() checks the next record of a table and if it's nil then its empty and we want a false value for empty tables; true means its populated because the use decided to share it
+    --     local checked = next(barData[self.currentPlayerServerSpec]) ~= nil
+    --     -- self:Print(("Bar Name: %s, Character: %s, is shared? %s"):format(barName, self.currentPlayerServerSpec, tostring(checked)))
 
-        -- call existing function when the share check boxes are clicked; pass in existing checked value
-        self:ShareBar(barName, checked)
-    end
+    --     -- call existing function when the share check boxes are clicked; pass in existing checked value
+    --     self:ShareBar(barName, checked)
+    -- end
 
     -- set a new last scan date/time
     self:SetLastScan()
@@ -1751,9 +1751,9 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:RegisterAddonEvents()
     --@debug@
-    if self:GetDevMode() == true then
-        self:Print(ABSync.L["Registering Events..."]) 
-    end
+    -- if self:GetDevMode() == true then
+    --     self:Print(ABSync.L["Registering Events..."]) 
+    -- end
     --@end-debug@
 
     -- PLAYER_ENTERING_WORLD
@@ -1761,7 +1761,7 @@ function ABSync:RegisterAddonEvents()
         -- get event parameters
         local isInitialLogin, isReload = ...
         --@debug@
-        ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ABSync.L["Yes"] or ABSync.L["No"], tostring(isReload) and ABSync.L["Yes"] or ABSync.L["No"]))
+        -- ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ABSync.L["Yes"] or ABSync.L["No"], tostring(isReload) and ABSync.L["Yes"] or ABSync.L["No"]))
         --@end-debug@
 
         -- only run these commands if this is the initial login
@@ -1788,7 +1788,7 @@ function ABSync:RegisterAddonEvents()
     -- PLAYER_LOGOUT
     self:RegisterEvent("PLAYER_LOGOUT", function(self, event, ...)
         --@debug@
-        ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ABSync:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
         ABSync:EventPlayerLogout()
     end)
@@ -1796,7 +1796,7 @@ function ABSync:RegisterAddonEvents()
     -- VARIABLES_LOADED
     self:RegisterEvent("VARIABLES_LOADED", function(self, event, ...)
         --@debug@
-        ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ABSync:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
     end)
 
@@ -1896,7 +1896,9 @@ function ABSync:ShowUI(openDelaySeconds)
 
         -- show initial tab
         local tabKey = self:GetTab()
-        print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
+        --@debug@
+        -- print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
+        --@end-debug@
         self:ShowTabContent(tabKey)
         local buttonID = ABSync.uitabs["buttonref"][tabKey]
         PanelTemplates_SetTab(ActionBarSyncMainFrameTabs, buttonID)
@@ -1925,8 +1927,9 @@ function ABSync:ShowTabContent(tabKey)
 
     -- get the global name of the tab
     local tabContentFrame = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. varName)
-
-    print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
+    --@debug@
+    -- print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
+    --@end-debug@
 
     -- hide the tab
     if _G[tabContentFrame] then
@@ -1934,38 +1937,46 @@ function ABSync:ShowTabContent(tabKey)
     end
     
     --@debug@
-    self:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
+    -- self:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
     --@end-debug@
 
     -- set the tab
     self:SetTab(tabKey)
+
+    -- currentframe
+    local currentFrame = nil
     
     -- switch to the selected tab
     if tabKey == "about" then
         -- tabs\About.lua
-        self:ProcessAboutFrame(ActionBarSyncMainFrameTabContent, tabKey)
+        currentFrame = self:ProcessAboutFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "introduction" then
         -- tabs\Introduction.lua
-        self:ProcessIntroductionFrame(ActionBarSyncMainFrameTabContent, tabKey)
+        currentFrame = self:ProcessIntroductionFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "sharesync" then
         -- tabs\ShareSync.lua
-        -- self:CreateShareSyncFrame(ActionBarSyncMainFrameTabContent)
+        currentFrame = self:ProcessShareSyncFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "last_sync_errors" then
         -- tabs\LastSyncErrors.lua
-        -- self:CreateLastSyncErrorFrame(ActionBarSyncMainFrameTabContent)
+        currentFrame = self:ProcessLastSyncErrorFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "lookup" then
         -- tabs\Lookup.lua
-        -- self:CreateLookupFrame(ActionBarSyncMainFrameTabContent)
+        currentFrame = self:ProcessLookupFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "backup" then
         -- tabs\Restore.lua
-        -- self:CreateBackupFrame(ActionBarSyncMainFrameTabContent)
+        currentFrame = self:ProcessBackupFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "developer" then
         -- tabs\Developer.lua
-        -- self:CreateDeveloperFrame(ActionBarSyncMainFrameTabContent)
+        currentFrame = self:ProcessDeveloperFrame(ActionBarSyncMainFrameTabContent, tabKey)
     end
 
     -- update tab buttons
     self:UpdateTabButtons(tabKey)
+
+    -- show new tab content frame
+    if currentFrame then
+        currentFrame:Show()
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -1988,9 +1999,9 @@ function ABSync:StoreFramePosition(frame)
     local isSuccess = self:SetFramePosition(frameName, point, relativePoint, xOfs, yOfs)
 
     --@debug@
-    if self:GetDevMode() == true then
-        self:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
-    end
+    -- if self:GetDevMode() == true then
+    --     self:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
+    -- end
     --@end-debug@
 
     return isSuccess
@@ -2071,22 +2082,22 @@ function ABSync:RestoreFramePosition(frame, frameWidth, frameHeight)
             yOffset = testY
             
             --@debug@
-            if self:GetDevMode() == true then
-                self:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
-            end
+            -- if self:GetDevMode() == true then
+            --     self:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
+            -- end
             --@end-debug@
         else
             --@debug@
-            if self:GetDevMode() == true then
-                self:Print("Stored frame position is outside bounds, centering frame.")
-            end
+            -- if self:GetDevMode() == true then
+            --     self:Print("Stored frame position is outside bounds, centering frame.")
+            -- end
             --@end-debug@
         end
     else
         --@debug@
-        if self:GetDevMode() == true then
-            self:Print("No stored frame position found, centering frame.")
-        end
+        -- if self:GetDevMode() == true then
+        --     self:Print("No stored frame position found, centering frame.")
+        -- end
         --@end-debug@
     end
     
@@ -2219,7 +2230,9 @@ function ABSync:CreateTabSystem(parent)
 
         -- create the tab button ID
         local tabButtonID = self:GetObjectName("TabButton" .. tabID)
-        print(("Creating Tab Button: %s"):format(tabButtonID))
+        --@debug@
+        -- print(("Creating Tab Button: %s"):format(tabButtonID))
+        --@end-debug@
 
         -- create variable for button
         local button = nil

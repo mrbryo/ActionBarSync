@@ -6,12 +6,6 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- get global variable friendly tab name
-    local varName = self.uitabs["varnames"][tabKey]
-
-    -- get global tab name
-    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. varName)
-
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local instructionsFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
 
@@ -40,8 +34,6 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     local labelCount = 2
 
     -- place frame in parent
-    -- instructionsFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    -- instructionsFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
     instructionsFrame:SetAllPoints(parent)
 
     -- create title for instructions frame

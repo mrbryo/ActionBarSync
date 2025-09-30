@@ -415,7 +415,7 @@ function ABSync:GetTab()
     if isSet == true then
         local tabValue = ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
         --@debug@
-        print("(GetTab) ID: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
+        -- print("(GetTab) ID: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
         --@end-debug@
         return tabValue
     else

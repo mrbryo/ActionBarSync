@@ -3,9 +3,6 @@
     Purpose:    Create the mount database content for the developer frame.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
-    -- get language data
-    local L = self.L
-
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
     -- make the frame just high enough for the content, track its height
@@ -109,18 +106,28 @@ function CreateDevManualActionButton(parent, halfWidth, posnFrame)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateDeveloperFrame
+    Function:   ProcessDeveloperFrame
     Purpose:    Create the developer frame for testing and debugging.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDeveloperFrame(parent)
-    -- get language data
-    local L = self.L
-
+function ABSync:ProcessDeveloperFrame(parent, tabKey)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
-    -- create main frame
-    local devFrame = CreateFrame("Frame", nil, parent)
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local devFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return devFrame
+    end
+
+    -- make sure devFrame was populated
+    if not devFrame then
+        self:Print("Error: devFrame is nil in ProcessDeveloperFrame.")
+        return nil
+    end
+
+    -- set frame position
     devFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", padding, -padding)
     devFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -padding, 0)
 
@@ -146,7 +153,7 @@ function ABSync:CreateDeveloperFrame(parent)
     warningText:SetPoint("BOTTOMRIGHT", warningFrame, "BOTTOMRIGHT", -padding, padding)
     warningText:SetJustifyH("LEFT")
     warningText:SetWordWrap(true)
-    warningText:SetText(("|cffff0000%s|r: %s"):format(L["Warning"], L["This tab is used for development purposes only."]))
+    warningText:SetText(("|cffff0000%s|r: %s"):format(ABSync.L["Warning"], ABSync.L["This tab is used for development purposes only."]))
     warningFrame:SetHeight(warningText:GetStringHeight() + (padding * 2))
 
     -- get 50% width of the dev frame minus padding
@@ -157,4 +164,7 @@ function ABSync:CreateDeveloperFrame(parent)
 
     --[[ manual action button placement ]]
     -- local manualFrame = self:CreateDevManualActionButton(parent, halfWidth, mountDBFrame)
+
+    -- return object
+    return devFrame
 end

@@ -144,7 +144,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:RegisterEvent(event, handler)
 	--@debug@
-	self:Print(("Registering Event: %s"):format(event))
+	-- self:Print(("Registering Event: %s"):format(event))
 	--@end-debug@
 	self.events[event] = handler or function() end
 	self.eventFrame:RegisterEvent(event)
