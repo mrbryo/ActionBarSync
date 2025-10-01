@@ -90,6 +90,16 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["backup"] = ABSync.L["Backup/Restore"],
         ["developer"] = ABSync.L["Developer"],
     }
+    ABSync.errorColumns = {
+        { name = "Bar Name", key = "barName", width = 0.10},        -- 10
+        { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
+        { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
+        { name = "Action Type", key = "type", width = 0.10},        -- 30
+        { name = "Action Name", key = "name", width = 0.25},        -- 55
+        { name = "Action ID", key = "id", width = 0.05},            -- 60
+        { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
+        { name = "Message", key = "msg", width = 0.20}              -- 95
+    }
 
     -- Instantiate Standard Functions
     local StdFuncs = ABSync:GetModule("StandardFunctions")
@@ -1208,6 +1218,9 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
             -- update lastSyncErrorDttm
             ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
+
+            -- update the UI
+            ABSync:ProcessErrorData()
         end
 
         -- show popup if mount issue is true

@@ -217,9 +217,6 @@ end
 function ABSync:SetLastSynced(nosync)
     -- make sure the current player spec key is set
     if not self.currentPlayerServerSpec then return false end
-    
-    -- set language variable
-    local L = self.L
 
     -- nosync should default to false and only set to true during db initialization
     if not nosync then nosync = false end
@@ -228,7 +225,8 @@ function ABSync:SetLastSynced(nosync)
     local isSet = self:SetupCharDB()
     
     -- get current date/time or set to "Never" if nosync is true
-    local value = nosync and ABSync.L["Never"] or date("%Y-%m-%d %H:%M:%S")
+    local value = ABSync.L["Never"]
+    if nosync == false then value = date("%Y-%m-%d %H:%M:%S") end
 
     if isSet == true then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = value

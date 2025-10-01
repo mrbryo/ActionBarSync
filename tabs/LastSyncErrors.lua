@@ -96,98 +96,12 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   ProcessLastSyncErrorFrame
-    Purpose:    Create the Last Sync Error frame for the addon.
+    Function:   ProcessErrorData
+    Purpose:    Process the error data and populate the scroll frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
-
+function ABSync:ProcessErrorData()
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
-
-    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
-    local lastErrorGroup, existed = self:ProcessTabContentFrame(tabKey, parent)
-
-    -- if frame existed then just return it, no need to recreate content
-    if existed then
-        return lastErrorGroup
-    end
-
-    -- set frame position
-    lastErrorGroup:SetAllPoints(parent)
-
-    -- columns
-    local columns = {
-        { name = "Bar Name", key = "barName", width = 0.10},        -- 10
-        { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
-        { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
-        { name = "Action Type", key = "type", width = 0.10},        -- 30
-        { name = "Action Name", key = "name", width = 0.25},        -- 55
-        { name = "Action ID", key = "id", width = 0.05},            -- 60
-        { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
-        { name = "Message", key = "msg", width = 0.20}              -- 95
-    }
-
-    -- create title for frame
-    local title = lastErrorGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", lastErrorGroup, "TOPLEFT", padding, -padding)
-    title:SetPoint("TOPRIGHT", lastErrorGroup, "TOPRIGHT", -padding, -padding)
-    title:SetHeight(30)
-    title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Last Sync Errors"])
-
-    -- create main content frame
-    local contentFrame = CreateFrame("Frame", nil, lastErrorGroup, "InsetFrameTemplate")
-    contentFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
-    contentFrame:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, 0)
-    contentFrame:SetPoint("BOTTOMLEFT", lastErrorGroup, "BOTTOMLEFT", 0, 0)
-    contentFrame:SetPoint("BOTTOMRIGHT", lastErrorGroup, "BOTTOMRIGHT", 0, 0)
-
-    -- instantiate initial y offset
-    local offsetY = 5
-
-    -- Create header row; important to add the header group to the parent group to maintain a proper layout
-    local header = CreateFrame("Frame", nil, contentFrame)
-    header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, 0)
-    header:SetPoint("TOPRIGHT", contentFrame, "TOPRIGHT", -27, 0)
-    header:SetHeight(30)
-    local offsetX = padding
-    local maxHeight = 0
-    local hdrRowHeight = self:AddErrorRow(header, nil, columns, offsetY, true)
-    maxHeight = math.max(maxHeight, hdrRowHeight)
-
-    -- update header height
-    header:SetHeight(maxHeight + padding)
-
-    -- create a container for the scroll region
-    local scrollContainer = CreateFrame("ScrollFrame", nil, contentFrame, "UIPanelScrollFrameTemplate")
-    scrollContainer:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, -header:GetHeight())
-    scrollContainer:SetPoint("BOTTOMRIGHT", contentFrame, "BOTTOMRIGHT", -27, 0)
-
-    -- create a scroll container for the spreadsheet
-    local scrollContent = CreateFrame("Frame", nil, scrollContainer)
-    scrollContent:SetWidth(scrollContainer:GetWidth())
-    scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
-    scrollContainer:SetScrollChild(scrollContent)
-
-    -- get frame width offset between scrollContent and contentFrame
-    -- print(("%s Region - Width: %d"):format("Header", header:GetWidth()))
-    -- print(("%s Region - Width: %d"):format("Scroll Content", scrollContent:GetWidth()))
-
-    --@debug@
-    -- if self:GetDevMode() == true then
-    --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
-    --     local testdttmkey = date("%Y%m%d%H%M%S")
-    --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
-    --     local testerrors = {}
-    --     for i = 1, 10 do
-    --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
-    --     end
-    --     table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
-    --         key = testdttmkey,
-    --         errors = testerrors
-    --     })
-    -- end
-    --@end-debug@
 
     -- verify if we a last sync error
     local errorsExist = false
@@ -200,11 +114,16 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
         end
     end
     --@debug@
-    -- if self:GetDevMode() == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
+    if self:GetDevMode() == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
     --@end-debug@
 
     -- instantiate initial y offset
     offsetY = 5
+
+    -- if the scroll frame has children, remove them
+    if ActionBarSyncErrorScrollContent:GetNumChildren() > 0 then
+        self:RemoveFrameChildren(ActionBarSyncErrorScrollContent)
+    end
     
     -- loop over sync errors
     --[[ 
@@ -235,15 +154,112 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
                 -- loop over the rows
                 for _, errorRow in ipairs(errorRcd.errors) do
                     -- print("here3")
-                    local rowHeight = self:AddErrorRow(scrollContent, errorRow, columns, offsetY)
+                    local rowHeight = self:AddErrorRow(ActionBarSyncErrorScrollContent, errorRow, ABSync.errorColumns, offsetY)
                     offsetY = offsetY + rowHeight + padding
-                    -- local fakelabel = scrollContent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+                    -- local fakelabel = ActionBarSyncErrorScrollContent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
                     -- fakelabel:SetText("Fake Info")
-                    -- fakelabel:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 0, 0)
+                    -- fakelabel:SetPoint("TOPLEFT", ActionBarSyncErrorScrollContent, "TOPLEFT", 0, 0)
                     -- fakelabel:SetJustifyH("LEFT")
                     -- fakelabel:SetWidth(200)
                 end
             end
         end
     end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ProcessLastSyncErrorFrame
+    Purpose:    Create the Last Sync Error frame for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
+    -- standard variables
+    local padding = ABSync.constants.ui.generic.padding
+
+    -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
+    local lastErrorGroup, existed = self:ProcessTabContentFrame(tabKey, parent)
+
+    -- if frame existed then just return it, no need to recreate content
+    if existed then
+        return lastErrorGroup
+    end
+
+    -- set frame position
+    lastErrorGroup:SetAllPoints(parent)
+
+    -- columns
+    -- local columns = {
+    --     { name = "Bar Name", key = "barName", width = 0.10},        -- 10
+    --     { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
+    --     { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
+    --     { name = "Action Type", key = "type", width = 0.10},        -- 30
+    --     { name = "Action Name", key = "name", width = 0.25},        -- 55
+    --     { name = "Action ID", key = "id", width = 0.05},            -- 60
+    --     { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
+    --     { name = "Message", key = "msg", width = 0.20}              -- 95
+    -- }
+
+    -- create title for frame
+    local title = lastErrorGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", lastErrorGroup, "TOPLEFT", padding, -padding)
+    title:SetPoint("TOPRIGHT", lastErrorGroup, "TOPRIGHT", -padding, -padding)
+    title:SetHeight(30)
+    title:SetJustifyH("CENTER")
+    title:SetText(ABSync.L["Last Sync Errors"])
+
+    -- create main content frame
+    local contentFrame = CreateFrame("Frame", nil, lastErrorGroup, "InsetFrameTemplate")
+    contentFrame:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, 0)
+    contentFrame:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, 0)
+    contentFrame:SetPoint("BOTTOMLEFT", lastErrorGroup, "BOTTOMLEFT", 0, 0)
+    contentFrame:SetPoint("BOTTOMRIGHT", lastErrorGroup, "BOTTOMRIGHT", 0, 0)
+
+    -- instantiate initial y offset
+    local offsetY = 5
+
+    -- Create header row; important to add the header group to the parent group to maintain a proper layout
+    local header = CreateFrame("Frame", nil, contentFrame)
+    header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, 0)
+    header:SetPoint("TOPRIGHT", contentFrame, "TOPRIGHT", -27, 0)
+    header:SetHeight(30)
+    local offsetX = padding
+    local maxHeight = 0
+    local hdrRowHeight = self:AddErrorRow(header, nil, ABSync.errorColumns, offsetY, true)
+    maxHeight = math.max(maxHeight, hdrRowHeight)
+
+    -- update header height
+    header:SetHeight(maxHeight + padding)
+
+    -- create a container for the scroll region
+    local scrollContainer = CreateFrame("ScrollFrame", nil, contentFrame, "UIPanelScrollFrameTemplate")
+    scrollContainer:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, -header:GetHeight())
+    scrollContainer:SetPoint("BOTTOMRIGHT", contentFrame, "BOTTOMRIGHT", -27, 0)
+
+    -- create a scroll container for the spreadsheet
+    local scrollContent = CreateFrame("Frame", "ActionBarSyncErrorScrollContent", scrollContainer)
+    scrollContent:SetWidth(scrollContainer:GetWidth())
+    scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
+    scrollContainer:SetScrollChild(scrollContent)
+
+    -- get frame width offset between scrollContent and contentFrame
+    -- print(("%s Region - Width: %d"):format("Header", header:GetWidth()))
+    -- print(("%s Region - Width: %d"):format("Scroll Content", scrollContent:GetWidth()))
+
+    --@debug@
+    -- if self:GetDevMode() == true then
+    --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
+    --     local testdttmkey = date("%Y%m%d%H%M%S")
+    --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
+    --     local testerrors = {}
+    --     for i = 1, 10 do
+    --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
+    --     end
+    --     table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
+    --         key = testdttmkey,
+    --         errors = testerrors
+    --     })
+    -- end
+    --@end-debug@
+
+    -- process the error data
+    self:ProcessErrorData()
 end
