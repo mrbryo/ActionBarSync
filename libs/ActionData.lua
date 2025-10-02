@@ -3,25 +3,19 @@
     Purpose:    Retrieve spell information based on the spell ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetSpellDetails(spellID)
-    -- get language data
-    local L = self.L
-
-    -- special handling for Switch Flight Style
-    -- if spellID == 460002 then spellID = 436854 end
-    
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
     local spellData = C_Spell.GetSpellInfo(spellID)
-    local spellName = spellData and spellData.name or L["Unknown"]
+    local spellName = spellData and spellData.name or ABSync.L["Unknown"]
     local hasSpell = self:CharacterHasSpell(spellID)
     local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
     local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
-    local spellLink = C_Spell.GetSpellLink(spellID) or L["Unknown"]
+    local spellLink = C_Spell.GetSpellLink(spellID) or ABSync.L["Unknown"]
     local baseID = C_Spell.GetBaseSpell(spellID) or -1
 
     -- finally return the data collected
     return {
         blizData = {
-            name = spellData and spellData.name or L["Unknown"],
+            name = spellData and spellData.name or ABSync.L["Unknown"],
             iconID = spellData and spellData.iconID or -1,
             originalIconID = spellData and spellData.originalIconID or -1,
             castTime = spellData and spellData.castTime or -1,

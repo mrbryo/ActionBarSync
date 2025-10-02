@@ -146,15 +146,15 @@ end
     Function:   GetBarToShare
     Purpose:    Check if a specific action bar is set to share for a specific player.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarToShare(barName, playerID)
+function ABSync:GetBarToShare(barID, playerID)
     if not ActionBarSyncDB.global.barsToSync then
         return false
-    elseif not ActionBarSyncDB.global.barsToSync[barName] then
+    elseif not ActionBarSyncDB.global.barsToSync[barID] then
         return false
-    elseif not ActionBarSyncDB.global.barsToSync[barName][playerID] then
+    elseif not ActionBarSyncDB.global.barsToSync[barID][playerID] then
         return false
     else
-        return next(ActionBarSyncDB.global.barsToSync[barName][playerID]) ~= nil
+        return next(ActionBarSyncDB.global.barsToSync[barID][playerID]) ~= nil
     end
 end
 
@@ -162,13 +162,13 @@ end
     Function:   IsSyncSet
     Purpose:    Check if a specific bar is set to sync for a specific player.
 -----------------------------------------------------------------------------]]
-function ABSync:IsSyncSet(barName, playerID)
+function ABSync:IsSyncSet(barID, playerID)
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
         return false
-    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] then
+    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
         return false
     else
-        return ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barName] == playerID
+        return ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] == playerID
     end
 end
 
