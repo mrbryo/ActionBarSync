@@ -121,8 +121,10 @@ function ABSync:ProcessErrorData()
     offsetY = 5
 
     -- if the scroll frame has children, remove them
-    if ActionBarSyncErrorScrollContent:GetNumChildren() > 0 then
-        self:RemoveFrameChildren(ActionBarSyncErrorScrollContent)
+    if ActionBarSyncErrorScrollContent then
+        if ActionBarSyncErrorScrollContent:GetNumChildren() > 0 then
+            self:RemoveFrameChildren(ActionBarSyncErrorScrollContent)
+        end
     end
     
     -- loop over sync errors
@@ -145,7 +147,7 @@ function ABSync:ProcessErrorData()
             sharedby        the player who shared the action
             buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
     ]]
-    if errorsExist == true then
+    if errorsExist == true and ActionBarSyncErrorScrollContent then
         for _, errorRcd in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
             -- print("here1")
             -- continue to next row if key doesn't match

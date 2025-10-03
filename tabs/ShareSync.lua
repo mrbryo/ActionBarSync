@@ -37,6 +37,10 @@ function ABSync:CreateSyncCheckbox(parent, globalID, barName, playerID, currentP
     return checkbox
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   RemoveHyphens
+    Purpose:    Remove hyphens from a string.
+-----------------------------------------------------------------------------]]
 function ABSync:RemoveHyphens(text)
     -- remove all hyphens from the text
     return string.gsub(text, "-", "")
@@ -54,7 +58,9 @@ function ABSync:GetCheckboxGlobalName(barID, playerID)
     -- TODO: add to issues in saved variables as well
     if not fixedBarName then
         fixedBarName = "UnknownBarName" .. self:GetRandom6DigitNumber()
-        self:Print("(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: " .. fixedBarName)
+        if self:GetDevMode() == true then
+            self:Print("(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: " .. fixedBarName)
+        end
     end
 
     -- get global name for the checkbox
@@ -96,7 +102,7 @@ function ABSync:ProcessSyncRegion(callingFunction)
 
             -- verify bar exists in global.barsToSync
             if ActionBarSyncDB.global.barsToSync[barID] ~= nil then
-                -- loop over the barName in global.barsToSync
+                -- loop over the barID in global.barsToSync
                 for playerID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID]) do
                     -- to see if enabled, the buttonData must be a table and have at least 1 record
                     -- count variable
@@ -130,18 +136,18 @@ function ABSync:ProcessSyncRegion(callingFunction)
                         -- does the checkbox already exist?
                         if _G[checkboxGlobalID] ~= nil then
                             --@debug@
-                            print(("Checkbox - Reuse: %s (%d)"):format(checkboxGlobalID, nameLength))
+                            -- print(("Checkbox - Reuse: %s (%d)"):format(checkboxGlobalID, nameLength))
                             --@end-debug@
                             checkbox = _G[checkboxGlobalID]
                         else
                             --@debug@
-                            print(("Checkbox - Create: %s (%d)"):format(checkboxGlobalID, nameLength))
+                            -- print(("Checkbox - Create: %s (%d)"):format(checkboxGlobalID, nameLength))
                             --@end-debug@
                             -- checkbox = self:CreateSyncCheckbox(self.ui.frame.syncContent, checkboxGlobalID, barName, playerID, currentPlayerID, padding)
                             
                             -- create the checkbox since not found globally
-                            checkbox = self:CreateCheckbox(self.ui.frame.syncContent, "-", self:IsSyncSet(barName, playerID), checkboxGlobalID, function(self, button, checked)
-                                ABSync:SyncOnValueChanged(checked, barName, playerID)
+                            checkbox = self:CreateCheckbox(self.ui.frame.syncContent, "-", self:IsSyncSet(barID, playerID), checkboxGlobalID, function(self, button, checked)
+                                ABSync:SyncOnValueChanged(checked, barID, playerID)
                             end)
                         end
 
@@ -170,7 +176,7 @@ function ABSync:ProcessSyncRegion(callingFunction)
                         visibleCheckboxes = true
 
                         -- update value
-                        checkbox:SetChecked(self:IsSyncSet(barName, playerID))
+                        checkbox:SetChecked(self:IsSyncSet(barID, playerID))
 
                     -- if no data found then remove the checkbox if it exists
                     else
@@ -209,7 +215,9 @@ function ABSync:ProcessSyncRegion(callingFunction)
         end
     else
         --@debug@
-        self:Print(("(%s) self.ui.frame.syncContent does not exist, cannot process sync region."):format("ProcessSyncRegion"))
+        if self:GetDevMode() == true then
+            self:Print(("(%s) self.ui.frame.syncContent does not exist, cannot process sync region."):format("ProcessSyncRegion"))
+        end
         --@end-debug@
     end
 end
@@ -269,7 +277,9 @@ function ABSync:ProcessShareCheckboxes(callingFunction)
     local funcName = "ProcessShareCheckboxes"
     --@debug@
     -- notify of function call
-    self:Print(("(%s) called from: %s"):format(funcName, callingFunction or "Unknown"))
+    if self:GetDevMode() == true then
+        self:Print(("(%s) called from: %s"):format(funcName, callingFunction or "Unknown"))
+    end
     --@end-debug@
 
     -- track y offset
@@ -363,14 +373,14 @@ end
     Purpose:    Update the last scan label with the latest scan date/time.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLastScanLabel()
-    -- print(self.currentPlayerServerSpec)
-    -- print(ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan)
     local lastScan = self:GetLastScan()
     local formatString = self:FormatDateString(lastScan)
     --@debug@
     -- print("UpdateLastScanLabel Value: " .. formatString)
     --@end-debug@
-    self.ui.label.lastScan:SetText(formatString)
+    if self.ui.label.lastScan then
+        self.ui.label.lastScan:SetText(formatString)
+    end
 end
 
 --[[---------------------------------------------------------------------------
@@ -381,6 +391,10 @@ function ABSync:UpdateLastSyncLabel()
     self.ui.label.lastSync:SetText(self:FormatDateString(self:GetLastSynced()))
 end
 
+--[[---------------------------------------------------------------------------
+    Function:   UpdateCheckboxState
+    Purpose:    Update the checkbox state to enabled or disabled and change text color.
+-----------------------------------------------------------------------------]]
 function ABSync:UpdateCheckboxState(checkbox, checked)
     if checked == true then
         checkbox:Enable()
@@ -436,7 +450,6 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     local scanButton = self:CreateStandardButton(regionContent, "Scan Now", 100, function(self, button, down)
         ABSync:UpdateCheckboxState(self, false) -- disable button while scanning
         ABSync:GetActionBarData()
-        ABSync:UpdateLastScanLabel()
         ABSync:ProcessSyncRegion("CreateShareSyncTopFrameContent:ScanButton")
         ABSync:UpdateCheckboxState(self, true) -- re-enable button after scan is complete
     end)

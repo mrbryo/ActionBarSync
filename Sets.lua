@@ -39,8 +39,8 @@ function ABSync:SetAutoScanData(value)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetDevMode
-    Purpose:    Get the development mode status for the current character.
+    Function:   SetDevMode
+    Purpose:    Set the development mode status for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:SetDevMode(value)
     -- make sure the current player key is set
@@ -184,29 +184,23 @@ end
     Function:   SetLastScan
     Purpose:    Set the last scan date/time for the action bars.
 -----------------------------------------------------------------------------]]
-function ABSync:SetLastScan(noscan)
+function ABSync:SetLastScan(dttm)
     -- make sure the current player spec key is set
     if not self.currentPlayerServerSpec then return false end
 
-    -- set language variable
-    local L = self.L
-
-    -- noscan should default to false and only set to true during db initialization
-    if not noscan then noscan = false end
-    
     -- make sure data structure exists
-    local isSet = self:SetupCharDB()
-
-    -- get current date/time or set to "Never" if noscan is true
-    local value = noscan and ABSync.L["Never"] or date("%Y-%m-%d %H:%M:%S")
-
-    if isSet == true then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = value
-        return true
-    else
-        self:Print(("Error Setting Last Scan to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServerSpec)))
-        return false
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = self.L["Never"]
     end
+
+    -- check inputs
+    if not dttm then
+        dttm = ABSync.L["Never"]
+    end
+
+    -- update db
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = dttm
+    return true
 end
 
 --[[---------------------------------------------------------------------------
@@ -214,27 +208,23 @@ end
     Purpose:    Set the last synced time for the action bars to update the Last Synced field in the options for the current character.
        TODO:    Format a base data value instead of a formatted value. Format it when needed later.
 -----------------------------------------------------------------------------]]
-function ABSync:SetLastSynced(nosync)
+function ABSync:SetLastSynced(dttm)
     -- make sure the current player spec key is set
     if not self.currentPlayerServerSpec then return false end
 
-    -- nosync should default to false and only set to true during db initialization
-    if not nosync then nosync = false end
-
     -- make sure data structure exists
-    local isSet = self:SetupCharDB()
-    
-    -- get current date/time or set to "Never" if nosync is true
-    local value = ABSync.L["Never"]
-    if nosync == false then value = date("%Y-%m-%d %H:%M:%S") end
-
-    if isSet == true then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = value
-        return true
-    else
-        self:Print(("Error Setting Last Synced to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServerSpec)))
-        return false
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = self.L["Never"]
     end
+
+    -- check inputs
+    if not dttm then
+        dttm = ABSync.L["Never"]
+    end
+
+    -- update db
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = dttm
+    return true
 end
 
 --[[---------------------------------------------------------------------------

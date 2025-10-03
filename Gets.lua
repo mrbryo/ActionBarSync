@@ -177,19 +177,15 @@ end
     Purpose:    Get the developer mode for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetDevMode()
-    -- set language variable
-    local L = self.L
     local defaultValue = false
+    defaultValue = false
     --@debug@
-    -- override for development purposes
-    defaultValue = true
+    -- for development purposes, uncomment next line to always enable dev mode
+    -- defaultValue = true
     --@end-debug@
 
     -- get player unique key; if not already set
-    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= self.L["Unknown"] then
-        --@debug@
-        self:Print("(GetDevMode) Error: currentPlayerServerSpec not set!")
-        --@end-debug@
+    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= ABSync.L["Unknown"] then
         return defaultValue
     end
 
@@ -205,7 +201,7 @@ function ABSync:GetDevMode()
     end
 
     --@debug@
-    ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = defaultValue
+    -- ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = defaultValue
     --@end-debug@
 
     -- finally return the dev mode value

@@ -141,10 +141,14 @@ function ABSync:InstantiateDBChar(barID)
     end
 
     -- character specific date/time of last scan, defaults to never, pass true for the never value
-    self:SetLastScan(true)
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = self.L["Never"]
+    end
 
     -- character specific last synced date/time, defaults to never, pass true for the never value
-    self:SetLastSynced(true)
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = self.L["Never"]
+    end
 
     -- backup of action bar data so a user can restore
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].backup then
@@ -285,9 +289,6 @@ end
     Purpose:    Ensure the DB has all the necessary values. Can run anytime to check and fix all data with default values.
 -----------------------------------------------------------------------------]]
 function ABSync:InstantiateDB(barID)
-    -- set language variable
-    local L = self.L
-
     --@debug@
     if self:GetDevMode() == true then
         self:Print("DB Initialization")
@@ -671,6 +672,9 @@ end
         4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
 -----------------------------------------------------------------------------]]
 function ABSync:BeginSync()
+    --@debug@
+    -- self:Print("BeginSync Called")
+    --@end-debug@
     -- track testing
     local barsToSync = false
     
@@ -686,7 +690,7 @@ function ABSync:BeginSync()
     if not barsToSync then
         -- add dialog to let user know they must select bars to sync first
         StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
-            text = self.L["actionbarsync_no_syncbars_text"],
+            text = self.L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."],
             button1 = self.L["ok"],
             timeout = 15,
             whileDead = true,
@@ -700,7 +704,7 @@ function ABSync:BeginSync()
     else
         -- add dialog to let user know sync was cancelled
         StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
-            text = self.L["actionbarsync_sync_cancelled_text"],
+            text = self.L["Action Bar Sync has been cancelled."],
             button1 = self.L["ok"],
             timeout = 15,
             hideOnEscape = true,
@@ -715,6 +719,9 @@ function ABSync:BeginSync()
             hasEditBox = true,
             maxLetters = 64,
             OnAccept = function(self)
+                --@debug@
+                -- ABSync:Print("Backup Accepted...")
+                --@end-debug@
                 -- capture the name
                 local backupName = self.EditBox:GetText()
                 -- start the actual backup passing in needed data
@@ -744,11 +751,17 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:TriggerBackup(note)
     -- Instantiate Standard Functions
-    local StdFuncs = ABSync:GetModule("StandardFunctions")
+    -- local StdFuncs = ABSync:GetModule("StandardFunctions")
+    --@debug@
+    -- print("TriggerBackup Called")
+    --@end-debug@
 
     -- set up backup timestamp
     local backupdttm = date("%Y%m%d%H%M%S")
-    self:SetLastSynced()
+    local lastSyncedUpdated = self:SetLastSynced(backupdttm)
+    
+    -- update the UI last synced label
+    ABSync:UpdateLastSyncLabel()
 
     -- track any errors in the data
     local errors = {}
@@ -769,7 +782,7 @@ function ABSync:TriggerBackup(note)
     for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
         if syncOn ~= false then
             --@debug@
-            if self:GetDevMode() == true then self:Print((ABSync.L["triggerbackup_notify"]):format(barName)) end
+            if self:GetDevMode() == true then self:Print((ABSync.L["Backing Up Action Bar '%s'..."]):format(barName)) end
             --@end-debug@
 
             -- make sync data found
@@ -787,7 +800,7 @@ function ABSync:TriggerBackup(note)
 
     -- add error if no sync data found
     if syncDataFound == false then
-        table.insert(errors, ABSync.L["triggerbackup_no_sync_data_found"])
+        table.insert(errors, ABSync.L["No sync data found for backup."])
     end
 
     -- count number of backups
@@ -807,7 +820,7 @@ function ABSync:TriggerBackup(note)
     -- add backup to db
     local backupEntry = {
         dttm = backupdttm,
-        note = note or ABSync.L["triggerbackup_no_note_provided"],
+        note = note or ABSync.L["No note provided!"],
         error = errors,
         data = backupData,
     }
@@ -928,70 +941,70 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     return differences, differencesFound
 end
 
--- function ABSync:ProcessSpell(inputButtonID, inputSpellID)
---     -- button ID is required
---     if not inputButtonID then
---         return {
---             msg = "Error: No Button ID",
---             success = false,
---             errors = true,
---         }
---     end
+--[[function ABSync:ProcessSpell(inputButtonID, inputSpellID)
+    -- button ID is required
+    if not inputButtonID then
+        return {
+            msg = "Error: No Button ID",
+            success = false,
+            errors = true,
+        }
+    end
 
---     -- if spell ID is zero then get from difference record
---     if not inputSpellID then inputSpellID = 0 end
+    -- if spell ID is zero then get from difference record
+    if not inputSpellID then inputSpellID = 0 end
 
---     -- if inputSpellID is zero then get spellID from difference record
---     local actionID = 0
---     if inputSpellID == 0 then
+    -- if inputSpellID is zero then get spellID from difference record
+    local actionID = 0
+    if inputSpellID == 0 then
         
---     end
+    end
 
---     -- get action details
---     local actionDetails = self:GetActionData(actionID, "spell")
-
-
+    -- get action details
+    local actionDetails = self:GetActionData(actionID, "spell")
 
 
---     -- review base ID vs source ID and override with base ID
---     if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
---         err.id = diffData.shared.blizData.baseID
---         --@debug@
---         if self:GetDevMode() == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
---         --@end-debug@
---     end
 
---     -- verify if user has spell
---     local hasSpell = self:CharacterHasSpell(err.id)
 
---     -- report error if player does not have the spell
---     --@debug@
---     -- self:Print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
---     --@end-debug@
---     if hasSpell == self.L["No"] then
---         -- update message to show character doesn't have the spell
---         err["msg"] = self.L["unavailable"]
+    -- review base ID vs source ID and override with base ID
+    if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
+        err.id = diffData.shared.blizData.baseID
+        --@debug@
+        if self:GetDevMode() == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
+        --@end-debug@
+    end
 
---         -- insert the error record into tracking table
---         table.insert(errors, err)
+    -- verify if user has spell
+    local hasSpell = self:CharacterHasSpell(err.id)
 
---     -- proceed if player has the spell
---     -- make sure we have a name that isn't unknown
---     elseif err.name ~= self.L["Unknown"] then
---         -- set the action bar button to the spell
---         C_Spell.PickupSpell(err.id)
---         PlaceAction(tonumber(err.buttonID))
---         ClearCursor()
+    -- report error if player does not have the spell
+    --@debug@
+    -- self:Print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
+    --@end-debug@
+    if hasSpell == self.L["No"] then
+        -- update message to show character doesn't have the spell
+        err["msg"] = self.L["unavailable"]
 
---         -- button was updated
---         buttonUpdated = true
+        -- insert the error record into tracking table
+        table.insert(errors, err)
 
---     -- else should never trigger but set message to not found and add to tracking table
---     else
---         err["msg"] = self.L["notfound"]
---         table.insert(errors, err)
---     end
--- end
+    -- proceed if player has the spell
+    -- make sure we have a name that isn't unknown
+    elseif err.name ~= self.L["Unknown"] then
+        -- set the action bar button to the spell
+        C_Spell.PickupSpell(err.id)
+        PlaceAction(tonumber(err.buttonID))
+        ClearCursor()
+
+        -- button was updated
+        buttonUpdated = true
+
+    -- else should never trigger but set message to not found and add to tracking table
+    else
+        err["msg"] = self.L["notfound"]
+        table.insert(errors, err)
+    end
+end]]
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateActionBars
@@ -1036,7 +1049,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
             -- instantiate standard error fields
             local err = {
-                barName = diffData.barName,
+                barName = ABSync.barNameLanguageTranslate[diffData.barID],
                 barPosn = diffData.shared.barPosn,
                 buttonID = diffData.shared.actionID,
                 type = diffData.shared.actionType,
@@ -1545,7 +1558,8 @@ function ABSync:GetActionBarData()
 
             -- skip bar if unknown
             if barName == ABSync.L["Unknown"] then
-                self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
+                -- self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
+                -- TODO: Need to log this as a scan error.
 
             -- continue if barname is known
             else
@@ -1594,10 +1608,13 @@ function ABSync:GetActionBarData()
     end)
 
     -- set a new last scan date/time
-    self:SetLastScan()
+    self:SetLastScan(date("%Y%m%d%H%M%S"))
 
     -- capture last scan data
     errs.lastScan = self:GetLastScan()
+
+    -- update the last scan label in the UI
+    ABSync:UpdateLastScanLabel()
 
     -- let user know its done
     --@debug@
@@ -1613,11 +1630,8 @@ function ABSync:EnableDevelopment()
     -- enable development mode
     self:SetDevMode(true)
 
-    -- set language variable
-    local L = self.L
-
-    -- force close the window
-    ActionBarSyncMainFrame:Hide()
+    -- enable button
+    self:SetDeveloperTabVisibleState(true)
 
     -- give user status
     self:Print("Development Mode: Enabled")
@@ -1628,9 +1642,6 @@ end
     Purpose:    Disable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
 function ABSync:DisableDevelopment()
-    -- set language variable
-    local L = self.L
-
     if self:GetTab() == "developer" then
         -- switch to default tab if the user is on the developer tab
         self:SetTab("introduction")
@@ -1639,8 +1650,8 @@ function ABSync:DisableDevelopment()
     -- disable development mode
     self:SetDevMode(false)
 
-    -- force close the window
-    ActionBarSyncMainFrame:Hide()
+    -- enable button
+    self:SetDeveloperTabVisibleState(false)
 
     -- give user status
     self:Print("Development Mode: Disabled")
@@ -1677,6 +1688,7 @@ function ABSync:SlashCommand(text)
         elseif arg:lower() == "fonts" then
             ABSync:CreateFontStringExamplesFrame():Show()
         else
+            self:Print(("Unknown Command: %s"):format(arg))
         --@debug@
         -- elseif arg:lower() == "spec" then
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
@@ -1720,7 +1732,9 @@ function ABSync:OnSpecializationChanged(event, ...)
     -- do not run function unless player has entered world event has triggered
     if self.hasPlayerEnteredWorld == false then
         --@debug@
-        self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
+        if self:GetDevMode() == true then
+            self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
+        end
         --@end-debug@
         return
     end
@@ -1762,7 +1776,9 @@ function ABSync:OnDisable()
         self.eventFrame:SetScript("OnEvent", nil)
     end
 
-    self:Print(ABSync.L["disabled"])
+    if self:GetDevMode() == true then
+        self:Print(ABSync.L["disabled"])
+    end
 
     -- same clean up should occur when disabled
     ABSync:EventPlayerLogout()
@@ -1826,7 +1842,7 @@ function ABSync:RegisterAddonEvents()
     -- ACTIVE_TALENT_GROUP_CHANGED
     self:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED", function(self, event, ...)
         --@debug@
-        ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ABSync:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
         ABSync:OnSpecializationChanged(event, ...)
     end)
@@ -1894,6 +1910,22 @@ function ABSync:ClearBackupActionBarDropdown()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   SetDeveloperTabVisibleState
+    Purpose:    Show/hide the developer tab based on input parameter.
+    Arguments:  makeVisible - boolean; true to show, false to hide
+-----------------------------------------------------------------------------]]
+function ABSync:SetDeveloperTabVisibleState(makeVisible)
+    local devTabButton = self:GetObjectName("TabButtonDeveloper")
+    if _G[devTabButton] then
+        if makeVisible then
+            _G[devTabButton]:Show()
+        else
+            _G[devTabButton]:Hide()
+        end
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
@@ -1912,13 +1944,28 @@ function ABSync:ShowUI(openDelaySeconds)
         ABSync:CreateMainFrame()
 
         -- create tab group
-        ABSync:CreateTabSystem(ActionBarSyncMainFrame)
+        ABSync:ProcessTabSystem(ActionBarSyncMainFrame)
 
         -- create content area
         ABSync:CreateContentFrame(ActionBarSyncMainFrame)
 
         -- show initial tab
         local tabKey = self:GetTab()
+
+        -- check on developer mode
+        if self:GetDevMode() == false then
+            -- hide developer tab button
+            self:SetDeveloperTabVisibleState(false)
+
+            -- if the current tab is developer then switch to introduction
+            if tabKey == "developer" then
+                tabKey = "introduction"
+                self:SetTab(tabKey)
+            end
+        else
+            -- show developer tab button
+            self:SetDeveloperTabVisibleState(true)
+        end
         --@debug@
         -- self:Print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
         --@end-debug@
@@ -1993,9 +2040,6 @@ function ABSync:ShowTabContent(tabKey)
         currentFrame = self:ProcessDeveloperFrame(ActionBarSyncMainFrameTabContent, tabKey)
     end
 
-    -- update tab buttons
-    self:UpdateTabButtons(tabKey)
-
     -- show new tab content frame
     if currentFrame then
         currentFrame:Show()
@@ -2014,7 +2058,9 @@ function ABSync:StoreFramePosition(frame)
     -- get frame name
     local frameName = frame:GetName()
     if not frameName then
-        self:Print("Error: Frame has no name, cannot store position.")
+        if self:GetDevMode() == true then
+            self:Print("Error: Frame has no name, cannot store position.")
+        end
         return
     end
 
@@ -2193,34 +2239,34 @@ end
     Function:   UpdateTabButtons
     Purpose:    Update the visual state of the tab buttons to reflect the active tab.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateTabButtons(tabKey)
-    local tabButtons = ABSync.uitabs["buttons"]
-    --@debug@
-    -- self:Print(("(UpdateTabButtons) Tab Key: %s"):format(tostring(tabKey)))
-    --@end-debug@
-    -- fetch the button ID for the current tabKey
-    local buttonID = self.uitabs["buttonref"][tabKey]
+-- function ABSync:UpdateTabButtons(tabKey)
+--     local tabButtons = ABSync.uitabs["buttons"]
+--     --@debug@
+--     -- self:Print(("(UpdateTabButtons) Tab Key: %s"):format(tostring(tabKey)))
+--     --@end-debug@
+--     -- fetch the button ID for the current tabKey
+--     local buttonID = self.uitabs["buttonref"][tabKey]
 
-    -- update visual states for all tabs
-    for j, btn in ipairs(tabButtons) do
-        --@debug@
-        -- self:Print(("(UpdateTabButtons) Processing Button ID: %d, Expected ID: %d"):format(btn:GetID(), buttonID))
-        --@end-debug@
-        if btn:GetID() == buttonID then
-            -- Active tab
-            PanelTemplates_SelectTab(btn)
-        else
-            -- Inactive tab
-            PanelTemplates_DeselectTab(btn)
-        end
-    end
-end
+--     -- update visual states for all tabs
+--     for j, btn in ipairs(tabButtons) do
+--         --@debug@
+--         -- self:Print(("(UpdateTabButtons) Processing Button ID: %d, Expected ID: %d"):format(btn:GetID(), buttonID))
+--         --@end-debug@
+--         if btn:GetID() == buttonID then
+--             -- Active tab
+--             PanelTemplates_SelectTab(btn)
+--         else
+--             -- Inactive tab
+--             PanelTemplates_DeselectTab(btn)
+--         end
+--     end
+-- end
 
 --[[---------------------------------------------------------------------------
-    Function:   CreateTabSystem
+    Function:   ProcessTabSystem
     Purpose:    Create a tab system at the bottom of the main frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateTabSystem(parent)
+function ABSync:ProcessTabSystem(parent)
     -- instantiate variable for the main tab frame
     local tabFrame = nil
 
@@ -2284,6 +2330,11 @@ function ABSync:CreateTabSystem(parent)
             -- if it already exists just reference it
             button = _G[tabButtonID]
         end
+
+        -- if this is the developer tab, hide it unless in dev mode
+        if tabKey == "developer" and ABSync:GetDevMode() == false then
+            button:Hide()
+        end
          
         -- position tabs horizontally with proper spacing for Collections style
         if tabIndex == 1 then
@@ -2304,7 +2355,7 @@ function ABSync:CreateTabSystem(parent)
     PanelTemplates_SetTab(tabFrame, 1)
 
     -- initialize first tab to users last, if not set to introduction (which is done in GetTab)
-    self:UpdateTabButtons()
+    -- self:UpdateTabButtons()
 
     -- assign buttons to addon global
     ABSync.uitabs["buttons"] = tabButtons
