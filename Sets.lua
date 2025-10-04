@@ -149,6 +149,26 @@ function ABSync:SetLastActionBar(value)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   SetLastActionBarUtilities
+    Purpose:    Set the last action bar for the Utilities tab for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetLastActionBarUtilities(value)
+    --@debug@
+    self:Print(("(SetLastActionBarUtilities) Setting last action bar to: %s for %s"):format(tostring(value), tostring(self.currentPlayerServerSpec)))
+    --@end-debug@
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar = "actionbar1"
+    end
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar = value
+end
+
+--[[---------------------------------------------------------------------------
     Function:   SetLastActionButton
     Purpose:    Set the last action button for the current character.
 -----------------------------------------------------------------------------]]
@@ -225,6 +245,40 @@ function ABSync:SetLastSynced(dttm)
     -- update db
     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = dttm
     return true
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetRestoreChoiceActionBar
+    Purpose:    Set the last selected action bar for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetRestoreChoiceActionBar(value)
+    if not value then
+        value = self.L["None"]
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    end
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetRestoreChoiceDateTime
+    Purpose:    Set the last selected backup date/time for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetRestoreChoiceDateTime(value)
+    if not value then
+        value = self.L["None"]
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    end
+    ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = value
 end
 
 --[[---------------------------------------------------------------------------

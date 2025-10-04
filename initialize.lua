@@ -29,6 +29,13 @@ ABSync = {
 		checkbox = {},
 	},
 
+	-- track popups
+	popups = {
+		clearbarBackupConfirmation = "ACTIONBARSYNC_CLEARBAR_BACKUP_NAME",
+		clearbarSyncCancelled = "ACTIONBARSYNC_CLEARBAR_SYNC_CANCELLED",
+		clearBarInvalidBarID = "ACTIONBARSYNC_CLEARBAR_INVALID_BARID",
+	},
+
 	-- action bar keys and their order
     actionBarOrder = {
         "actionbar1",
@@ -90,6 +97,7 @@ ABSync = {
 			"last_sync_errors",
 			"lookup",
 			"backup",
+			"utilities",
 			"developer",
 		},
 		["varnames"] = {
@@ -99,6 +107,7 @@ ABSync = {
 			["last_sync_errors"] = "LastSyncErrors",
 			["lookup"] = "Lookup",
 			["backup"] = "Backup",
+			["utilities"] = "Utilities",
 			["developer"] = "Developer",
 		},
 		["buttons"] = {},

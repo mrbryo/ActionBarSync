@@ -37,20 +37,20 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshInfoLabel:GetStringHeight() + (padding * 2)
 
     -- create button to refresh mount db
-    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, "Refresh Mount DB", 150, function()
+    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, nil, "Refresh Mount DB", 150, function()
         ABSync:RefreshMountDB()
     end)
     mountDBRefreshButton:SetPoint("TOPLEFT", mountDBRefreshInfoLabel, "BOTTOMLEFT", 0, -padding)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshButton:GetHeight() + padding
 
     -- create button to reload the ui
-    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame,"Reload UI", 100, function()
+    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame, nil,"Reload UI", 100, function()
         C_UI.Reload()
     end)
     mountDBReloadButton:SetPoint("TOPLEFT", mountDBRefreshButton, "TOPRIGHT", padding, 0)
 
     -- create button to clear db for this char
-    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, "Clear Character Mount DB", 200, function()
+    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, nil, "Clear Character Mount DB", 200, function()
         ABSync:ClearMountDB()
     end)
     mountDBClearButton:SetPoint("TOPLEFT", mountDBRefreshButton, "BOTTOMLEFT", 0, -padding)

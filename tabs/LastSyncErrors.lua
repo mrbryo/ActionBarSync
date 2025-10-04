@@ -77,7 +77,7 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
             -- translate data if necessary
             colVal = data[colDef.key]
             if colDef.key == "type" then
-                colVal = ABSync.actionTypeLookup[colVal]
+                colVal = ABSync.actionTypeLookup.data[colVal]
             end
             -- print("ColVal: " .. tostring(colVal))
         end

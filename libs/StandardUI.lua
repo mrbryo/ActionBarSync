@@ -125,14 +125,14 @@ function ABSync:CreateContentFrame(parent)
         contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
         
         -- create close button
-        local closeButton = self:CreateStandardButton(footer, "Close", 80, function()
+        local closeButton = self:CreateStandardButton(footer, nil, "Close", 80, function()
             parent:Hide()
         end)
         local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
         closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
     
         -- add button to show action bar guide
-        local guideButton = self:CreateStandardButton(footer, "Show Action Bar Guide", 150, function()
+        local guideButton = self:CreateStandardButton(footer, nil, "Show Action Bar Guide", 150, function()
             self:CreateBarIdentificationFrame(parent)
         end)
         guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
@@ -194,8 +194,8 @@ end
                 onClick  - Callback function when the button is clicked
     Returns:    The created Button frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateStandardButton(parent, text, width, onClick)
-    local button = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
+function ABSync:CreateStandardButton(parent, buttonName, text, width, onClick)
+    local button = CreateFrame("Button", buttonName, parent, "GameMenuButtonTemplate")
     button:SetSize(width or 120, 22)
     button:SetText(text)
     button:SetScript("OnClick", onClick)
@@ -305,14 +305,20 @@ end
                 onSelectionChanged - Callback function when the selection changes
     Returns:    The created Dropdown frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
+function ABSync:CreateDropdown(parent, itemOrder, items, initialValue, frameName, onChange)
     -- create dropdown and set it up
     local dropdown = CreateFrame("DropdownButton", frameName, parent, "WowStyle1DropdownTemplate")
     
     -- store dropdown state
     dropdown.selectedValue = initialValue or ""
-    dropdown.selectedText = items[initialValue] or ""
-    dropdown.items = items
+    if items == nil then
+        dropdown.selectedText = itemOrder[initialValue] or ""
+        dropdown.items = itemOrder
+    else
+        dropdown.selectedText = items[initialValue] or ""
+        dropdown.items = items
+    end
+    dropdown.itemOrder = itemOrder
     
     -- external function; change selected value
     local function SetSelectedValue(key)
@@ -322,6 +328,9 @@ function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
         if dropdown.items[key] then
             dropdown.selectedValue = key
             dropdown.selectedText = dropdown.items[key] or ""
+        elseif dropdown.items[key] == nil then
+            dropdown.selectedValue = key
+            dropdown.selectedText = key
         else
             dropdown.selectedValue = ""
             dropdown.selectedText = ""
@@ -339,8 +348,15 @@ function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
     -- function to build the dropdown menu from the items parameter
     local function GeneratorFunction(dropdown, rootDescription)
         -- add buttons for each item
-        for key, value in pairs(dropdown.items) do
-            rootDescription:CreateRadio(value, IsSelectedValue, SetSelectedValue, key)
+        -- for key, value in pairs(dropdown.items) do
+        for key, value in pairs(dropdown.itemOrder) do
+            local radioValue = dropdown.items[value]
+            local radioKey = value
+            if items == nil then
+                radioValue = value
+                radioKey = key
+            end
+            rootDescription:CreateRadio(radioValue, IsSelectedValue, SetSelectedValue, radioKey)
         end
     end
 
@@ -348,11 +364,17 @@ function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
     dropdown:SetupMenu(GeneratorFunction)
 
     -- external function; update function
-    function dropdown:UpdateItems(newItems, newValue)
+    function dropdown:UpdateItems(newItemOrder, newItems, newValue)
         --@debug@
         -- print("(CreateDropdown) New Value:", newValue)
         --@end-debug@
-        self.items = newItems
+        if newItems == nil then
+            self.selectedText = newItemOrder[newValue] or ""
+            self.items = newItemOrder
+        else
+            self.selectedText = newItems[newValue] or ""
+            self.items = newItems
+        end
         -- dropdown:SetupMenu(GeneratorFunction)
         SetSelectedValue(newValue)
         dropdown:GenerateMenu()
@@ -364,7 +386,7 @@ function ABSync:CreateDropdown(parent, items, initialValue, frameName,onChange)
     end
 
     -- set initial value if provided
-    if initialValue and items[initialValue] then
+    if initialValue and dropdown.items[initialValue] then
         SetSelectedValue(initialValue)
     end
     

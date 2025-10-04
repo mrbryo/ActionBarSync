@@ -123,7 +123,13 @@ end
     Purpose:    Get the action bar values.
 -----------------------------------------------------------------------------]]
 function ABSync:GetBarValues()
-    return ActionBarSyncDB.global.actionBars
+    -- initialize temporary table
+    -- local lookups = {}
+    -- return ActionBarSyncDB.global.actionBars
+    return {
+        order = ABSync.actionBarOrder,
+        data = ABSync.barNameLanguageTranslate,
+    }
 end
 
 --[[---------------------------------------------------------------------------
@@ -155,20 +161,6 @@ function ABSync:GetBarToShare(barID, playerID)
         return false
     else
         return next(ActionBarSyncDB.global.barsToSync[barID][playerID]) ~= nil
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   IsSyncSet
-    Purpose:    Check if a specific bar is set to sync for a specific player.
------------------------------------------------------------------------------]]
-function ABSync:IsSyncSet(barID, playerID)
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
-        return false
-    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
-        return false
-    else
-        return ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] == playerID
     end
 end
 
@@ -283,7 +275,31 @@ end
     Purpose:    Get the last action bar for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetLastActionBar()
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.bar or ""
+    local returnVal = nil
+    if ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.bar then
+        returnVal = ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.bar
+    end
+    if returnVal == nil or returnVal == "" then
+        returnVal = "actionbar1"
+    end
+    return returnVal
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetLastActionBarUtilities
+    Purpose:    Get the last action bar for the Utilities tab for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetLastActionBarUtilities()
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar = "actionbar1"
+    end
+    return ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar or false
 end
 
 --[[---------------------------------------------------------------------------
@@ -401,6 +417,34 @@ function ABSync:GetRandom6DigitNumber()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetRestoreChoiceActionBar
+    Purpose:    Get the last selected action bar for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetRestoreChoiceActionBar()
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    end
+    return ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar or ABSync.L["None"]
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetRestoreChoiceDateTime
+    Purpose:    Get the last selected backup date/time for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetRestoreChoiceDateTime()
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    end
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    end
+    return ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm or ABSync.L["None"]
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetTab
     Purpose:    Get the current selected tab in the options.
 -----------------------------------------------------------------------------]]
@@ -417,5 +461,19 @@ function ABSync:GetTab()
     else
         self:Print(("Error Getting Tab for %s!"):format(tostring(self.currentPlayerServer)))
         return "introduction"
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   IsSyncSet
+    Purpose:    Check if a specific bar is set to sync for a specific player.
+-----------------------------------------------------------------------------]]
+function ABSync:IsSyncSet(barID, playerID)
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
+        return false
+    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
+        return false
+    else
+        return ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] == playerID
     end
 end

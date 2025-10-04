@@ -447,7 +447,7 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self.ui.label.lastScan:SetWidth(lastScanWidth)
 
     -- scan button
-    local scanButton = self:CreateStandardButton(regionContent, "Scan Now", 100, function(self, button, down)
+    local scanButton = self:CreateStandardButton(regionContent, nil, "Scan Now", 100, function(self, button, down)
         ABSync:UpdateCheckboxState(self, false) -- disable button while scanning
         ABSync:GetActionBarData()
         ABSync:ProcessSyncRegion("CreateShareSyncTopFrameContent:ScanButton")
@@ -469,14 +469,14 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self:UpdateLastSyncLabel()
 
     -- create button for manual sync
-    local manualSyncButton = self:CreateStandardButton(regionContent, "Sync Now", 100, function()
+    local manualSyncButton = self:CreateStandardButton(regionContent, nil, "Sync Now", 100, function()
         self:BeginSync()
     end)
     manualSyncButton:SetPoint("LEFT", self.ui.label.lastSync, "RIGHT", padding, 0)
     manualSyncButton:SetPoint("TOPLEFT", scanButton, "BOTTOMLEFT", 0, -buttonOffset)
 
     -- create button for manual mount filter reset
-    local manualMountFilterResetButton = self:CreateStandardButton(regionContent, "Reset Mount Filters", 160, function()
+    local manualMountFilterResetButton = self:CreateStandardButton(regionContent, nil, "Reset Mount Filters", 160, function()
         self:MountJournalFilterReset()
     end)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)

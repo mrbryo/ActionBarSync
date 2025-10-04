@@ -1,36 +1,9 @@
---[[---------------------------------------------------------------------------
-    Function:   GetSpellDetails
-    Purpose:    Retrieve spell information based on the spell ID.
+--[[ ------------------------------------------------------------------------
+	Title: 			ActionData.lua
+	Author: 		mrbryo
+	Create Date : 	11/16/2024 3:01:25 PM
+	Description: 	All functions for getting action bar button data.
 -----------------------------------------------------------------------------]]
-function ABSync:GetSpellDetails(spellID)
-    -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
-    local spellData = C_Spell.GetSpellInfo(spellID)
-    local spellName = spellData and spellData.name or ABSync.L["Unknown"]
-    local hasSpell = self:CharacterHasSpell(spellID)
-    local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
-    local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
-    local spellLink = C_Spell.GetSpellLink(spellID) or ABSync.L["Unknown"]
-    local baseID = C_Spell.GetBaseSpell(spellID) or -1
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            name = spellData and spellData.name or ABSync.L["Unknown"],
-            iconID = spellData and spellData.iconID or -1,
-            originalIconID = spellData and spellData.originalIconID or -1,
-            castTime = spellData and spellData.castTime or -1,
-            minRange = spellData and spellData.minRange or -1,
-            maxRange = spellData and spellData.maxRange or -1,
-            spellID = spellData and spellData.spellID or -1,
-            link = spellLink,
-            baseID = baseID,
-        },
-        name = spellName,
-        hasSpell = hasSpell,
-        isTalent = isTalentSpell,
-        isPvp = isPvpSpell,
-    }
-end
 
 --[[---------------------------------------------------------------------------
     Function:   CharacterHasSpell
@@ -60,31 +33,76 @@ function ABSync:CharacterHasSpell(spellID)
     end
 end
 
---[[ --------------------------------------------------------------------------
-    Function:   GetToyIDs
-    Purpose:    Retrieve the toy index by using the toy item ID...and then get the toy ID from that index. Seems like it is always the same ID either way? But now after doing this search toys are being added to the action bar correctly.
+--[[---------------------------------------------------------------------------
+    Function:   GetFlyoutDetails
+    Purpose:    Retrieve flyout information based on the flyout ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetToyIDs(toyID)
-    local count = C_ToyBox.GetNumFilteredToys()
-    local toyIndex = -1
-    local displayedToyID = -1
-    
-    for i = 1, count do
-        displayedToyID = C_ToyBox.GetToyFromIndex(i)
-        -- local toyData = C_ToyBox.GetToyFromIndex(i)
-
-        -- for k, v in pairs(toyData) do
-        --     print(("Toy Key: %s, Value: %s"):format(tostring(k), tostring(v)))
-        -- end
-
-        if displayedToyID == toyID then
-            -- print("toy found - index: " .. i .. ", id: " .. displayedToyID)
-            toyIndex = i
-            break
-        end
+function ABSync:GetFlyoutDetails(flyoutID)
+    --@debug@
+    self:Print(("Getting details for Flyout ID: %s"):format(tostring(flyoutID)))
+    --@end-debug@
+    -- fetch blizzard flyout details
+    local flyoutResult = self:SafeWoWAPICall(GetFlyoutInfo, flyoutID)
+    local errorText = "No Error"
+    local flyoutName = ABSync.L["Unknown"]
+    local flyoutDescription = ABSync.L["Unknown"]
+    local numSlots = 0
+    local isKnown = ABSync.L["No"]
+    if not flyoutResult.success then
+        errorText = ("GetFlyoutInfo failed: %s"):format(flyoutResult.error)
+    else
+        -- parse results
+        flyoutName = select(1, flyoutResult.result)
+        flyoutDescription = select(2, flyoutResult.result)
+        numSlots = select(3, flyoutResult.result)
+        isKnown = select(4, flyoutResult.result)
     end
 
-    return { id = displayedToyID, index = toyIndex }
+    -- fetch blizzard flyout details by slot
+    -- self:Print(("Flyout ID: %s, Name: %s, Descr: %s, Error Text: %s"):format(tostring(flyoutID), tostring(flyoutName), tostring(flyoutDescription), tostring(errorText)))
+
+    -- find the spell book slot for the flyout
+    local includeHidden, includeFlyouts, includeFutureSpells, includeOffSpec = true, true, true, true
+    local spellBookItemSlotIndex, spellBookItemSpellBank = C_SpellBook.FindSpellBookSlotForSpell(flyoutID, includeHidden, includeFlyouts, includeFutureSpells, includeOffSpec)
+
+    -- get spell book item link
+    -- local spellBookItemLink = C_SpellBook.GetSpellBookItemLink(spellBookItemSlotIndex, spellBookItemSpellBank)
+
+    -- get spellbook item info
+    -- local itemType, actionID, spellID = C_SpellBook.GetSpellBookItemType(spellBookItemSlotIndex, spellBookItemSpellBank)
+
+    -- get spell data
+    local spellData = C_Spell.GetSpellInfo(flyoutName)
+
+    -- if spellData and spellData.name then
+    --     print("Flyout Spell Name: " .. spellData.name)
+    -- else
+    --     print("Flyout Spell Name not found")
+    -- end
+
+    -- be sure values are not nil
+    spellBookItemSlotIndex = spellBookItemSlotIndex or -1
+    spellBookItemSpellBank = spellBookItemSpellBank or -1
+    -- --@debug@
+    -- self:Print(("Flyout: %s, Spell Book Slot Index: %s, Spell Book Slot Bank: %s"):format(tostring(flyoutID), tostring(spellBookItemSlotIndex), tostring(spellBookItemSpellBank)))
+    --@end-debug@
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            name = flyoutName or ABSync.L["Unknown"],
+            descr = flyoutDescription or ABSync.L["Unknown"],
+            numSlots = numSlots or 0,
+            isKnown = isKnown and ABSync.L["Yes"] or ABSync.L["No"],
+            spellData = spellData or {},
+            spellBook = {
+                slotIndex = spellBookItemSlotIndex,
+                spellBank = spellBookItemSpellBank,
+            },
+        },
+        flyoutID = flyoutID,
+        errorText = errorText
+    }
 end
 
 --[[---------------------------------------------------------------------------
@@ -92,9 +110,6 @@ end
     Purpose:    Retrieve item information based on the item ID.
 -----------------------------------------------------------------------------]]
 function ABSync:GetItemDetails(itemID)
-    -- set language variable
-    local L = self.L
-
     -- fetch blizzard item details
     local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemID)
 
@@ -115,8 +130,8 @@ function ABSync:GetItemDetails(itemID)
         -- get toy ID by using the toy index
         local toyInfo = self:GetToyIDs(itemID)
 
-        -- print(("toy found: %s (%s)"):format(tostring(toyName or L["Unknown"]), toyID))
-        checkItemName = toyName or L["Unknown"]
+        -- print(("toy found: %s (%s)"):format(tostring(toyName or ABSync.L["Unknown"]), toyID))
+        checkItemName = toyName or ABSync.L["Unknown"]
         isToy = true
         toyData = {
             id = toyID,
@@ -125,7 +140,7 @@ function ABSync:GetItemDetails(itemID)
             isFavorite = toyIsFavorite,
             hasFanfare = toyHasFanfare,
             quality = toyItemQuality,
-            usable = toyUsable and L["Yes"] or L["No"],
+            usable = toyUsable and ABSync.L["Yes"] or ABSync.L["No"],
             index = toyInfo.index or -1,
             toyID = toyInfo.id or -1,
         }
@@ -134,15 +149,15 @@ function ABSync:GetItemDetails(itemID)
     -- finally return the data collected
     return {
         blizData = {
-            itemName = itemName or L["Unknown"],
-            itemLink = itemLink or L["Unknown"],
-            itemQuality = itemQuality or L["Unknown"],
+            itemName = itemName or ABSync.L["Unknown"],
+            itemLink = itemLink or ABSync.L["Unknown"],
+            itemQuality = itemQuality or ABSync.L["Unknown"],
             itemLevel = itemLevel or -1,
             itemMinLevel = itemMinLevel or -1,
-            itemType = itemType or L["Unknown"],
-            itemSubType = itemSubType or L["Unknown"],
+            itemType = itemType or ABSync.L["Unknown"],
+            itemSubType = itemSubType or ABSync.L["Unknown"],
             itemStackCount = itemStackCount or -1,
-            itemEquipLoc = itemEquipLoc or L["Unknown"],
+            itemEquipLoc = itemEquipLoc or ABSync.L["Unknown"],
             itemTexture = itemTexture or -1,
             sellPrice = sellPrice or -1,
             classID = classID or -1,
@@ -157,7 +172,7 @@ function ABSync:GetItemDetails(itemID)
         isToy = isToy,
         toyData = toyData,
         userItemCount = itemCount,
-        hasItem = (itemCount > 0 or toyData.usable) and L["Yes"] or L["No"],
+        hasItem = (itemCount > 0 or toyData.usable) and ABSync.L["Yes"] or ABSync.L["No"],
     }
 end
 
@@ -189,63 +204,6 @@ function ABSync:GetMacroDetails(macroID)
         macroType = macroType,
         id = macroID,
         hasMacro = macroName and L["Yes"] or L["No"],
-    }
-end
-
---[[---------------------------------------------------------------------------
-    Function:   GetPetDetails
-    Purpose:    Retrieve pet information based on the pet ID.
------------------------------------------------------------------------------]]
-function ABSync:GetPetDetails(petID)
-    -- get language data
-    local L = self.L
-
-    -- requires a pet GUID
-    local allPetIDs = C_PetJournal.GetOwnedPetIDs()
-
-    -- was a valid pet id found
-    local petFound = false
-
-    -- see if petID is in the list
-    for _, ownedPetID in ipairs(allPetIDs) do
-        if ownedPetID == petID then
-            -- print(("Pet ID %s found!"):format(tostring(petID)))
-            petFound = true
-            break
-        end
-    end
-
-    -- get pet information
-    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable
-    if petFound == true then
-        speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
-    end
-
-    -- finally return the data collected
-    return {
-        blizData = {
-            speciesID = speciesID or -1,
-            customName = customName or L["Unknown"],
-            level = level or -1,
-            xp = xp or -1,
-            maxXp = maxXp or -1,
-            displayID = displayID or -1,
-            isFavorite = isFavorite or false,
-            name = name or L["Unknown"],
-            icon = icon or -1,
-            petType = petType or L["Unknown"],
-            creatureID = creatureID or -1,
-            sourceText = sourceText or L["Unknown"],
-            description = description or L["Unknown"],
-            isWild = isWild or false,
-            canBattle = canBattle or false,
-            isTradeable = isTradeable or false,
-            isUnique = isUnique or false,
-            obtainable = obtainable or false
-        },
-        petID = petID,
-        name = name or L["Unknown"],
-        hasPet = name and L["Yes"] or L["No"]
     }
 end
 
@@ -333,4 +291,122 @@ function ABSync:GetMountinfo(mountID)
         displayInfoLink = mountCreatureDisplayInfoLink,
         mountJournalIndex = mountJournalIndex or -1,
     }
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetPetDetails
+    Purpose:    Retrieve pet information based on the pet ID.
+-----------------------------------------------------------------------------]]
+function ABSync:GetPetDetails(petID)
+    -- get language data
+    local L = self.L
+
+    -- requires a pet GUID
+    local allPetIDs = C_PetJournal.GetOwnedPetIDs()
+
+    -- was a valid pet id found
+    local petFound = false
+
+    -- see if petID is in the list
+    for _, ownedPetID in ipairs(allPetIDs) do
+        if ownedPetID == petID then
+            -- print(("Pet ID %s found!"):format(tostring(petID)))
+            petFound = true
+            break
+        end
+    end
+
+    -- get pet information
+    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable
+    if petFound == true then
+        speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
+    end
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            speciesID = speciesID or -1,
+            customName = customName or L["Unknown"],
+            level = level or -1,
+            xp = xp or -1,
+            maxXp = maxXp or -1,
+            displayID = displayID or -1,
+            isFavorite = isFavorite or false,
+            name = name or L["Unknown"],
+            icon = icon or -1,
+            petType = petType or L["Unknown"],
+            creatureID = creatureID or -1,
+            sourceText = sourceText or L["Unknown"],
+            description = description or L["Unknown"],
+            isWild = isWild or false,
+            canBattle = canBattle or false,
+            isTradeable = isTradeable or false,
+            isUnique = isUnique or false,
+            obtainable = obtainable or false
+        },
+        petID = petID,
+        name = name or L["Unknown"],
+        hasPet = name and L["Yes"] or L["No"]
+    }
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetSpellDetails
+    Purpose:    Retrieve spell information based on the spell ID.
+-----------------------------------------------------------------------------]]
+function ABSync:GetSpellDetails(spellID)
+    -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, spellID
+    local spellData = C_Spell.GetSpellInfo(spellID)
+    local spellName = spellData and spellData.name or ABSync.L["Unknown"]
+    local hasSpell = self:CharacterHasSpell(spellID)
+    local isTalentSpell = C_Spell.IsClassTalentSpell(spellID) or false
+    local isPvpSpell = C_Spell.IsPvPTalentSpell(spellID) or false
+    local spellLink = C_Spell.GetSpellLink(spellID) or ABSync.L["Unknown"]
+    local baseID = C_Spell.GetBaseSpell(spellID) or -1
+
+    -- finally return the data collected
+    return {
+        blizData = {
+            name = spellData and spellData.name or ABSync.L["Unknown"],
+            iconID = spellData and spellData.iconID or -1,
+            originalIconID = spellData and spellData.originalIconID or -1,
+            castTime = spellData and spellData.castTime or -1,
+            minRange = spellData and spellData.minRange or -1,
+            maxRange = spellData and spellData.maxRange or -1,
+            spellID = spellData and spellData.spellID or -1,
+            link = spellLink,
+            baseID = baseID,
+        },
+        name = spellName,
+        hasSpell = hasSpell,
+        isTalent = isTalentSpell,
+        isPvp = isPvpSpell,
+    }
+end
+
+--[[ --------------------------------------------------------------------------
+    Function:   GetToyIDs
+    Purpose:    Retrieve the toy index by using the toy item ID...and then get the toy ID from that index. Seems like it is always the same ID either way? But now after doing this search toys are being added to the action bar correctly.
+-----------------------------------------------------------------------------]]
+function ABSync:GetToyIDs(toyID)
+    local count = C_ToyBox.GetNumFilteredToys()
+    local toyIndex = -1
+    local displayedToyID = -1
+    
+    for i = 1, count do
+        displayedToyID = C_ToyBox.GetToyFromIndex(i)
+        -- local toyData = C_ToyBox.GetToyFromIndex(i)
+
+        -- for k, v in pairs(toyData) do
+        --     print(("Toy Key: %s, Value: %s"):format(tostring(k), tostring(v)))
+        -- end
+
+        if displayedToyID == toyID then
+            -- print("toy found - index: " .. i .. ", id: " .. displayedToyID)
+            toyIndex = i
+            break
+        end
+    end
+
+    return { id = displayedToyID, index = toyIndex }
 end

@@ -13,7 +13,9 @@ function ABSync:LookupAction()
     local actionID = self:GetLastActionID()
 
     --@debug@
-    if self:GetDevMode() == true then self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID)) end
+    -- if self:GetDevMode() == true then
+        self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID))
+    -- end
     --@end-debug@
 
     -- instantiate lookup storage
@@ -180,7 +182,8 @@ function ABSync:CreateTopRegion(parent)
     actionNameLabel:SetWidth(colOneWidth)
 
     -- action type row; drop down for selecting action type
-    local actionTypeDropDown = self:CreateDropdown(rowType, self:GetActionTypeValues(), self:GetLastActionType(), self:GetObjectName("DropdownActionType"), function(key)
+    local actionTypeLookup = self:GetActionTypeValues()
+    local actionTypeDropDown = self:CreateDropdown(rowType, actionTypeLookup.order, actionTypeLookup.data, self:GetLastActionType(), self:GetObjectName("DropdownActionType"), function(key)
         ABSync:SetLastActionType(key)
     end)
     --@debug@
@@ -195,7 +198,7 @@ function ABSync:CreateTopRegion(parent)
     -- topFrameHeight = topFrameHeight + actionTypeDropDown:GetHeight() + padding
 
     -- action type row; button to perform the lookup
-    local lookupButton = self:CreateStandardButton(rowType, L["lookupbuttonname"], 75, function()
+    local lookupButton = self:CreateStandardButton(rowType, nil, L["lookupbuttonname"], 75, function()
         ABSync:LookupAction()
     end)
     lookupButton:SetPoint("LEFT", actionTypeDropDown, "RIGHT", padding, 0)
@@ -211,7 +214,9 @@ function ABSync:CreateTopRegion(parent)
     actionBarLabel:SetText(actionBarLabelText)
 
     -- action bar drop down
-    local actionBarDropDown = self:CreateDropdown(rowBar, self:GetBarValues(), self:GetLastActionBar(), self:GetObjectName("DropdownActionBar"), function(key)
+    local barValues = self:GetBarValues()
+    local lastBarAction = self:GetLastActionBar()
+    local actionBarDropDown = self:CreateDropdown(rowBar, barValues.order, barValues.data, lastBarAction, self:GetObjectName("DropdownActionBar"), function(key)
         ABSync:SetLastActionBar(key)
     end)
     actionBarDropDown:SetWidth(controlWidth)
@@ -227,7 +232,8 @@ function ABSync:CreateTopRegion(parent)
     actionBtnLabel:SetText(actionBtnLabelText)
 
     -- action button drop down
-    local actionBtnDropDown = self:CreateDropdown(rowBtn, self:GetButtonValues(), self:GetLastActionButton(), self:GetObjectName("DropdownActionButton"), function(key)
+    local actionButtonValues = self:GetButtonValues()
+    local actionBtnDropDown = self:CreateDropdown(rowBtn, actionButtonValues, nil, self:GetLastActionButton(), self:GetObjectName("DropdownActionButton"), function(key)
         ABSync:SetLastActionButton(key)
     end)
     actionBtnDropDown:SetWidth(controlWidth)
@@ -236,13 +242,13 @@ function ABSync:CreateTopRegion(parent)
     --[[ place action button row ]]
 
     -- place action button
-    local applyActionButton = self:CreateStandardButton(rowTrigger, "Place Action", 100, function()
+    local applyActionButton = self:CreateStandardButton(rowTrigger, nil, "Place Action", 100, function()
         -- get stored values
         local actionID = ABSync:GetLastActionID()
         local actionType = ABSync:GetLastActionType()
         local actionBar = ABSync:GetLastActionBar()
         local actionButton = ABSync:GetLastActionButton()
-        ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     end)
     applyActionButton:SetPoint("LEFT", rowTrigger, "LEFT", 0, 0)
 
@@ -305,7 +311,7 @@ function ABSync:AddRow(parent, data, columns, offsetY, isHeader)
             -- translate data if necessary
             colVal = data[colDef.key]
             if colDef.key == "type" then
-                colVal = ABSync.actionTypeLookup[colVal]
+                colVal = ABSync.actionTypeLookup.data[colVal]
             end
             -- print("ColVal: " .. tostring(colVal))
         end
@@ -434,7 +440,6 @@ end
     Returns:    None
 -----------------------------------------------------------------------------]]
 function ABSync:ProcessLookupFrame(parent, tabKey)
-
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 

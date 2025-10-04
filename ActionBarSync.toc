@@ -36,6 +36,7 @@ tabs\ShareSync.lua
 tabs\LastSyncErrors.lua
 tabs\Lookup.lua
 tabs\Restore.lua
+tabs\Utilities.lua
 tabs\Developer.lua
 
 ## Libraries

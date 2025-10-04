@@ -1,3 +1,29 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			MountExtra.lua
+	Author: 		mrbryo
+	Create Date : 	11/16/2024 3:01:25 PM
+	Description: 	All functions for handling mount data in support of GetMountInfo in ActionData.lua.
+-----------------------------------------------------------------------------]]
+
+--[[---------------------------------------------------------------------------
+    Function:   ClearMountDB
+    Purpose:    Clear the mount database for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:ClearMountDB()
+    -- get playerID
+    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
+    local playerID = self:GetKeyPlayerServer(true)
+
+    -- set language variable
+    local L = self.L
+
+    -- clear the existing mount database
+    ActionBarSyncMountDB[playerID] = {}
+
+    -- notify user its done
+    self:Print("Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character.")
+end
+
 --[[---------------------------------------------------------------------------
     Function:   MountJournalFilterBackup
     Purpose:    Backup the current mount journal filter settings.
@@ -63,4 +89,67 @@ function ABSync:MountIDToOriginalIndex(mountID)
     end
 
     return nil
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   RefreshMountDB
+    Purpose:    For development purposes only! Refresh the mount database for the current player.
+-----------------------------------------------------------------------------]]
+function ABSync:RefreshMountDB()
+    -- get playerID
+    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
+    local playerID = self:GetKeyPlayerServer(true)
+
+    -- set language variable
+    local L = self.L
+
+    -- clear the existing mount database
+    ActionBarSyncMountDB[playerID] = {}
+
+    --[[ create sorted list of mount ID's ]]
+    
+    -- get all the mount id's
+    local mountLookup = C_MountJournal.GetMountIDs()
+
+    -- build table of mount ID's as keys and the index as the key's value
+    local reversed = {}
+    for journalIndex, journalMountID in pairs(mountLookup) do
+        reversed[journalIndex] = journalMountID
+    end
+
+    -- build a table of just mount ID's for sorting them
+    local keys = {}
+    for journalMountID in pairs(reversed) do
+        table.insert(keys, journalMountID)
+    end
+
+    -- sort the keys
+    table.sort(keys)
+
+    -- create sorted mountIDLookup table
+    local mountIDLookup = {}
+    for _, journalMountID in ipairs(keys) do
+        table.insert(mountIDLookup, reversed[journalMountID])
+    end
+
+    -- clear unused tables
+    wipe(reversed)
+    wipe(keys)
+
+    -- loop over sorted mount ID's
+    for journalMountID, journalIndex in pairs(mountIDLookup) do
+        -- get mount data
+        local mountInfo = self:GetMountinfo(journalMountID)
+
+        -- add index to mountInfo and the associated mount ID to confirm data from GetMountinfo aligns with the GetMountIDs function
+        mountInfo.journalIndex = journalIndex
+        mountInfo.journalMountID = journalMountID
+
+        -- add to table
+        table.insert(ActionBarSyncMountDB[playerID], mountInfo)
+        -- ActionBarSyncMountDB[playerID][tostring(journalMountID)] = mountInfo
+    end
+
+    -- notify user its done
+    self:Print("Mount DB Refreshed! Reload the UI by using this command: /reload")
 end

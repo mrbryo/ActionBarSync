@@ -7,14 +7,28 @@ function ABSync:LoadBackupActionBars(parent, backupKey)
     local found = false
     for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         if backupRow.dttm == backupKey then
-            -- loop over the action bars in the backup record and create a checkbox for each one
+            -- instantiate needed data
             local newData = {}
+            local dataAdded = false
+            local itemOrder = ABSync.actionBarOrder
+            local selectedItem = self:GetRestoreChoiceActionBar()
+
+            -- loop over the action bars in the backup record and create a checkbox for each one
             for actionBarName, _ in pairs(backupRow.data) do
                 newData[actionBarName] = actionBarName
+                dataAdded = true
+                print("Found Action Bar in Backup: " .. actionBarName)
+            end
+
+            -- if no data added then apply default value
+            if not dataAdded then
+                newData = {["none"] = "No Action Bars Backed Up"}
+                itemOrder = {"none"}
+                selectedItem = "none"
             end
 
             -- update list
-            self.ui.dropdown.actionBarSelection:UpdateItems(newData, ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar)
+            self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, newData, selectedItem)
 
             -- set found to true
             found = true
@@ -35,7 +49,8 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:ClearActionBarDropDown()
     local items = {["none"] = "No Action Bars Found"}
-    self.ui.dropdown.actionBarSelection:UpdateItems(items, "none")
+    local itemOrder = {"none"}
+    self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, items, "none")
 end
 
 --[[---------------------------------------------------------------------------
@@ -68,14 +83,14 @@ function ABSync:LoadBackups()
             -- if checked, load the action bars for this backup into the action bar selection scroll region
             if value == true then
                 -- track choice by character
-                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = backupRow.dttm
+                ABSync:SetRestoreChoiceDateTime(backupRow.dttm)
 
                 -- update the drop down with action bars for this backup
                 ABSync:LoadBackupActionBars(ABSync.ui.scroll.backups, backupRow.dttm)
             else
                 -- blank out selected backup
-                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.backupDttm = self.L["None"]
-                ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = self.L["None"]
+                ABSync:SetRestoreChoiceDateTime(ABSync.L["None"])
+                ABSync:SetRestoreChoiceActionBar(ABSync.L["None"])
 
                 -- clear dropdown and choice
                 ABSync:ClearActionBarDropDown()
@@ -169,12 +184,13 @@ function ABSync:CreateRestoreFrame(parent)
     dropdownLabel:SetText("Select Action Bar to Restore:")
 
     -- create drop down based on selected backup, initially it will have a fake value
-    -- local actionBarSelection = CreateDropdown(insetFrame, "Select an Action Bar to Restore", 150, nil)
     local items = {["none"] = "No Backups Selected"}
-    self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
+    local itemOrder = {"none"}
+    self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, itemOrder, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
         -- track choice by character
         if key ~= "none" and key ~= nil then
-            ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = key
+            ABSync:SetRestoreChoiceActionBar(key)
+            -- ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = key
             --@debug@
             -- print("(ActionBarDropdownOnClick) Selected Action Bar to Restore:", key)
             --@end-debug@
@@ -188,7 +204,7 @@ function ABSync:CreateRestoreFrame(parent)
     self.ui.dropdown.actionBarSelection:SetPoint("LEFT", dropdownLabel, "RIGHT", padding, 0)
 
     -- add button to trigger restore
-    local restoreButton = self:CreateStandardButton(insetFrame, "Restore", 100, function(self, button, down)        
+    local restoreButton = self:CreateStandardButton(insetFrame, nil, "Restore", 100, function(self, button, down)        
         ABSync:BeginRestore(self)
     end)
     restoreButton:SetPoint("TOPLEFT", dropdownLabel, "BOTTOMLEFT", 0, -(padding + dropdownOffset))

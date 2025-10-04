@@ -75,12 +75,24 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 		}
     }
     ABSync.actionTypeLookup = {
-		["spell"] = ABSync.L["spell"],
-		["item"] = ABSync.L["item"],
-		["macro"] = ABSync.L["macro"],
-		["summonpet"] = ABSync.L["summonpet"],
-		["summonmount"] = ABSync.L["summonmount"]
+        order = { "spell", "item", "macro", "summonpet", "summonmount", "flyout" },
+        data = {
+            ["spell"] = ABSync.L["Spell"],
+            ["item"] = ABSync.L["Item"],
+            ["macro"] = ABSync.L["Macro"],
+            ["summonpet"] = ABSync.L["Pet"],
+            ["summonmount"] = ABSync.L["Mount"],
+            ["flyout"] = ABSync.L["Flyout"]
+        }
     }
+    -- ABSync.actionTypeLookup = {
+	-- 	["spell"] = ABSync.L["Spell"],
+	-- 	["item"] = ABSync.L["Item"],
+	-- 	["macro"] = ABSync.L["Macro"],
+	-- 	["summonpet"] = ABSync.L["Pet"],
+	-- 	["summonmount"] = ABSync.L["Mount"],
+    --     ["flyout"] = ABSync.L["Flyout"]
+    -- }
     ABSync.uitabs["tabs"] = {
         ["about"] = ABSync.L["About"],
         ["introduction"] = ABSync.L["Introduction"],
@@ -88,6 +100,7 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["last_sync_errors"] = ABSync.L["Last Sync Errors"],
         ["lookup"] = ABSync.L["Lookup & Assign"],
         ["backup"] = ABSync.L["Backup/Restore"],
+        ["utilities"] = ABSync.L["Utilities"],
         ["developer"] = ABSync.L["Developer"],
     }
     ABSync.errorColumns = {
@@ -116,6 +129,201 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 	ABSync:UnregisterEvent("ADDON_LOADED")
 end)
 
+--[[---------------------------------------------------------------------------
+    Function:   BeginActionBarClear
+    Purpose:    Trigger a backup if user hits OK on the confirmation dialog, then clear the selected action bar.
+-----------------------------------------------------------------------------]]
+function ABSync:BeginActionBarClear()
+    -- disable button
+    local globalButtonName = self:GetObjectName("UtilitiesClearButton")
+    _G[globalButtonName]:Disable()
+
+    -- get bar to clear
+    local barID = self:GetLastActionBarUtilities()
+    
+    -- add dialog to let user know sync was cancelled
+    StaticPopupDialogs[self.popups.clearbarSyncCancelled] = {
+        text = self.L["Action Bar Clear has been cancelled."],
+        button1 = self.L["ok"],
+        timeout = 15,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+
+    -- get confirmation and backup name
+    StaticPopupDialogs[self.popups.clearbarBackupConfirmation] = {
+        text = self.L["Enter a name for this backup:"],
+        button1 = self.L["ok"],
+        button2 = self.L["cancel"],
+        hasEditBox = true,
+        maxLetters = 64,
+        OnAccept = function(self)
+            --@debug@
+            -- ABSync:Print("Backup Accepted...")
+            --@end-debug@
+            -- capture the name
+            local backupName = self.EditBox:GetText()
+            -- start the actual backup passing in needed data
+            local backupdttm = ABSync:TriggerBackup(backupName)
+            -- sync the bars
+            ABSync:ClearActionBar()
+        end, 
+        OnCancel = function(self)
+            StaticPopup_Show(self.popups.clearbarSyncCancelled)
+        end,
+        OnShow = function(self)
+            self.EditBox:SetText((ABSync.L["Clear %s"]):format(ABSync.barNameLanguageTranslate[barID]))
+            self.EditBox:SetFocus()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+    StaticPopup_Show(self.popups.clearbarBackupConfirmation)
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ClearActionBar
+    Purpose:    Clear the selected action bar by removing all action buttons.
+-----------------------------------------------------------------------------]]
+function ABSync:ClearActionBar()
+    -- get bar to clear
+    local barID = self:GetLastActionBarUtilities()
+
+    -- notify user if barID doesn't exist
+    if barID == false then
+        StaticPopupDialogs[self.popups.clearBarInvalidBarID] = {
+            text = self.L["Invalid Action Bar ID. Report this to the author."],
+            button1 = self.L["ok"],
+            timeout = 15,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+        StaticPopup_Show(self.popups.clearBarInvalidBarID)
+    else
+        -- loop over action bar button number
+        for _, buttonID in pairs(ActionBarSyncDB.global.actionButtonTranslation[barID]) do
+            print("Clear Button: " .. buttonID)
+            -- call function to remove a buttons action
+            self:RemoveButtonAction(buttonID)
+        end
+
+        -- enable button
+        local globalButtonName = self:GetObjectName("UtilitiesClearButton")
+        _G[globalButtonName]:Enable()
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   BeginRestore
+    Purpose:    Start the restore process for a single backup and action bar combination.
+-----------------------------------------------------------------------------]]
+function ABSync:BeginRestore(button)
+    -- disable button
+    button:Disable()
+
+    -- refresh current bar data
+    self:GetActionBarData()
+
+    -- trigger message
+    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar))
+
+    -- trigger the update with the backup date time and a true value for isRestore
+    self:UpdateActionBars(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm, true)
+
+    -- enable button
+    button:Enable()
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   BeginSync
+    Purpose:    Start the sync process.
+    Steps:      
+        1. Check if there is any bars selected to sync.
+        2. If no bars selected then show a dialog and stop processing.
+        3. If bars are selected, ask the user for a note. If they click OK proceed. Or stop if they click cancel.
+        4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
+-----------------------------------------------------------------------------]]
+function ABSync:BeginSync()
+    --@debug@
+    -- self:Print("BeginSync Called")
+    --@end-debug@
+    -- track testing
+    local barsToSync = false
+    
+    -- count entries
+    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
+        if syncOn ~= false then
+            barsToSync = true
+            break
+        end
+    end
+
+    -- if no data found, show a message and return
+    if not barsToSync then
+        -- add dialog to let user know they must select bars to sync first
+        StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
+            text = self.L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."],
+            button1 = self.L["ok"],
+            timeout = 15,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+
+        StaticPopup_Show("ACTIONBARSYNC_NO_SYNCBARS")
+
+    -- if data found, proceed with backup; ask user for backup note
+    else
+        -- add dialog to let user know sync was cancelled
+        StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
+            text = self.L["Action Bar Sync has been cancelled."],
+            button1 = self.L["ok"],
+            timeout = 15,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+
+        -- add dialog to ask for backup name
+        StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
+            text = self.L["Enter a name for this backup:"],
+            button1 = self.L["ok"],
+            button2 = self.L["cancel"],
+            hasEditBox = true,
+            maxLetters = 64,
+            OnAccept = function(self)
+                --@debug@
+                -- ABSync:Print("Backup Accepted...")
+                --@end-debug@
+                -- capture the name
+                local backupName = self.EditBox:GetText()
+                -- start the actual backup passing in needed data
+                local backupdttm = ABSync:TriggerBackup(backupName)
+
+                -- update last synced...though this should be done in the sync function after the sync is successful
+                ABSync:SetLastSynced(backupdttm)
+                
+                -- update the UI last synced label
+                ABSync:UpdateLastSyncLabel()
+                -- sync the bars
+                ABSync:UpdateActionBars(backupdttm)
+            end, 
+            OnCancel = function(self)
+                StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
+            end,
+            OnShow = function(self)
+                self.EditBox:SetText(ABSync.L["Default Name"])
+                self.EditBox:SetFocus()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+        StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
+    end
+end
 
 --[[---------------------------------------------------------------------------
     Function:   InstantiateDBChar
@@ -174,6 +382,11 @@ function ABSync:InstantiateDBChar(barID)
             bar = "",
             btn = "",
         }
+    end
+
+    -- character specific last action placement data
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement then
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = {}
     end
 
     -- character specific lookup history
@@ -326,57 +539,50 @@ end
     Purpose:    Get the action data for a specific action ID and type.
 -----------------------------------------------------------------------------]]
 function ABSync:GetActionData(actionID, actionType)
-    -- store results
-    local lookupInfo = {
-        data = {},
-        name = self.L["Unknown"],
-        has = self.L["No"]
-    }
+    --@debug@
+    -- self:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(actionID), tostring(actionType)))
+    --@end-debug@
+    -- instantiate a return table
+    local returnData = {}
 
+    -- process by type
     if actionType == "spell" then
         -- get spell details: data, name, hasSpell
-        lookupInfo.data = self:GetSpellDetails(actionID)
-
-        -- update details
-        lookupInfo.name = lookupInfo.data.name
-        lookupInfo.has = lookupInfo.data.hasSpell
+        returnData = self:GetSpellDetails(actionID)
     elseif actionType == "item" then
         -- get item details
-        lookupInfo.data = self:GetItemDetails(actionID)
-
-        -- update details
-        lookupInfo.name = lookupInfo.data.finalItemName
-        lookupInfo.has = lookupInfo.data.hasItem
+        returnData = self:GetItemDetails(actionID)
     elseif actionType == "macro" then
         -- get macro details
-        lookupInfo.data = self:GetMacroDetails(actionID)
-        
-        -- update details
-        lookupInfo.name = lookupInfo.data.blizData.name
-        lookupInfo.has = lookupInfo.data.hasMacro
+        returnData = self:GetMacroDetails(actionID)
     elseif actionType == "summonpet" then
         -- get pet data
-        lookupInfo.data = self:GetPetDetails(actionID)
-
-        -- update details
-        lookupInfo.name = lookupInfo.data.name
-        lookupInfo.has = lookupInfo.data.hasPet
+        returnData = self:GetPetDetails(actionID)
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
-        lookupInfo.data = self:GetMountinfo(actionID)
-
-        -- update name
-        lookupInfo.name = lookupInfo.data.name
-
-        -- get mount journal index
-        -- local mountJournalIndex = self:MountIDToOriginalIndex(mountInfo.mountID)
-
-        -- has mount
-        lookupInfo.has = lookupInfo.data.mountJournalIndex and "Yes" or "No"
+        returnData = self:GetMountinfo(actionID)
+    elseif actionType == "flyout" then
+        -- get flyout data
+        returnData = self:GetFlyoutDetails(actionID)
+    elseif actionType == nil then
+        -- leave as unknown since no action type of nil is assigned to the button which is valid
+    else
+        -- actually unknown action type, this addon doesn't know what to do with it!
+        -- add unknown action type property
+        returnData.unknownActionType = true
     end
 
-    -- finally return results
-    return lookupInfo
+    -- add additional details
+    returnData.parameters = {
+        actionID = actionID,
+        actionType = actionType
+    }
+    if not returnData.unknownActionType then
+        returnData.unknownActionType = false
+    end
+
+    -- finally return the data collected
+    return returnData
 end
 
 --[[---------------------------------------------------------------------------
@@ -480,59 +686,6 @@ function ABSync:ConfirmBar(barID)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   ShareBar
-    Purpose:    Set the bar to share for the current global db settings.
------------------------------------------------------------------------------]]
-function ABSync:ShareBar(barID, value, checkbox)
-    -- instantiate db to ensure barID structures exist
-    self:InstantiateDBGlobal(barID)
-
-    -- track if bar is found in profile.currentBarData
-    local barFound = self:ConfirmBar(barID)
-
-    -- if currentBarData is emtpy then let user know they must trigger a sync first
-    if barFound == false then
-        StaticPopupDialogs["ACTIONBARSYNC_NO_SCAN"] = {
-            text = (ABSync.L["actionbarsync_no_scan_text"]):format(barID),
-            button1 = ABSync.L["ok"],
-            button2 = ABSync.L["cancel"],
-            timeout = 0,
-            hideOnEscape = true,
-            preferredIndex = 2,
-            OnAccept = function(self)
-                StaticPopup_Hide("ACTIONBARSYNC_NO_SCAN")
-                ABSync:GetActionBarData()
-            end,
-        }
-        StaticPopup_Show("ACTIONBARSYNC_NO_SCAN")
-
-        -- uncheck the checkbox
-        if checkbox then
-            checkbox:SetChecked(false)
-        end
-
-        -- just return to cancel the rest of the function
-        return false
-    end
-
-    -- if the value is true, add the bar data to the buttonsToSync table under the barsToSync[barID] table
-    if value == true then
-        -- add the bar data
-        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
-    else
-        -- remove all the button data
-        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = {}
-    end
-
-    -- update the check boxes in the share area
-    ABSync:ProcessSyncRegion("ShareBar")
-
-    --@debug@
-    -- if self:GetDevMode() == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
-    --@end-debug@
-end
-
---[[---------------------------------------------------------------------------
     Function:   MarkBarToSync
     Purpose:    Update the db for current profile when the user changes the values in the options on which bars to sync.
 -----------------------------------------------------------------------------]]
@@ -589,160 +742,194 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
     -- translate action bar number into action bar name
-    actionBar = ActionBarSyncDB.global.actionBars[actionBar]
-
-    --@debug@
-    -- if self:GetDevMode() == true then self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton))) end
-    --@end-debug@
+    -- actionBar = ActionBarSyncDB.global.actionBars[actionBar]
 
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
     local buttonID = ActionBarSyncDB.global.actionButtonTranslation[actionBar][actionButton]
 
     -- get action details
-    local actionDetails = self:GetActionData(actionID, actionType)
+    local actionDetails = self:GetActionData(actionID, actionType, buttonID)
 
-    -- something picked up?
-    local pickedUp = false
+    --@debug@
+    -- if self:GetDevMode() == true then
+        self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s, ActionButtonID: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
+    -- end
+    --@end-debug@
 
     -- response
     local response = {
-        msg = "Not Picked Up - Unknown"
+        parameters = {
+            actionID = actionID,
+            actionType = actionType,
+            actionBar = actionBar,
+            actionButton = actionButton,
+        },
+        placement = {
+            buttonID = buttonID,
+            actionDetails = actionDetails,
+        },
+        msg = "Not Picked Up - Unknown",
+        pickedUp = false,
     }
 
     -- place action on bar based on type
     if actionType == "spell" then
         C_Spell.PickupSpell(actionID)
-        pickedUp = true
+        response.pickedUp = true
     elseif actionType == "item" then
         if actionDetails.data.userItemCount > 0 and actionDetails.data.isToy == false then
             C_Item.PickupItem(actionID)
-            pickedUp = true
+            response.pickedUp = true
             response.msg = "Picked Up"
         elseif actionDetails.data.isToy == true then
             C_ToyBox.PickupToyBoxItem(actionID)
-            pickedUp = true
+            response.pickedUp = true
             response.msg = "Picked Up"
         elseif actionDetails.data.userItemCount == 0 and actionDetails.data.isToy == false then
             response.msg = "Not Picked Up - Item not in inventory!"
         end
     elseif actionType == "macro" then
         PickupMacro(actionDetails.name)
-        pickedUp = true
+        response.pickedUp = true
+        response.msg = "Picked Up"
     elseif actionType == "summonpet" then
         C_PetJournal.PickupPet(actionID)
-        pickedUp = true
+        response.pickedUp = true
+        response.msg = "Picked Up"
     elseif actionType == "summonmount" then
-        C_MountJournal.Pickup(actionDetails.mountJournalIndex)
-        pickedUp = true
-    end
-
-    -- place action and clear the cursor
-    PlaceAction(tonumber(buttonID))
-    ClearCursor()
-end
-
---[[---------------------------------------------------------------------------
-    Function:   BeginRestore
-    Purpose:    Start the restore process for a single backup and action bar combination.
------------------------------------------------------------------------------]]
-function ABSync:BeginRestore(button)
-    -- disable button
-    button:Disable()
-
-    -- refresh current bar data
-    self:GetActionBarData()
-
-    -- trigger message
-    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar))
-
-    -- trigger the update with the backup date time and a true value for isRestore
-    self:UpdateActionBars(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm, true)
-
-    -- enable button
-    button:Enable()
-end
-
---[[---------------------------------------------------------------------------
-    Function:   BeginSync
-    Purpose:    Start the sync process.
-    Steps:      
-        1. Check if there is any bars selected to sync.
-        2. If no bars selected then show a dialog and stop processing.
-        3. If bars are selected, ask the user for a note. If they click OK proceed. Or stop if they click cancel.
-        4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
------------------------------------------------------------------------------]]
-function ABSync:BeginSync()
-    --@debug@
-    -- self:Print("BeginSync Called")
-    --@end-debug@
-    -- track testing
-    local barsToSync = false
-    
-    -- count entries
-    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
-        if syncOn ~= false then
-            barsToSync = true
-            break
+        print("Mount Journal Index: ", actionDetails.data.mountJournalIndex)
+        C_MountJournal.Pickup(actionDetails.data.mountJournalIndex)
+        response.pickedUp = true
+        response.msg = "Picked Up"
+    elseif actionType == "flyout" then
+        if actionDetails.data.blizData.spellBook.slotIndex and actionDetails.data.blizData.spellBook.slotIndex > 0 then
+            PickupSpellBookItem(actionDetails.data.blizData.spellBook.slotIndex, actionDetails.data.blizData.spellBook.spellBank)
+            response.pickedUp = true
+            response.msg = "Picked Up"
+            response.method = "From Spell Book"
+        else
+            if actionDetails.data.blizData.name then
+                C_Spell.PickupSpell(actionDetails.data.blizData.name)
+                response.pickedUp = true
+                response.msg = "Picked Up"
+                response.method = "As a Spell (Flyout Name)"
+            elseif actionDetails.data.flyoutID then
+                C_Spell.PickupSpell(actionDetails.data.flyoutID)
+                response.pickedUp = true
+                response.msg = "Picked Up"
+                response.method = "As a Spell (Flyout ID)"
+            else
+                response.msg = "Not Picked Up - Flyout Name and ID was Nil!"
+            end
         end
     end
 
-    -- if no data found, show a message and return
-    if not barsToSync then
-        -- add dialog to let user know they must select bars to sync first
-        StaticPopupDialogs["ACTIONBARSYNC_NO_SYNCBARS"] = {
-            text = self.L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."],
-            button1 = self.L["ok"],
-            timeout = 15,
-            whileDead = true,
-            hideOnEscape = true,
-            preferredIndex = 3,
+    -- place action and clear the cursor
+    if response.pickedUp == true then
+        -- get cursor details
+        local cursorType, cursorID = GetCursorInfo()
+        response.cursor = {
+            type = cursorType or ABSync.L["None"],
+            id = cursorID or -1,
         }
-
-        StaticPopup_Show("ACTIONBARSYNC_NO_SYNCBARS")
-
-    -- if data found, proceed with backup; ask user for backup note
-    else
-        -- add dialog to let user know sync was cancelled
-        StaticPopupDialogs["ACTIONBARSYNC_SYNC_CANCELLED"] = {
-            text = self.L["Action Bar Sync has been cancelled."],
-            button1 = self.L["ok"],
-            timeout = 15,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-
-        -- add dialog to ask for backup name
-        StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
-            text = self.L["Enter a name for this backup:"],
-            button1 = self.L["ok"],
-            button2 = self.L["cancel"],
-            hasEditBox = true,
-            maxLetters = 64,
-            OnAccept = function(self)
-                --@debug@
-                -- ABSync:Print("Backup Accepted...")
-                --@end-debug@
-                -- capture the name
-                local backupName = self.EditBox:GetText()
-                -- start the actual backup passing in needed data
-                local backupdttm = ABSync:TriggerBackup(backupName)
-                -- sync the bars
-                ABSync:UpdateActionBars(backupdttm)
-            end, 
-            OnCancel = function(self)
-                StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
-            end,
-            OnShow = function(self)
-                self.EditBox:SetText(ABSync.L["Default Name"])
-                self.EditBox:SetFocus()
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-        StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
+        if cursorType then
+            PlaceAction(tonumber(buttonID))
+            ClearCursor()
+        else
+            response.pickedUp = false
+            response.msg = "Not Placed - Cursor Empty!"
+        end
     end
+
+    -- return response
+    return response
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SafeWoWAPICall
+    Purpose:    Safely execute a WoW API call with error handling.
+    Arguments:  func - Function to call
+                ... - Arguments to pass to the function
+    Returns:    Table with success status, result, and error message
+-----------------------------------------------------------------------------]]
+function ABSync:SafeWoWAPICall(func, ...)
+    -- set language variable
+    local L = self.L
+    
+    local success, result = pcall(func, ...)
+    
+    if success then
+        return {
+            success = true,
+            result = result,
+            error = nil
+        }
+    else
+        --@debug@
+        if self:GetDevMode() == true then
+            self:Print(("API Error: %s"):format(tostring(result)))
+        end
+        --@end-debug@
+        
+        return {
+            success = false,
+            result = nil,
+            error = result or L["Unknown"]
+        }
+    end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   ShareBar
+    Purpose:    Set the bar to share for the current global db settings.
+-----------------------------------------------------------------------------]]
+function ABSync:ShareBar(barID, value, checkbox)
+    -- instantiate db to ensure barID structures exist
+    self:InstantiateDBGlobal(barID)
+
+    -- track if bar is found in profile.currentBarData
+    local barFound = self:ConfirmBar(barID)
+
+    -- if currentBarData is emtpy then let user know they must trigger a sync first
+    if barFound == false then
+        StaticPopupDialogs["ACTIONBARSYNC_NO_SCAN"] = {
+            text = (ABSync.L["actionbarsync_no_scan_text"]):format(barID),
+            button1 = ABSync.L["ok"],
+            button2 = ABSync.L["cancel"],
+            timeout = 0,
+            hideOnEscape = true,
+            preferredIndex = 2,
+            OnAccept = function(self)
+                StaticPopup_Hide("ACTIONBARSYNC_NO_SCAN")
+                ABSync:GetActionBarData()
+            end,
+        }
+        StaticPopup_Show("ACTIONBARSYNC_NO_SCAN")
+
+        -- uncheck the checkbox
+        if checkbox then
+            checkbox:SetChecked(false)
+        end
+
+        -- just return to cancel the rest of the function
+        return false
+    end
+
+    -- if the value is true, add the bar data to the buttonsToSync table under the barsToSync[barID] table
+    if value == true then
+        -- add the bar data
+        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
+    else
+        -- remove all the button data
+        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = {}
+    end
+
+    -- update the check boxes in the share area
+    ABSync:ProcessSyncRegion("ShareBar")
+
+    --@debug@
+    -- if self:GetDevMode() == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -758,10 +945,10 @@ function ABSync:TriggerBackup(note)
 
     -- set up backup timestamp
     local backupdttm = date("%Y%m%d%H%M%S")
-    local lastSyncedUpdated = self:SetLastSynced(backupdttm)
+    -- local lastSyncedUpdated = self:SetLastSynced(backupdttm)
     
     -- update the UI last synced label
-    ABSync:UpdateLastSyncLabel()
+    -- ABSync:UpdateLastSyncLabel()
 
     -- track any errors in the data
     local errors = {}
@@ -871,7 +1058,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     local differencesFound = false
 
     -- define what values to check
-    local checkValues = { "sourceID", "actionType", "subType" }
+    local checkValues = { "sourceIDString", "sourceIDNumber", "actionType", "subType" }
 
     -- determine differences
     if isRestore == false then
@@ -886,7 +1073,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                 for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID][sharedby]) do
                     -- loop over checkValues
                     for _, testit in ipairs(checkValues) do
-                        if buttonData[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID][testit] then
+                        if buttonData["getActionInfo"][testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID]["getActionInfo"][testit] then
                             differencesFound = true
                             table.insert(differences, {
                                 shared = ActionBarSyncDB.global.barsToSync[barID][sharedby][buttonID],
@@ -915,7 +1102,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                             -- self:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
                             --@end-debug@
                             -- compare values
-                            if buttonData[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID][testit] then
+                            if buttonData["getActionInfo"][testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID]["getActionInfo"][testit] then
                                 differencesFound = true
                                 table.insert(differences, {
                                     shared = buttonData,
@@ -1227,6 +1414,20 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
                 -- count mounts
                 mountCount = mountCount + 1
+            elseif err.type == "flyout" then
+                -- see if character knows the flyout action
+                if diffData.shared.blizData.isKnown == ABSync.L["Yes"] then
+                    -- set the action bar button to the flyout
+                    C_Spell.PickupSpell(err.id)
+                    PlaceAction(tonumber(err.buttonID))
+                    ClearCursor()
+
+                    -- button was updated
+                    buttonUpdated = true
+                else
+                    err["msg"] = self.L["unavailable"]
+                    table.insert(errors, err)
+                end
 
             -- proper response if action type is not recognized
             else
@@ -1310,207 +1511,27 @@ function ABSync:GetItemCount(id)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetActionButtonData
+    Function:   GetActionDataWithButtonName
     Purpose:    Retrieve action button data based on the action ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionButtonData(actionID, btnName)
+function ABSync:GetActionDataWithButtonName(actionID, btnName)
     -- get action type and ID information
     local actionType, infoID, subType = GetActionInfo(actionID)
 
-    -- instantiate the return table
-    local returnData = {
-        blizData = {},
+    -- fetch data with standard function
+    local actionDetails = self:GetActionData(actionID, actionType)
+
+    -- add in additional properties from this function
+    actionDetails.barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1
+    actionDetails.getActionInfo = {
         actionType = actionType or ABSync.L["Unknown"],
         subType = subType or ABSync.L["Unknown"],
-        actionID = actionID,
-        originalSourceID = infoID,
-        buttonID = buttonID,
-        btnName = btnName,
-        name = ABSync.L["Unknown"],
-        icon = -1,
-        sourceID = -1,
-        unknownActionType = false,
-
-        -- location in the action bar: 1-12
-        barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1,
+        sourceIDString = tostring(infoID) or ABSync.L["Unknown"],
+        sourceIDNumber = tonumber(infoID) or -1,
     }
 
-    -- get the name of the id based on action type
-    if actionType == "spell" then
-        -- get spell details: data, name, hasSpell
-        local spellInfo = self:GetSpellDetails(infoID)
-
-        --@debug@
-        -- for key, value in pairs(spellInfo) do
-        --     self:Print(("spellInfo Key: %s - Value Type: %s"):format(key, type(value)))
-        -- end
-        --@end-debug@
-
-        -- assign data
-        returnData.name = spellInfo.name
-        returnData.icon = spellInfo.blizData.icon
-        returnData.sourceID = spellInfo.blizData.spellID
-        returnData.blizData = spellInfo.blizData
-        returnData.hasSpell = spellInfo.hasSpell
-        returnData.isTalent = spellInfo.isTalent
-        returnData.isPvp = spellInfo.isPvp
-        returnData.link = spellInfo.blizData.link
-
-    -- process items
-    elseif actionType == "item" then
-        -- get item details
-        local itemInfo = self:GetItemDetails(infoID)
-
-        -- assign data
-        returnData.name = itemInfo.finalItemName
-        returnData.icon = itemInfo.blizData.itemTexture
-        returnData.sourceID = itemInfo.itemID
-        returnData.blizData = itemInfo.blizData
-        returnData.isToy = itemInfo.isToy
-        returnData.toyData = itemInfo.toyData
-        returnData.hasItem = itemInfo.hasItem
-
-    elseif actionType == "macro" then
-        -- get macro details
-        local macroInfo = self:GetMacroDetails(infoID)
-
-        -- assign data
-        returnData.name = macroInfo.blizData.name
-        returnData.icon = macroInfo.blizData.icon
-        returnData.body = macroInfo.blizData.body
-        returnData.sourceID = macroInfo.id
-        returnData.blizData = macroInfo.blizData
-        returnData.macroType = macroInfo.macroType
-        returnData.hasMacro = macroInfo.hasMacro
-
-    elseif actionType == "summonpet" then
-        -- get pet data
-        local petInfo = self:GetPetDetails(infoID)
-
-        -- assign data
-        returnData.name = petInfo.name
-        returnData.icon = petInfo.blizData.icon
-        returnData.blizData = petInfo.blizData
-        returnData.sourceID = petInfo.petID
-        returnData.hasPet = petInfo.hasPet
-
-    elseif actionType == "summonmount" then
-        -- get the mount spell name; see function details for why we get its spell name
-        local mountInfo = self:GetMountinfo(infoID)
-
-        -- assign data
-        returnData.name = mountInfo.name
-        returnData.icon = mountInfo.blizData.icon
-        returnData.sourceID = mountInfo.sourceID
-        returnData.blizData = mountInfo.blizData
-        returnData.displayIndex = mountInfo.displayIndex
-        returnData.mountID = mountInfo.mountID
-        returnData.displayIDs = mountInfo.displayIDs
-        returnData.extraInfo = mountInfo.extraInfo
-
-    -- action button is empty
-    elseif actionType == nil then
-        -- leave as unknown since no action is assigned to the button
-    else
-        -- actually unknown, this addon doesn't know what to do with it!
-        -- add unknown action type property
-        returnData.unknownActionType = true
-        self:Print((ABSync.L["Action Button '%s' has an unrecognized type of '%s'. Adding issue to Scan Errors and skipping...lots more text."]):format(btnName, tostring(actionType)))
-
-        -- add to scan errors
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].scanErrors = {
-            actionID = actionID,
-            btnName = btnName,
-            actionType = actionType,
-            infoID = infoID,
-            subType = subType
-        }
-    end
-
     -- finally return the data
-    return returnData
-end
-
---[[---------------------------------------------------------------------------
-    Function:   RefreshMountDB
-    Purpose:    For development purposes only! Refresh the mount database for the current player.
------------------------------------------------------------------------------]]
-function ABSync:RefreshMountDB()
-    -- get playerID
-    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
-    local playerID = self:GetKeyPlayerServer(true)
-
-    -- set language variable
-    local L = self.L
-
-    -- clear the existing mount database
-    ActionBarSyncMountDB[playerID] = {}
-
-    --[[ create sorted list of mount ID's ]]
-    
-    -- get all the mount id's
-    local mountLookup = C_MountJournal.GetMountIDs()
-
-    -- build table of mount ID's as keys and the index as the key's value
-    local reversed = {}
-    for journalIndex, journalMountID in pairs(mountLookup) do
-        reversed[journalIndex] = journalMountID
-    end
-
-    -- build a table of just mount ID's for sorting them
-    local keys = {}
-    for journalMountID in pairs(reversed) do
-        table.insert(keys, journalMountID)
-    end
-
-    -- sort the keys
-    table.sort(keys)
-
-    -- create sorted mountIDLookup table
-    local mountIDLookup = {}
-    for _, journalMountID in ipairs(keys) do
-        table.insert(mountIDLookup, reversed[journalMountID])
-    end
-
-    -- clear unused tables
-    wipe(reversed)
-    wipe(keys)
-
-    -- loop over sorted mount ID's
-    for journalMountID, journalIndex in pairs(mountIDLookup) do
-        -- get mount data
-        local mountInfo = self:GetMountinfo(journalMountID)
-
-        -- add index to mountInfo and the associated mount ID to confirm data from GetMountinfo aligns with the GetMountIDs function
-        mountInfo.journalIndex = journalIndex
-        mountInfo.journalMountID = journalMountID
-
-        -- add to table
-        table.insert(ActionBarSyncMountDB[playerID], mountInfo)
-        -- ActionBarSyncMountDB[playerID][tostring(journalMountID)] = mountInfo
-    end
-
-    -- notify user its done
-    self:Print("Mount DB Refreshed! Reload the UI by using this command: /reload")
-end
-
---[[---------------------------------------------------------------------------
-    Function:   ClearMountDB
-    Purpose:    Clear the mount database for the current character.
------------------------------------------------------------------------------]]
-function ABSync:ClearMountDB()
-    -- get playerID
-    -- no need to include spec in playerID for mount db since the mounts are not spec-specific
-    local playerID = self:GetKeyPlayerServer(true)
-
-    -- set language variable
-    local L = self.L
-
-    -- clear the existing mount database
-    ActionBarSyncMountDB[playerID] = {}
-
-    -- notify user its done
-    self:Print("Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character.")
+    return actionDetails
 end
 
 --[[---------------------------------------------------------------------------
@@ -1553,12 +1574,12 @@ function ABSync:GetActionBarData()
             local barID = ABSync.blizzardTranslate[blizzardBarName]
             local barName = self.barNameLanguageTranslate[barID] or ABSync.L["Unknown"]
             --@debug@
-            -- self:Print(("Bar Name after translation: %s"):format(blizzardBarName))
+            -- self:Print(("Bar ID: %s, Bar Name: %s, Blizzard Bar Name: %s"):format(barID, barName, blizzardBarName))
             --@end-debug@
 
             -- skip bar if unknown
             if barName == ABSync.L["Unknown"] then
-                -- self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
+                self:Print(("Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."):format(barName))
                 -- TODO: Need to log this as a scan error.
 
             -- continue if barname is known
@@ -1567,7 +1588,7 @@ function ABSync:GetActionBarData()
                 local actionID = btnData:GetPagedID()
 
                 -- process more data for info based on actionType
-                local buttonData = self:GetActionButtonData(actionID, btnName)
+                local buttonData = self:GetActionDataWithButtonName(actionID, btnName)
 
                 -- check if barID exists in actionBars
                 local barIDFound = false
@@ -1597,7 +1618,8 @@ function ABSync:GetActionBarData()
                 if not ActionBarSyncDB.global.actionButtonTranslation[barID] then
                     ActionBarSyncDB.global.actionButtonTranslation[barID] = {}
                 end
-                ActionBarSyncDB.global.actionButtonTranslation[barID][buttonData.barPosn] = buttonData.actionID
+                -- self:Print(("Mapping Bar ID: %s, Button Position: %s, Action ID: %s, Returned Action ID: %s"):format(barID, tostring(buttonData.barPosn), tostring(actionID), tostring(buttonData.parameters.actionID)))
+                ActionBarSyncDB.global.actionButtonTranslation[barID][buttonData.barPosn] = actionID
             end
         end
     end
@@ -2035,6 +2057,9 @@ function ABSync:ShowTabContent(tabKey)
     elseif tabKey == "backup" then
         -- tabs\Restore.lua
         currentFrame = self:ProcessBackupFrame(ActionBarSyncMainFrameTabContent, tabKey)
+    elseif tabKey == "utilities" then
+        -- tabs\Utilities.lua
+        currentFrame = self:ProcessUtilitiesFrame(ActionBarSyncMainFrameTabContent, tabKey)
     elseif tabKey == "developer" then
         -- tabs\Developer.lua
         currentFrame = self:ProcessDeveloperFrame(ActionBarSyncMainFrameTabContent, tabKey)
