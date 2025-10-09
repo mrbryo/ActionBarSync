@@ -203,7 +203,7 @@ function ABSync:ClearActionBar()
         StaticPopup_Show(self.popups.clearBarInvalidBarID)
     else
         -- loop over action bar button number
-        for _, buttonID in pairs(ActionBarSyncDB.global.actionButtonTranslation[barID]) do
+        for _, buttonID in pairs(ABSync.constants.actionButtonTranslation[barID]) do
             print("Clear Button: " .. buttonID)
             -- call function to remove a buttons action
             self:RemoveButtonAction(buttonID)
@@ -447,17 +447,12 @@ function ABSync:InstantiateDBGlobal(barID)
 
     -- action buttons; used to process action bars buttons in number order; probably should be global variable instead of stored in DB...fix later
     -- TODO: move to global addon variable
-    if not ActionBarSyncDB.global.actionButtons then
-        ActionBarSyncDB.global.actionButtons = {}
-        for i = 1, 12 do
-            table.insert(ActionBarSyncDB.global.actionButtons, i, tostring(i))
-        end
-    end
-
-    -- action button translation
-    if not ActionBarSyncDB.global.actionButtonTranslation then
-        ActionBarSyncDB.global.actionButtonTranslation = {}
-    end
+    -- if not ActionBarSyncDB.global.actionButtons then
+    --     ActionBarSyncDB.global.actionButtons = {}
+    --     for i = 1, 12 do
+    --         table.insert(ActionBarSyncDB.global.actionButtons, i, tostring(i))
+    --     end
+    -- end
 
     -- instantiate barsToSync if it doesn't exist
     if not ActionBarSyncDB.global.barsToSync then
@@ -465,9 +460,9 @@ function ABSync:InstantiateDBGlobal(barID)
     end
 
     -- instantiate bar translation for UI objects
-    if not ActionBarSyncDB.global.barNameTranslate then
-        ActionBarSyncDB.global.barNameTranslate = {}
-    end
+    -- if not ActionBarSyncDB.global.barNameTranslate then
+    --     ActionBarSyncDB.global.barNameTranslate = {}
+    -- end
 
     -- instantiate only if barID is passed
     if barID ~= nil then
@@ -478,7 +473,7 @@ function ABSync:InstantiateDBGlobal(barID)
 
         -- instantiate bar owner if it doesn't exist
         if not ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] then
-            ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = {}
+            ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = false
         end
     end
 end
@@ -538,9 +533,9 @@ end
     Function:   GetActionData
     Purpose:    Get the action data for a specific action ID and type.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionData(actionID, actionType)
+function ABSync:GetActionData(buttonActionID, actionType)
     --@debug@
-    -- self:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(actionID), tostring(actionType)))
+    -- self:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(buttonActionID), tostring(actionType)))
     --@end-debug@
     -- instantiate a return table
     local returnData = {}
@@ -548,22 +543,22 @@ function ABSync:GetActionData(actionID, actionType)
     -- process by type
     if actionType == "spell" then
         -- get spell details: data, name, hasSpell
-        returnData = self:GetSpellDetails(actionID)
+        returnData = self:GetSpellDetails(buttonActionID)
     elseif actionType == "item" then
         -- get item details
-        returnData = self:GetItemDetails(actionID)
+        returnData = self:GetItemDetails(buttonActionID)
     elseif actionType == "macro" then
         -- get macro details
-        returnData = self:GetMacroDetails(actionID)
+        returnData = self:GetMacroDetails(buttonActionID)
     elseif actionType == "summonpet" then
         -- get pet data
-        returnData = self:GetPetDetails(actionID)
+        returnData = self:GetPetDetails(buttonActionID)
     elseif actionType == "summonmount" then
         -- get the mount spell name; see function details for why we get its spell name
-        returnData = self:GetMountinfo(actionID)
+        returnData = self:GetMountinfo(buttonActionID)
     elseif actionType == "flyout" then
         -- get flyout data
-        returnData = self:GetFlyoutDetails(actionID)
+        returnData = self:GetFlyoutDetails(buttonActionID)
     elseif actionType == nil then
         -- leave as unknown since no action type of nil is assigned to the button which is valid
     else
@@ -574,11 +569,16 @@ function ABSync:GetActionData(actionID, actionType)
 
     -- add additional details
     returnData.parameters = {
-        actionID = actionID,
+        buttonActionID = buttonActionID,
         actionType = actionType
     }
     if not returnData.unknownActionType then
         returnData.unknownActionType = false
+    end
+
+    -- is blizData missing? add it
+    if not returnData.blizData then
+        returnData.blizData = {}
     end
 
     -- finally return the data collected
@@ -739,99 +739,209 @@ end
 --[[---------------------------------------------------------------------------
     Function:   PlaceActionOnBar
     Purpose:    Place a specific action on a specific action bar and button.
+    Parameters: 
+        buttonActionID - the action ID from Blizzard API for the action to place on the bar
+        actionType      - the type of action: spell, item, macro, summonpet, summonmount, flyout
+        actionBar       - the action bar to place the action on; ActionBar1, ActionBar2, etc.
+        actionButton    - the button number on the action bar to place the action on; 1 through max number of buttons
+        sharedAction    - optional parameter that is used when placing an action from a sync instead of the
+                          current character's action details
 -----------------------------------------------------------------------------]]
-function ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
+function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton, sharedAction)
     -- translate action bar number into action bar name
     -- actionBar = ActionBarSyncDB.global.actionBars[actionBar]
 
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
-    local buttonID = ActionBarSyncDB.global.actionButtonTranslation[actionBar][actionButton]
+    local buttonID = ABSync.constants.actionButtonTranslation[actionBar][actionButton]
+    --@debug@
+    -- if self:GetDevMode() == true then
+        -- self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
 
     -- get action details
-    local actionDetails = self:GetActionData(actionID, actionType, buttonID)
+    local actionDetails = self:GetActionData(buttonActionID, actionType, buttonID)
 
     --@debug@
     -- if self:GetDevMode() == true then
-        self:Print(("(%s) ActionID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s, ActionButtonID: %s"):format("PlaceActionOnBar", tostring(actionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
+        -- self:Print(("(%s) Action ID: %s, Action Type: %s, Action Bar: %s, Action Button: %s, Action Button ID: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
     -- end
     --@end-debug@
 
     -- response
     local response = {
         parameters = {
-            actionID = actionID,
+            buttonActionID = buttonActionID,
             actionType = actionType,
             actionBar = actionBar,
             actionButton = actionButton,
+            sharedAction = sharedAction or {},
         },
         placement = {
             buttonID = buttonID,
-            actionDetails = actionDetails,
         },
+        cursor = {
+            type = ABSync.L["Unknown"],
+            id = -1,
+        },
+        actionDetails = actionDetails,
+        -- actionDetailsOverride only indicates if an actionType overrode actionDetails with sharedAction data, actionDetails is still populated with current character data
+        actionDetailsOverride = false,
         msg = "Not Picked Up - Unknown",
         pickedUp = false,
     }
 
-    -- place action on bar based on type
+    -- check for valid buttonActionID
+    if sharedAction and sharedAction.parameters.buttonActionID <= 0 then
+        response.msg = "Not Picked Up - Invalid Shared Action ID!"
+        return response
+    else
+        if actionDetails.parameters.buttonActionID <= 0 then
+            response.msg = "Not Picked Up - Invalid Action ID!"
+            return response
+        end
+    end
+
+    --[[ ** place action on bar based on type ** ]]
+
+    --[[ spell - do not override with sharedAction, we need current details for the same spell to act on ]]
+
     if actionType == "spell" then
-        C_Spell.PickupSpell(actionID)
-        response.pickedUp = true
-    elseif actionType == "item" then
-        if actionDetails.data.userItemCount > 0 and actionDetails.data.isToy == false then
-            C_Item.PickupItem(actionID)
-            response.pickedUp = true
-            response.msg = "Picked Up"
-        elseif actionDetails.data.isToy == true then
-            C_ToyBox.PickupToyBoxItem(actionID)
-            response.pickedUp = true
-            response.msg = "Picked Up"
-        elseif actionDetails.data.userItemCount == 0 and actionDetails.data.isToy == false then
-            response.msg = "Not Picked Up - Item not in inventory!"
-        end
-    elseif actionType == "macro" then
-        PickupMacro(actionDetails.name)
-        response.pickedUp = true
-        response.msg = "Picked Up"
-    elseif actionType == "summonpet" then
-        C_PetJournal.PickupPet(actionID)
-        response.pickedUp = true
-        response.msg = "Picked Up"
-    elseif actionType == "summonmount" then
-        print("Mount Journal Index: ", actionDetails.data.mountJournalIndex)
-        C_MountJournal.Pickup(actionDetails.data.mountJournalIndex)
-        response.pickedUp = true
-        response.msg = "Picked Up"
-    elseif actionType == "flyout" then
-        if actionDetails.data.blizData.spellBook.slotIndex and actionDetails.data.blizData.spellBook.slotIndex > 0 then
-            PickupSpellBookItem(actionDetails.data.blizData.spellBook.slotIndex, actionDetails.data.blizData.spellBook.spellBank)
-            response.pickedUp = true
-            response.msg = "Picked Up"
-            response.method = "From Spell Book"
+        -- if hasSpell is no, set message as not picked up and spell unknown
+        if actionDetails.hasSpell == ABSync.L["No"] then
+            response.msg = "Not Picked Up - Spell not known!"
+
+        -- otherwise hasSpell is yes, pick it up
         else
-            if actionDetails.data.blizData.name then
-                C_Spell.PickupSpell(actionDetails.data.blizData.name)
-                response.pickedUp = true
-                response.msg = "Picked Up"
-                response.method = "As a Spell (Flyout Name)"
-            elseif actionDetails.data.flyoutID then
-                C_Spell.PickupSpell(actionDetails.data.flyoutID)
-                response.pickedUp = true
-                response.msg = "Picked Up"
-                response.method = "As a Spell (Flyout ID)"
-            else
-                response.msg = "Not Picked Up - Flyout Name and ID was Nil!"
+            -- track correct spellid
+            local spellID = sharedAction.parameters.buttonActionID
+
+            -- check for spell override with base spell ID
+            if actionDetails.overrideWithBaseID == true then
+                spellID = actionDetails.blizData.baseID
             end
+
+            -- pickup the spell
+            C_Spell.PickupSpell(spellID)
+            response.pickedUp = true
         end
+
+    --[[ item - do not override with sharedAction, we need current details for the same item to act on ]]
+
+    elseif actionType == "item" then
+        -- if user has a toy, pick it up as a toy
+        if actionDetails.isToy == true then
+            if actionDetails.has == ABSync.L["Yes"] then
+                C_ToyBox.PickupToyBoxItem(sharedAction.parameters.buttonActionID)
+                response.pickedUp = true
+                response.msg = "Picked Up"
+            else
+                response.msg = "Not Picked Up - Item is a toy but not usable by character!"
+            end
+
+        -- if not a toy, other checks needed
+        elseif actionDetails.userItemCount > 0 then
+            C_Item.PickupItem(sharedAction.parameters.buttonActionID)
+            response.pickedUp = true
+            response.msg = "Picked Up"
+        else
+            response.msg = "Not Picked Up - Item is not a toy and not in inventory!"
+        end
+
+    --[[ macro - macros have to be processed differently since they can be character specific or general (account wide) ]]
+
+    elseif actionType == "macro" then
+        -- get macro type if this is a shared action, if nil, then it will get the current action's macro type
+        local macroType = sharedAction.macroType or actionDetails.macroType
+
+        -- if shared action and the macro type is character specific, don't pick it up since it won't be the same macro
+        if sharedAction and macroType == ABSync.macroType.character then
+            response.msg = "Not Picked Up - Macro from sync is character specific!"
+
+        -- if shared action and the macro type is general (account wide), pick it up
+        elseif sharedAction and macroType == ABSync.macroType.general then
+            PickupMacro(sharedAction.blizData.name)
+            response.pickedUp = true
+            response.msg = "Picked Up - General Macro"
+
+        -- not shared action so pick up based on current action details for this character
+        elseif actionDetails.hasMacro == ABSync.L["Yes"] then
+            PickupMacro(actionDetails.blizData.name)
+            response.pickedUp = true
+            response.msg = "Picked Up - Not Shared Macro"
+        end
+
+    --[[ summonpet - do not override with sharedAction, we need current details for the same pet to act on ]]
+
+    elseif actionType == "summonpet" then
+        if actionDetails.hasPet == ABSync.L["No"] then
+            response.msg = "Not Picked Up - Pet not known!"
+        else
+            -- pickup the pet
+            C_PetJournal.PickupPet(sharedAction.parameters.buttonActionID)
+            response.pickedUp = true
+            response.msg = "Picked Up"
+        end
+
+    --[[ summonmount ]]
+
+    elseif actionType == "summonmount" then
+        if actionDetails.mountJournalIndex >= 0 then
+            --@debug@
+            if self:GetDevMode() == true then print("Mount Journal Index: ", actionDetails.mountJournalIndex) end
+            --@end-debug@
+            C_MountJournal.Pickup(actionDetails.mountJournalIndex)
+            response.pickedUp = true
+            response.msg = "Picked Up"
+        else
+            response.msg = "Not Picked Up - Mount not found! May need to reset mount filters and sync again."
+        end
+
+    --[[ flyout ]]
+
+    elseif actionType == "flyout" then
+        if actionDetails.blizData.flyoutInfo.isKnown == ABSync.L["Yes"] then
+            response.msg = "Not Picked Up - Flyout not known!"
+            if actionDetails.blizData.spellBookSlot.index and actionDetails.blizData.spellBookSlot.index > 0 then
+                PickupSpellBookItem(actionDetails.blizData.spellBookSlot.index, actionDetails.blizData.spellBookSlot.bank)
+                response.pickedUp = true
+                response.msg = "Picked Up"
+                response.method = "From Spell Book"
+            else
+                if actionDetails.blizData.name then
+                    C_Spell.PickupSpell(actionDetails.blizData.name)
+                    response.pickedUp = true
+                    response.msg = "Picked Up"
+                    response.method = "As a Spell (Flyout Name)"
+                elseif actionDetails.flyoutID then
+                    C_Spell.PickupSpell(actionDetails.flyoutID)
+                    response.pickedUp = true
+                    response.msg = "Picked Up"
+                    response.method = "As a Spell (Flyout ID)"
+                else
+                    response.msg = "Not Picked Up - Flyout Name and ID was Nil!"
+                end
+            end
+        else
+            response.msg = "Not Picked Up - Flyout not known!"
+        end
+
+    --[[ unknown action type ]]
+
+    elseif actionType == self.L["Unknown"] then
+        -- call function to remove a buttons action
+        self:RemoveButtonAction(buttonID)
+    
+    -- unknown action type, can't do anything
+    else
+        response.msg = "Not Picked Up - Unknown Action Type!"
     end
 
     -- place action and clear the cursor
     if response.pickedUp == true then
         -- get cursor details
         local cursorType, cursorID = GetCursorInfo()
-        response.cursor = {
-            type = cursorType or ABSync.L["None"],
-            id = cursorID or -1,
-        }
+        response.cursor.type = cursorType or ABSync.L["Unknown"]
+        response.cursor.id = cursorID or -1
+
         if cursorType then
             PlaceAction(tonumber(buttonID))
             ClearCursor()
@@ -880,6 +990,24 @@ function ABSync:SafeWoWAPICall(func, ...)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   UpdateSharedData
+    Purpose:    Update the global shared data structure with the current character's bar data for any bars they are sharing.]]
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateSharedData()
+    -- loop over the barsToSync table from global
+    for barID, owners in pairs(ActionBarSyncDB.global.barsToSync) do
+        -- loop over the owners of the bar
+        for owner, buttonData in pairs(owners) do
+            -- if the owner is the current player and spec and the table isn't empty, copy from the currentBarData to the global barsToSync structure
+            if owner == self.currentPlayerServerSpec and buttonData ~= false then
+                -- copy the data
+                ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
+            end
+        end
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ShareBar
     Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
@@ -921,7 +1049,7 @@ function ABSync:ShareBar(barID, value, checkbox)
         ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
     else
         -- remove all the button data
-        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = {}
+        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = false
     end
 
     -- update the check boxes in the share area
@@ -1064,16 +1192,24 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     if isRestore == false then
         -- compare the global barsToSync data to the user's current action bar data
         -- loop over only the bars the character wants to sync
+        print(("Player Server Spec: %s"):format(tostring(self.currentPlayerServerSpec)))
         for barID, sharedby in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
+            --@debug@
+            if self:GetDevMode() == true then
+                self:Print(("Bar ID: %s, Shared By: %s"):format(barID, tostring(sharedby)))
+            end
+            --@end-debug@
             if sharedby ~= false then
                 --@debug@
-                -- self:Print(("Bar Name: %s, Shared By: %s, Button ID: %s"):format(barName, sharedby, tostring(buttonID)))
+                if self:GetDevMode() == true then
+                    self:Print(("Bar ID: %s, Shared By: %s, Button ID: %s"):format(barID, sharedby, tostring(buttonID)))
+                end
                 --@end-debug@
                 -- loop over the shared data
                 for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID][sharedby]) do
                     -- loop over checkValues
                     for _, testit in ipairs(checkValues) do
-                        if buttonData["getActionInfo"][testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID]["getActionInfo"][testit] then
+                        if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
                             differencesFound = true
                             table.insert(differences, {
                                 shared = ActionBarSyncDB.global.barsToSync[barID][sharedby][buttonID],
@@ -1102,7 +1238,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                             -- self:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
                             --@end-debug@
                             -- compare values
-                            if buttonData["getActionInfo"][testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID]["getActionInfo"][testit] then
+                            if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
                                 differencesFound = true
                                 table.insert(differences, {
                                     shared = buttonData,
@@ -1110,6 +1246,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                                     barID = barID,
                                     sharedBy = self.L["restore"],
                                 })
+                                break
                             end
                         end
                     end
@@ -1127,71 +1264,6 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
 
     return differences, differencesFound
 end
-
---[[function ABSync:ProcessSpell(inputButtonID, inputSpellID)
-    -- button ID is required
-    if not inputButtonID then
-        return {
-            msg = "Error: No Button ID",
-            success = false,
-            errors = true,
-        }
-    end
-
-    -- if spell ID is zero then get from difference record
-    if not inputSpellID then inputSpellID = 0 end
-
-    -- if inputSpellID is zero then get spellID from difference record
-    local actionID = 0
-    if inputSpellID == 0 then
-        
-    end
-
-    -- get action details
-    local actionDetails = self:GetActionData(actionID, "spell")
-
-
-
-
-    -- review base ID vs source ID and override with base ID
-    if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
-        err.id = diffData.shared.blizData.baseID
-        --@debug@
-        if self:GetDevMode() == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
-        --@end-debug@
-    end
-
-    -- verify if user has spell
-    local hasSpell = self:CharacterHasSpell(err.id)
-
-    -- report error if player does not have the spell
-    --@debug@
-    -- self:Print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
-    --@end-debug@
-    if hasSpell == self.L["No"] then
-        -- update message to show character doesn't have the spell
-        err["msg"] = self.L["unavailable"]
-
-        -- insert the error record into tracking table
-        table.insert(errors, err)
-
-    -- proceed if player has the spell
-    -- make sure we have a name that isn't unknown
-    elseif err.name ~= self.L["Unknown"] then
-        -- set the action bar button to the spell
-        C_Spell.PickupSpell(err.id)
-        PlaceAction(tonumber(err.buttonID))
-        ClearCursor()
-
-        -- button was updated
-        buttonUpdated = true
-
-    -- else should never trigger but set message to not found and add to tracking table
-    else
-        err["msg"] = self.L["notfound"]
-        table.insert(errors, err)
-    end
-end]]
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateActionBars
@@ -1224,6 +1296,9 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- track any errors
         local errors = {}
 
+        -- track any successes
+        local successes = {}
+
         -- track if a mount issue occurred
         local mountIssue = false
         local mountIssueCount = 0
@@ -1231,217 +1306,44 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
         -- loop over differences and apply changes
         for _, diffData in ipairs(differences) do
-            -- create readable button name
-            -- local buttonName = (ABSync.L["updateactionbars_button_name_template"]):format(diffData.barName, diffData.position)
+            -- process the button
+            local placementResponse = self:PlaceActionOnBar(diffData.shared.parameters.buttonActionID, diffData.shared.parameters.actionType, diffData.barID, diffData.shared.barPosn, diffData.shared)
 
-            -- instantiate standard error fields
-            local err = {
-                barName = ABSync.barNameLanguageTranslate[diffData.barID],
-                barPosn = diffData.shared.barPosn,
-                buttonID = diffData.shared.actionID,
-                type = diffData.shared.actionType,
-                name = diffData.shared.name,
-                id = diffData.shared.sourceID,
-                link = diffData.shared.blizData.link or ABSync.L["Unknown"],
-                sharedby = diffData.sharedBy,
-                msg = ""
-            }
+            -- instantiate variables
+            local err = false
 
-            --@debug@
-            -- if self:GetDevMode() == true then self:Print("Item Type: " .. tostring(diffData.shared.actionType)) end
-            --@end-debug@
-
-            -- track if something was updated to action bar
-            local buttonUpdated = false
-
-            --[[ process based on type ]]
-
-            -- if unknown then shared action bar has no button there, if current char has a button in that position remove it
-            if err.type == self.L["Unknown"] and diffData.current.name ~= self.L["Unknown"] then
-                -- call function to remove a buttons action
-                self:RemoveButtonAction(err.buttonID)
-
-                -- button was updated
-                buttonUpdated = true
-
-            elseif err.type == "spell" then
-                -- review base ID vs source ID and override with base ID
-                if diffData.shared.blizData.baseID and diffData.shared.blizData.baseID ~= diffData.shared.sourceID then
-                    err.id = diffData.shared.blizData.baseID
-                    --@debug@
-                    if self:GetDevMode() == true then self:Print(("(%s) Overriding SourceID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("UpdateActionBars", tostring(err.name), tostring(diffData.shared.sourceID), tostring(diffData.shared.blizData.baseID))) end
-                    --@end-debug@
-                end
-
-                -- verify if user has spell
-                local hasSpell = self:CharacterHasSpell(err.id)
-
-                -- report error if player does not have the spell
-                --@debug@
-                -- self:Print("Does player have spell? " .. tostring(hasSpell) .. ", Spell Name: " .. tostring(err.name) .. ", Spell ID: " .. tostring(err.id))
-                --@end-debug@
-                if hasSpell == self.L["No"] then
-                    -- update message to show character doesn't have the spell
-                    err["msg"] = self.L["unavailable"]
-
-                    -- insert the error record into tracking table
-                    table.insert(errors, err)
-
-                -- proceed if player has the spell
-                -- make sure we have a name that isn't unknown
-                elseif err.name ~= self.L["Unknown"] then
-                    -- set the action bar button to the spell
-                    C_Spell.PickupSpell(err.id)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-
-                -- else should never trigger but set message to not found and add to tracking table
-                else
-                    err["msg"] = self.L["notfound"]
-                    table.insert(errors, err)
-                end
-
-            elseif err.type == "item" then
-                -- does player have the item
-                local itemCount = self:GetItemCount(err.id)
-                --@debug@
-                -- self:Print(("Item Name: %s, Item ID: %s, Item Count: %s, Is Toy? %s"):format(tostring(err.name), tostring(err.id), tostring(itemCount), tostring(diffData.shared.isToy and "Yes" or "No")))
-                --@end-debug@
-                -- if the user has the item, then add it to their action bar as long as the name is not unknown
-                if itemCount > 0 then
-                    -- item exists
-                    if err.name ~= self.L["Unknown"] and diffData.shared.isToy == false then
-                        -- set the action bar button to the item
-                        C_Item.PickupItem(err.id)
-                        PlaceAction(tonumber(err.buttonID))
-                        ClearCursor()
-
-                        -- button was updated
-                        buttonUpdated = true
-
-                    -- else should never trigger but just in case set message to not found and add to tracking table
-                    else
-                        err["msg"] = self.L["notfound"]
-                        table.insert(errors, err)
-                    end
-
-                -- could be a toy
-                elseif diffData.shared.isToy == true then
-                    --@debug@
-                    -- self:Print("toy found: " .. err.name)
-                    --@end-debug@
-                    -- set the action bar button to the toy
-                    C_ToyBox.PickupToyBoxItem(err.id)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-
-                -- if player doesn't have item then log as error
-                else
-                    err["msg"] = self.L["notinbags"]
-                    table.insert(errors, err)
-                end
-            elseif err.type == "macro" then
-                -- parse out character and server
-                local sharedByWithOutSpec = self:GetSharedByWithOutSpec(diffData.sharedBy)
-                --@debug@
-                -- self:Print("Char and Server: " .. tostring(sharedByWithOutSpec) .. ", Player Name Formatted: " .. tostring(self:GetKeyPlayerServer(true)))
-                --@end-debug@
-                -- if the shared macro is character based then no way to get the details so don't place it as it will get this characters macro in the same position, basically wrong macro then
-                if diffData.shared.macroType == ABSync.macroType.character and sharedByWithOutSpec ~= self:GetKeyPlayerServer(true) then
-                    err["msg"] = self.L["charactermacro"]
-                    table.insert(errors, err)
-                
-                -- if macro name is found proceed
-                elseif err.name ~= self.L["Unknown"] then
-                    -- set the action bar button to the macro
-                    PickupMacro(err.name)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-
-                -- if name is unknown then check the id...use the id to place the action
-                elseif err.id ~= -1 then
-                    PickupMacro(err.id)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                -- if macro name or id is not found then record error
-                else
-                    err["msg"] = self.L["notfound"]
-                    table.insert(errors, err)
-                end
-            elseif err.type == "summonpet" then
-                -- if pet name is found proceed
-                if err.id ~= -1 then
-                    -- set the action bar button to the pet
-                    C_PetJournal.PickupPet(err.id)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-                else
-                    err["msg"] = self.L["notfound"]
-                    table.insert(errors, err)
-                end
-            elseif err.type == "summonmount" then
-                -- get mount location in journal
-                local mountJournalIndex = self:MountIDToOriginalIndex(diffData.shared.mountID)
-
-                if mountJournalIndex then
-                    C_MountJournal.Pickup(mountJournalIndex)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-                else
-                    err["msg"] = self.L["notfound"]
-                    table.insert(errors, err)
-
-                    -- update mount issue flag
-                    mountIssue = true
-                    mountIssueCount = mountIssueCount + 1
-                end
-
-                -- count mounts
+            -- count number of mounts processed
+            if diffData.shared.parameters.actionType == "summonmount" then
                 mountCount = mountCount + 1
-            elseif err.type == "flyout" then
-                -- see if character knows the flyout action
-                if diffData.shared.blizData.isKnown == ABSync.L["Yes"] then
-                    -- set the action bar button to the flyout
-                    C_Spell.PickupSpell(err.id)
-                    PlaceAction(tonumber(err.buttonID))
-                    ClearCursor()
-
-                    -- button was updated
-                    buttonUpdated = true
-                else
-                    err["msg"] = self.L["unavailable"]
-                    table.insert(errors, err)
-                end
-
-            -- proper response if action type is not recognized
-            else
-                -- add error about unknown item type
-                err["msg"] = self.L["unknownitemtype"]
-                table.insert(errors, err)
             end
 
-            -- remove if not found and button has an action
-            if diffData.current.sourceID ~= -1 and buttonUpdated == false then
-                PickupAction(tonumber(err.buttonID))
-                ClearCursor()
+            -- check if the action was not placed
+            if placementResponse.pickedUp == false then
+                -- update error record with data; if not false then there is an error to report
+                err = {
+                    barName = ABSync.barNameLanguageTranslate[diffData.barID],
+                    barPosn = diffData.shared.barPosn,
+                    buttonID = diffData.shared.buttonActionID,
+                    type = diffData.shared.blizData.actionInfo.actionType,
+                    name = diffData.shared.blizData.name,
+                    buttonActionID = diffData.shared.buttonActionID,
+                    link = diffData.shared.blizData.link or ABSync.L["Unknown"],
+                    sharedby = diffData.sharedBy,
+                    msg = placementResponse.msg
+                }
+                table.insert(errors, err)
+
+                -- report mount issue
+                if err.type == "summonmount" then
+                    mountIssueCount = mountIssueCount + 1
+                    mountIssue = true
+                end
+            else
+                table.insert(successes, placementResponse)
             end
         end
+
+        --[[ clean up error records; keep max 10; remove down to 9 then add the new one ]]
 
         -- count number of sync error records
         local syncErrorCount = 0
@@ -1457,35 +1359,34 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             syncErrorCount = syncErrorCount - 1
         end
 
-        -- store errors
-        if #errors > 0 then
-            --@debug@
-            if self:GetDevMode() == true then self:Print((ABSync.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
-            --@end-debug@
+        -- store results
+        --@debug@
+        if self:GetDevMode() == true then self:Print((ABSync.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
+        --@end-debug@
 
-            -- make sure syncErrors exists
-            if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
-                ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
-            end
-            
-            -- write to db
-            table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
-                key = backupdttm,
-                errors = errors
-            })
+        -- make sure syncErrors exists
+        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
+            ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
+        end
+        
+        -- write to db
+        table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
+            key = backupdttm,
+            errors = errors,
+            successes = successes,
+        })
 
-            -- make sure lastSyncErrorDttm exists
-            if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
-                ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = ""
-            end
-
-            -- update lastSyncErrorDttm
-            ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
-
-            -- update the UI
-            ABSync:ProcessErrorData()
+        -- make sure lastSyncErrorDttm exists
+        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
+            ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = ""
         end
 
+        -- update lastSyncErrorDttm
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
+
+        -- update the UI
+        ABSync:ProcessErrorData()
+        
         -- show popup if mount issue is true
         if mountIssue == true then
             StaticPopupDialogs["ACTIONBARSYNC_MOUNT_ISSUE"] = {
@@ -1502,33 +1403,32 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetItemCount
-    Purpose:    Retrieve the item count for a specific button ID.
------------------------------------------------------------------------------]]
-function ABSync:GetItemCount(id)
-    local itemCount = C_Item.GetItemCount(id)
-    return itemCount
-end
-
---[[---------------------------------------------------------------------------
     Function:   GetActionDataWithButtonName
     Purpose:    Retrieve action button data based on the action ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionDataWithButtonName(actionID, btnName)
-    -- get action type and ID information
-    local actionType, infoID, subType = GetActionInfo(actionID)
+function ABSync:GetActionDataWithButtonName(buttonActionID, btnName)
+    -- blizzard api; get action type, the buttons action ID (ex.: spellID, itemID, macroID, etc), and subType (ex.: spellbook, bag, etc)
+    local actionType, buttonActionID, subType = GetActionInfo(buttonActionID)
+    --@debug@
+    -- if actionType == "macro" then
+    --     print(("Action ID: '%s', Button Name: '%s', Action Type: '%s', Info ID: '%s', Sub Type: '%s'"):format(buttonActionID, btnName, actionType, buttonActionID, subType))
+    -- end
+    --@end-debug@
 
     -- fetch data with standard function
-    local actionDetails = self:GetActionData(actionID, actionType)
+    local actionDetails = self:GetActionData(buttonActionID, actionType)
 
     -- add in additional properties from this function
     actionDetails.barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1
-    actionDetails.getActionInfo = {
+    -- GetActionInfo
+    actionDetails.blizData.actionInfo = {
         actionType = actionType or ABSync.L["Unknown"],
         subType = subType or ABSync.L["Unknown"],
-        sourceIDString = tostring(infoID) or ABSync.L["Unknown"],
-        sourceIDNumber = tonumber(infoID) or -1,
+        sourceIDString = tostring(buttonActionID) or ABSync.L["Unknown"],
+        sourceIDNumber = tonumber(buttonActionID) or -1,
     }
+    actionDetails.parameters.buttonActionID = buttonActionID or -1
+    actionDetails.parameters.btnName = btnName or ABSync.L["Unknown"]
 
     -- finally return the data
     return actionDetails
@@ -1545,9 +1445,6 @@ function ABSync:GetActionBarData()
 
     -- reset actionBars
     ActionBarSyncDB.global.actionBars = {}
-
-    -- reset actionButtonTranslation
-    ActionBarSyncDB.global.actionButtonTranslation = {}
     
     -- reset currentBarData
     ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
@@ -1585,10 +1482,10 @@ function ABSync:GetActionBarData()
             -- continue if barname is known
             else
                 -- get action ID and type information
-                local actionID = btnData:GetPagedID()
+                local buttonActionPosn = btnData:GetPagedID()
 
                 -- process more data for info based on actionType
-                local buttonData = self:GetActionDataWithButtonName(actionID, btnName)
+                local buttonData = self:GetActionDataWithButtonName(buttonActionPosn, btnName)
 
                 -- check if barID exists in actionBars
                 local barIDFound = false
@@ -1612,14 +1509,8 @@ function ABSync:GetActionBarData()
                 end
 
                 -- insert the info table into the current action bar data
-                ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][tostring(actionID)] = buttonData
-
-                -- insert details into button translation table
-                if not ActionBarSyncDB.global.actionButtonTranslation[barID] then
-                    ActionBarSyncDB.global.actionButtonTranslation[barID] = {}
-                end
-                -- self:Print(("Mapping Bar ID: %s, Button Position: %s, Action ID: %s, Returned Action ID: %s"):format(barID, tostring(buttonData.barPosn), tostring(actionID), tostring(buttonData.parameters.actionID)))
-                ActionBarSyncDB.global.actionButtonTranslation[barID][buttonData.barPosn] = actionID
+                -- table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID], buttonActionID, buttonData)
+                ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonActionPosn] = buttonData
             end
         end
     end
@@ -1637,6 +1528,12 @@ function ABSync:GetActionBarData()
 
     -- update the last scan label in the UI
     ABSync:UpdateLastScanLabel()
+
+    -- update shared bar data
+    ABSync:UpdateSharedData()
+
+    -- check hard coded data
+    ABSync:DataChecks()
 
     -- let user know its done
     --@debug@
@@ -1690,13 +1587,11 @@ function ABSync:SlashCommand(text)
         return
     end
 
-    -- set language variable
-    local L = self.L
-
     -- get args
     for _, arg in ipairs(self:GetArgs(text)) do
         if arg:lower() == "sync" then
             self:BeginSync()
+        --@debug@
         elseif arg:lower() == "enablemodedeveloper" then
             if not self:GetDevMode() or self:GetDevMode() == false then
                 self:EnableDevelopment()
@@ -1709,6 +1604,12 @@ function ABSync:SlashCommand(text)
             end
         elseif arg:lower() == "fonts" then
             ABSync:CreateFontStringExamplesFrame():Show()
+        elseif arg:lower() == "dodiffs" then
+            self:Print("Doing Diffs...")
+            local isRestore = false
+            local dttm = date("%Y%m%d%H%M%S")
+            ABSync:GetActionBarDifferences(dttm, isRestore)
+        --@end-debug@
         else
             self:Print(("Unknown Command: %s"):format(arg))
         --@debug@
@@ -1727,7 +1628,32 @@ function ABSync:SlashCommand(text)
         --@end-debug@
         end
     end
+end
 
+--[[---------------------------------------------------------------------------
+    Function:   DataChecks
+    Purpose:    Perform data checks so the user knows if an issue should be raised.
+-----------------------------------------------------------------------------]]
+function ABSync:DataChecks()
+    --[[ generate data from current action bars ]]
+
+    -- reset actionButtonTranslation
+    ActionBarSyncDB.global.actionButtonTranslation = {}
+
+    -- insert details into button translation table
+    -- if not ActionBarSyncDB.global.actionButtonTranslation[barID] then
+    --     ActionBarSyncDB.global.actionButtonTranslation[barID] = {}
+    -- end
+    -- self:Print(("Mapping Bar ID: %s, Button Position: %s, Action ID: %s, Returned Action ID: %s"):format(barID, tostring(buttonData.barPosn), tostring(buttonActionID), tostring(buttonActionID)))
+    -- ActionBarSyncDB.global.actionButtonTranslation[barID][buttonData.barPosn] = buttonActionID
+    -- table.insert(ActionBarSyncDB.global.actionButtonTranslation[barID], buttonData.barPosn, buttonActionID)
+
+    --[[ check this data against the hard coded ABSync.constants.actionButtonTranslation variable ]]
+    -- TODO: write this function
+
+
+    -- clear out variables
+    ActionBarSyncDB.global.actionButtonTranslation = nil
 end
 
 --[[---------------------------------------------------------------------------
@@ -1776,11 +1702,15 @@ function ABSync:OnSpecializationChanged(event, ...)
     -- end
 
     -- update content
-    if ABSync:GetTab() == "sharesync" then
-        ABSync:UpdateLastScanLabel()
-        ABSync:UpdateLastSyncLabel()
-        ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
-        ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
+    if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
+        if ABSync:GetTab() == "sharesync" then
+            ABSync:UpdateLastScanLabel()
+            ABSync:UpdateLastSyncLabel()
+            ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
+            ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
+        elseif ABSync:GetTab() == "backup" then
+            ABSync:ProcessBackupListFrame()
+        end
     end
 end
 

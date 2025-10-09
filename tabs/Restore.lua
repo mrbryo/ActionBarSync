@@ -53,13 +53,25 @@ function ABSync:ClearActionBarDropDown()
     self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, items, "none")
 end
 
+function ABSync:ClearAllChildFrames(parent)
+    -- loop over all children and remove them
+    for _, child in ipairs({parent:GetChildren()}) do
+        child:Hide()
+        child:SetParent(nil)
+        child = nil
+    end
+end
+
 --[[---------------------------------------------------------------------------
-    Function:   LoadBackups
+    Function:   ProcessBackupListFrame
     Purpose:    Load the checkboxes for available backups into the scroll frame.
 -----------------------------------------------------------------------------]]
-function ABSync:LoadBackups()
+function ABSync:ProcessBackupListFrame()
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
+
+    -- remove all existing children from the scroll frame
+    ABSync:ClearAllChildFrames(self.ui.scroll.backups)
 
     -- add the available backups
     local trackInserts = 0
@@ -67,7 +79,7 @@ function ABSync:LoadBackups()
     for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         -- check for selected value
         local isChecked = false
-        if ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm == backupRow.dttm then
+        if self:GetRestoreChoiceDateTime() == backupRow.dttm then
             -- set the new checkbox to be checked since the dttm values match
             isChecked = true
 
@@ -75,52 +87,113 @@ function ABSync:LoadBackups()
             self:LoadBackupActionBars(self.ui.scroll.backups, backupRow.dttm)
         end
 
-        -- create a checkbox for each backup
-        local checkbox = self:CreateCheckbox(self.ui.scroll.backups, self:FormatDateString(backupRow.dttm), isChecked, self:GetObjectName("CheckboxBackup" .. backupRow.dttm), function(self, button, value)
-            -- clear all other checkboxes
-            ABSync:UncheckAllChildCheckboxes(ABSync.ui.scroll.backups, self)
-            
-            -- if checked, load the action bars for this backup into the action bar selection scroll region
-            if value == true then
-                -- track choice by character
-                ABSync:SetRestoreChoiceDateTime(backupRow.dttm)
+        -- instantiate variables
+        local checkbox = nil
+        local checkboxGroup = nil
+        local checkboxNote = nil
 
-                -- update the drop down with action bars for this backup
-                ABSync:LoadBackupActionBars(ABSync.ui.scroll.backups, backupRow.dttm)
+        -- get global name for checkbox and note grouping
+        local groupName = self:GetObjectName("CheckboxBackupGroup" .. backupRow.dttm)
+        
+        -- see if group frame already exists
+        if _G[groupName] then
+            -- if the group already exists, skip creating it again
+            checkboxGroup = _G[groupName]
+        else
+            -- create a checkbox group for each backup to allow only one selection at a time
+            checkboxGroup = CreateFrame("Frame", groupName, self.ui.scroll.backups)
+        end
+
+        -- position group frame
+        checkboxGroup:SetPoint("TOPLEFT", self.ui.scroll.backups, "TOPLEFT", 5, -offsetY)
+        checkboxGroup:SetPoint("RIGHT", self.ui.scroll.backups, "RIGHT", -5, 0)
+
+        -- get global name for the checkbox
+        local checkboxGlobalName = self:GetObjectName("CheckboxBackup" .. backupRow.dttm)
+        
+        -- check if the checkbox already exists, if not create it
+        if _G[checkboxGlobalName] then
+            -- if the checkbox already exists, skip creating it again
+            checkbox = _G[checkboxGlobalName]
+        else
+            -- create a checkbox for each backup
+            checkbox = self:CreateCheckbox(self.ui.scroll.backups, self:FormatDateString(backupRow.dttm), isChecked, self:GetObjectName("CheckboxBackup" .. backupRow.dttm), function(self, button, value)
+                -- clear all other checkboxes
+                ABSync:UncheckAllChildCheckboxes(ABSync.ui.scroll.backups, self)
+                
+                -- if checked, load the action bars for this backup into the action bar selection scroll region
+                if value == true then
+                    -- track choice by character
+                    ABSync:SetRestoreChoiceDateTime(backupRow.dttm)
+
+                    -- update the drop down with action bars for this backup
+                    ABSync:LoadBackupActionBars(ABSync.ui.scroll.backups, backupRow.dttm)
+                else
+                    -- blank out selected backup
+                    ABSync:SetRestoreChoiceDateTime(ABSync.L["None"])
+                    ABSync:SetRestoreChoiceActionBar(ABSync.L["None"])
+
+                    -- clear dropdown and choice
+                    ABSync:ClearActionBarDropDown()
+                end
+            end)
+
+            -- update location of checkbox
+            checkbox:SetPoint("TOPLEFT", checkboxGroup, "TOPLEFT", 0, 0)
+
+            -- get global name for the note
+            local noteGlobalName = self:GetObjectName("CheckboxBackupNote" .. backupRow.dttm)
+
+            -- check if the note already exists, if not create it
+            if _G[noteGlobalName] then
+                checkboxNote = _G[noteGlobalName]
             else
-                -- blank out selected backup
-                ABSync:SetRestoreChoiceDateTime(ABSync.L["None"])
-                ABSync:SetRestoreChoiceActionBar(ABSync.L["None"])
+                checkboxNote = checkboxGroup:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 
-                -- clear dropdown and choice
-                ABSync:ClearActionBarDropDown()
+                -- position the note
+                checkboxNote:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 20, 0)
+                checkboxNote:SetPoint("RIGHT", self.ui.scroll.backups, "RIGHT", -5, 0)
+                checkboxNote:SetJustifyH("LEFT")
+                checkboxNote:SetText(backupRow.note or "No Description")
+                checkboxNote:SetWordWrap(false)
             end
-        end)
-        checkbox:SetPoint("TOPLEFT", self.ui.scroll.backups, "TOPLEFT", 5, -offsetY)
 
-        -- add description below
-        local noteLabel = self.ui.scroll.backups:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        noteLabel:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 20, 0)
-        noteLabel:SetPoint("RIGHT", self.ui.scroll.backups, "RIGHT", -5, 0)
-        noteLabel:SetJustifyH("LEFT")
-        noteLabel:SetText(backupRow.note or "No Description")
-        noteLabel:SetWordWrap(false)
+            -- update height of group frame
+            checkboxGroup:SetHeight(checkbox:GetHeight() + checkboxNote:GetStringHeight())
+        end
 
-        -- checkbox:SetDescription(backupRow.note)
+        -- track checkbox groups
         trackInserts = trackInserts + 1
-        offsetY = offsetY + checkbox:GetHeight() + noteLabel:GetStringHeight() + padding
+
+        -- update offset for next insert
+        offsetY = offsetY + checkboxGroup:GetHeight() + padding
     end
 
     -- final adjustment to content height
     self.ui.scroll.backups:SetHeight(offsetY)
 
-    -- insert empty records if no records inserted
-    if trackInserts == 0 then
-        local noDataLabel = self.ui.scroll.backups:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    -- instantiate variables
+    local noDataLabel = nil
+
+    -- get global name for no data label
+    local noDataLabelName = self:GetObjectName("CheckboxBackupNoDataLabel")
+
+    -- check to see if label exists already
+    if _G[noDataLabelName] then
+        noDataLabel = _G[noDataLabelName]
+    else
+        noDataLabel = self.ui.scroll.backups:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         noDataLabel:SetPoint("TOPLEFT", self.ui.scroll.backups, "TOPLEFT", 5, -5)
         noDataLabel:SetPoint("RIGHT", self.ui.scroll.backups, "RIGHT", 0, 0)
         noDataLabel:SetJustifyH("LEFT")
         noDataLabel:SetText("No Backups Found")
+    end
+
+    -- insert empty records if no records inserted
+    if trackInserts == 0 then
+        noDataLabel:Show()
+    else
+        noDataLabel:Hide()
     end
 end
 
@@ -272,5 +345,5 @@ function ABSync:ProcessBackupFrame(parent, tabKey)
     local actionBarSelectContent = self:CreateRestoreFrame(bottomRightFrame)
 
     -- load content
-    self:LoadBackups()
+    self:ProcessBackupListFrame()
 end

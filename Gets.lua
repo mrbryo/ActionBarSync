@@ -137,7 +137,7 @@ end
     Purpose:    Get the action button values.
 -----------------------------------------------------------------------------]]
 function ABSync:GetButtonValues()
-    return ActionBarSyncDB.global.actionButtons
+    return ABSync.constants.actionButtons
 end
 
 --[[---------------------------------------------------------------------------
@@ -469,7 +469,9 @@ end
     Purpose:    Check if a specific bar is set to sync for a specific player.
 -----------------------------------------------------------------------------]]
 function ABSync:IsSyncSet(barID, playerID)
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
+    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
+        return false
+    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
         return false
     elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
         return false

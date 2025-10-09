@@ -10,24 +10,24 @@ function ABSync:LookupAction()
     local actionType = self:GetLastActionType()
     
     -- get the action ID
-    local actionID = self:GetLastActionID()
+    local buttonActionID = self:GetLastActionID()
 
     --@debug@
     -- if self:GetDevMode() == true then
-        self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, actionID))
+        self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
     -- end
     --@end-debug@
 
     -- instantiate lookup storage
     local lookupInfo = {
         type = actionType,
-        id = actionID,
+        id = buttonActionID,
         name = self.L["Unknown"],
         has = self.L["No"]
     }
 
     -- perform lookup based on type
-    local actionData = self:GetActionData(actionID, actionType)
+    local actionData = self:GetActionData(buttonActionID, actionType)
     if actionData then
         lookupInfo.name = actionData.name
         lookupInfo.has = actionData.has
@@ -244,11 +244,11 @@ function ABSync:CreateTopRegion(parent)
     -- place action button
     local applyActionButton = self:CreateStandardButton(rowTrigger, nil, "Place Action", 100, function()
         -- get stored values
-        local actionID = ABSync:GetLastActionID()
+        local buttonActionID = ABSync:GetLastActionID()
         local actionType = ABSync:GetLastActionType()
         local actionBar = ABSync:GetLastActionBar()
         local actionButton = ABSync:GetLastActionButton()
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = ABSync:PlaceActionOnBar(actionID, actionType, actionBar, actionButton)
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton)
     end)
     applyActionButton:SetPoint("LEFT", rowTrigger, "LEFT", 0, 0)
 

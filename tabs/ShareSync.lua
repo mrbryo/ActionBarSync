@@ -3,6 +3,10 @@
     Purpose:    Sync the action bar state when the checkbox value changes.
 -----------------------------------------------------------------------------]]
 function ABSync:SyncOnValueChanged(value, barID, playerID)
+    -- initialize database if needed
+    self:InstantiateDBChar(barID)
+
+    -- update database
     if value == true then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] = playerID
     else
