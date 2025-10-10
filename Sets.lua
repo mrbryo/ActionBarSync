@@ -250,6 +250,30 @@ function ABSync:SetLastSynced(dttm)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   SetPlacementErrorClearButton
+    Purpose:    Set the placement error clear button status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetPlacementErrorClearButton(value)
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+    print("HERE1")
+
+    if isSet == true then
+        ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton = value
+        --@debug@
+        -- if self:GetDevMode() == true then
+            self:Print(("Set Placement Error Clear Button for %s to %s"):format(tostring(self.currentPlayerServer), tostring(value)))
+        -- end
+        --@end-debug@
+    else
+        self:Print(("Error Setting Placement Error Clear Button to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServer)))
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   SetRestoreChoiceActionBar
     Purpose:    Set the last selected action bar for the current character.
 -----------------------------------------------------------------------------]]
@@ -281,6 +305,24 @@ function ABSync:SetRestoreChoiceDateTime(value)
         ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
     end
     ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = value
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   SetSyncOnLogon
+    Purpose:    Set the sync on logon status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:SetSyncOnLogon(value)
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon = value
+    else
+        self:Print(("Error Setting Sync On Logon to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServer)))
+    end
 end
 
 --[[---------------------------------------------------------------------------

@@ -396,6 +396,36 @@ function ABSync:GetObjectName(postfix)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetRemoveActionFrame
+    Purpose:    Create the remove action bar frame in the Utilities tab.
+-----------------------------------------------------------------------------]]
+function ABSync:GetPlacementErrorClearButton()
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return false end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        -- set default
+        if not ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton then
+            ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton = false
+        end
+        --@debug@
+        -- if self:GetDevMode() == true then
+            self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(self.currentPlayerServer), tostring(ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton)))
+        -- end
+        --@end-debug@
+
+        -- return the current value
+        return ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton
+    else
+        self:Print(("Error Getting Placement Error Clear Button for %s!"):format(tostring(self.currentPlayerServer)))
+        return false
+    end
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetRandom6DigitNumber
     Purpose:    Generate a random 6-digit number.
     Returns:    A random number between 100000 and 999999
@@ -446,6 +476,31 @@ function ABSync:GetRestoreChoiceDateTime()
         ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
     end
     return ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm or ABSync.L["None"]
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetSyncOnLogon
+    Purpose:    Get the sync on logon status for the current character.
+-----------------------------------------------------------------------------]]
+function ABSync:GetSyncOnLogon()
+    -- make sure the current player key is set
+    if not self.currentPlayerServer then return false end
+
+    -- make sure data structure exists
+    local isSet = self:SetupProfileDB()
+
+    if isSet == true then
+        -- set default if not set
+        if not ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon then
+            ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon = false
+        end
+
+        -- return the value
+        return ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon
+    else
+        self:Print(("Error Getting Sync on Logon for %s!"):format(tostring(self.currentPlayerServer)))
+        return false
+    end
 end
 
 --[[---------------------------------------------------------------------------

@@ -486,14 +486,14 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
     
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", ActionBarSyncDB.profile.autoResetMountFilters, function(checked)
-        ABSync.db.profile.autoResetMountFilters = checked
+    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", ABSync:GetAutoResetMountFilters(), nil, function(self, button, checked)
+        ABSync:SetAutoResetMountFilters(checked)
     end)
-    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ActionBarSyncDB.profile.checkOnLogon)
+    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ABSync:GetSyncOnLogon())
 
     -- create checkbox for sync on login
-    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", ActionBarSyncDB.profile.checkOnLogon, function(checked)
-        ABSync.db.profile.checkOnLogon = checked
+    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", ABSync:GetSyncOnLogon(), nil, function(self, button, checked)
+        ABSync:SetSyncOnLogon(checked)
         self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
     end)
     loginCheckBox:SetPoint("TOPLEFT", lastSyncTitle, "BOTTOMLEFT", 0, -offsetY)
@@ -501,6 +501,14 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
 
     -- set the autoMountFilterReset checkbox to the right of the loginCheckBox
     self.ui.checkbox.autoMountFilterReset:SetPoint("TOPLEFT", loginCheckBox, "TOPRIGHT", self:GetCheckboxOffsetY(loginCheckBox), 0)
+
+    -- create checkbox for removing action button if there is an error in placing the new one
+    self.ui.checkbox.removeActionButtonOnError = self:CreateCheckbox(regionContent, "On Placement Failure Remove Current Action Button", ABSync:GetPlacementErrorClearButton(), nil, function(self, button, checked)
+        print("SetPlacementErrorClearButton: " .. tostring(checked))
+        ABSync:SetPlacementErrorClearButton(checked)
+    end)
+    self.ui.checkbox.removeActionButtonOnError:SetPoint("TOPLEFT", loginCheckBox, "BOTTOMLEFT", 0, 0)
+    contentHeight = contentHeight + self.ui.checkbox.removeActionButtonOnError:GetHeight()
 
     -- add in offsetY for padding below last item
     contentHeight = contentHeight + offsetY
