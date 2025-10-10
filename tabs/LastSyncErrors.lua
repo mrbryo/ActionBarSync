@@ -114,7 +114,9 @@ function ABSync:ProcessErrorData()
         end
     end
     --@debug@
-    if self:GetDevMode() == true then self:Print(("Errors Exist: %s"):format(tostring(errorsExist))) end
+    -- if self:GetDevMode() == true then
+        self:Print(("Errors Exist: %s"):format(tostring(errorsExist)))
+    -- end
     --@end-debug@
 
     -- instantiate initial y offset
@@ -147,22 +149,59 @@ function ABSync:ProcessErrorData()
             sharedby        the player who shared the action
             buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
     ]]
+    
+    -- locate the correct record
+    local errorRecords = nil
     if errorsExist == true and ActionBarSyncErrorScrollContent then
+        -- loop over the error records
         for _, errorRcd in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
-            -- print("here1")
             -- continue to next row if key doesn't match
             if errorRcd.key == ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
-                -- print("here2")
+                errorRecords = errorRcd.errors
+                --@debug@
+                -- if self:GetDevMode() == true then
+                    -- self:Print(("Found %d error records for last sync error dated %s"):format(#errorRecords, tostring(errorRcd.key)))
+                -- end
+                --@end-debug@
+                break
+            end
+        end
+
+        -- process in action bar order
+        for _, barID in ipairs(ABSync.actionBarOrder) do
+            --@debug@
+            -- if self:GetDevMode() == true then
+                -- self:Print(("Processing errors for Action Bar: %s"):format(tostring(barID)))
+            -- end
+            --@end-debug@
+            -- process in button order
+            for _, barPosn in ipairs(ABSync.constants.actionButtons) do
+                --@debug@
+                -- if self:GetDevMode() == true then
+                    -- self:Print(("Processing errors for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                -- end
+                --@end-debug@
+                -- force barPosn to a number
+                barPosn = tonumber(barPosn)
+
                 -- loop over the rows
-                for _, errorRow in ipairs(errorRcd.errors) do
-                    -- print("here3")
-                    local rowHeight = self:AddErrorRow(ActionBarSyncErrorScrollContent, errorRow, ABSync.errorColumns, offsetY)
-                    offsetY = offsetY + rowHeight + padding
-                    -- local fakelabel = ActionBarSyncErrorScrollContent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-                    -- fakelabel:SetText("Fake Info")
-                    -- fakelabel:SetPoint("TOPLEFT", ActionBarSyncErrorScrollContent, "TOPLEFT", 0, 0)
-                    -- fakelabel:SetJustifyH("LEFT")
-                    -- fakelabel:SetWidth(200)
+                for _, errorRow in ipairs(errorRecords) do
+                    -- check the barID and button position
+                    if errorRow.barPosn == barPosn and errorRow.barID == barID then
+                        --@debug@
+                        -- if self:GetDevMode() == true then
+                            -- self:Print(("Adding error for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                        -- end
+                        --@end-debug@
+                        -- add the row
+                        local rowHeight = self:AddErrorRow(ActionBarSyncErrorScrollContent, errorRow, ABSync.errorColumns, offsetY)
+
+                        -- add the row height and padding to the offset
+                        offsetY = offsetY + rowHeight + padding
+
+                        -- exist loop to next button 
+                        break
+                    end
                 end
             end
         end

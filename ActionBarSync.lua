@@ -106,9 +106,9 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
     ABSync.errorColumns = {
         { name = "Bar Name", key = "barName", width = 0.10},        -- 10
         { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
-        { name = "Button ID", key = "buttonID", width = 0.05},      -- 20
-        { name = "Action Type", key = "type", width = 0.10},        -- 30
-        { name = "Action Name", key = "name", width = 0.25},        -- 55
+        { name = "Button ID", key = "buttonID", width = 0.10},      -- 25
+        { name = "Action Type", key = "type", width = 0.10},        -- 35
+        { name = "Action Name", key = "name", width = 0.20},        -- 55
         { name = "Action ID", key = "id", width = 0.05},            -- 60
         { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
         { name = "Message", key = "msg", width = 0.20}              -- 95
@@ -1364,6 +1364,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 -- update error record with data; if not false then there is an error to report
                 err = {
                     barName = ABSync.barNameLanguageTranslate[diffData.barID],
+                    barID = diffData.barID,
                     barPosn = diffData.shared.barPosn,
                     buttonID = diffData.shared.buttonActionID,
                     type = diffData.shared.blizData.actionInfo.actionType,
