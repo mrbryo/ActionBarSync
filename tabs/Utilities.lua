@@ -5,6 +5,12 @@
 	Description: 	Building the Utilities tab in the UI.
 -----------------------------------------------------------------------------]]
 
+--[[---------------------------------------------------------------------------
+    Function: 	AddRemoveAllActionButtonsByBar
+    Parameters: parent - the parent frame to attach this content to
+    Returns: 	none
+    Purpose: 	This function builds the UI components needed to remove all action buttons in a selected action bar.
+-----------------------------------------------------------------------------]]
 function ABSync:AddRemoveAllActionButtonsByBar(parent)
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding

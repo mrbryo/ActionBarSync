@@ -154,7 +154,9 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:SetLastActionBarUtilities(value)
     --@debug@
-    self:Print(("(SetLastActionBarUtilities) Setting last action bar to: %s for %s"):format(tostring(value), tostring(self.currentPlayerServerSpec)))
+    -- if self:GetDevMode() == true then
+        -- self:Print(("(SetLastActionBarUtilities) Setting last action bar to: %s for %s"):format(tostring(value), tostring(self.currentPlayerServerSpec)))
+    -- end
     --@end-debug@
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities = {}

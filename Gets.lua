@@ -421,6 +421,10 @@ end
     Purpose:    Get the last selected action bar for the current character.
 -----------------------------------------------------------------------------]]
 function ABSync:GetRestoreChoiceActionBar()
+    -- basic char initialization
+    self:InstantiateDBChar()
+
+    -- make sure restore structure exists
     if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
         ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
     end

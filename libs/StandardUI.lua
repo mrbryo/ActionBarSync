@@ -375,7 +375,7 @@ function ABSync:CreateDropdown(parent, itemOrder, items, initialValue, frameName
             self.selectedText = newItems[newValue] or ""
             self.items = newItems
         end
-        -- dropdown:SetupMenu(GeneratorFunction)
+        self.itemOrder = newItemOrder
         SetSelectedValue(newValue)
         dropdown:GenerateMenu()
     end

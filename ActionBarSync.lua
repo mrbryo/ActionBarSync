@@ -135,26 +135,26 @@ end)
 -----------------------------------------------------------------------------]]
 function ABSync:BeginActionBarClear()
     -- disable button
-    local globalButtonName = self:GetObjectName("UtilitiesClearButton")
+    local globalButtonName = ABSync:GetObjectName("UtilitiesClearButton")
     _G[globalButtonName]:Disable()
 
     -- get bar to clear
-    local barID = self:GetLastActionBarUtilities()
+    local barID = ABSync:GetLastActionBarUtilities()
     
     -- add dialog to let user know sync was cancelled
-    StaticPopupDialogs[self.popups.clearbarSyncCancelled] = {
-        text = self.L["Action Bar Clear has been cancelled."],
-        button1 = self.L["ok"],
+    StaticPopupDialogs[ABSync.popups.clearbarSyncCancelled] = {
+        text = ABSync.L["Action Bar Clear has been cancelled."],
+        button1 = ABSync.L["ok"],
         timeout = 15,
         hideOnEscape = true,
         preferredIndex = 3,
     }
 
     -- get confirmation and backup name
-    StaticPopupDialogs[self.popups.clearbarBackupConfirmation] = {
-        text = self.L["Enter a name for this backup:"],
-        button1 = self.L["ok"],
-        button2 = self.L["cancel"],
+    StaticPopupDialogs[ABSync.popups.clearbarBackupConfirmation] = {
+        text = ABSync.L["Enter a name for this backup:"],
+        button1 = ABSync.L["ok"],
+        button2 = ABSync.L["cancel"],
         hasEditBox = true,
         maxLetters = 64,
         OnAccept = function(self)
@@ -163,13 +163,23 @@ function ABSync:BeginActionBarClear()
             --@end-debug@
             -- capture the name
             local backupName = self.EditBox:GetText()
+            
+            -- create variable table to hold a single action bar for backup
+            local limitBars = {}
+            limitBars[ABSync:GetLastActionBarUtilities()] = true
+
             -- start the actual backup passing in needed data
-            local backupdttm = ABSync:TriggerBackup(backupName)
+            local backupdttm = ABSync:TriggerBackup(backupName, limitBars)
+
             -- sync the bars
             ABSync:ClearActionBar()
         end, 
         OnCancel = function(self)
-            StaticPopup_Show(self.popups.clearbarSyncCancelled)
+            StaticPopup_Show(ABSync.popups.clearbarSyncCancelled)
+
+            -- enable button
+            local globalButtonName = ABSync:GetObjectName("UtilitiesClearButton")
+            _G[globalButtonName]:Enable()
         end,
         OnShow = function(self)
             self.EditBox:SetText((ABSync.L["Clear %s"]):format(ABSync.barNameLanguageTranslate[barID]))
@@ -180,7 +190,7 @@ function ABSync:BeginActionBarClear()
         hideOnEscape = true,
         preferredIndex = 3,
     }
-    StaticPopup_Show(self.popups.clearbarBackupConfirmation)
+    StaticPopup_Show(ABSync.popups.clearbarBackupConfirmation)
 end
 
 --[[---------------------------------------------------------------------------
@@ -204,7 +214,11 @@ function ABSync:ClearActionBar()
     else
         -- loop over action bar button number
         for _, buttonID in pairs(ABSync.constants.actionButtonTranslation[barID]) do
-            print("Clear Button: " .. buttonID)
+            --@debug@
+            -- if self:GetDevMode() == true then
+                -- self:Print("Clear Button: " .. buttonID)
+            -- end
+            --@end-debug@
             -- call function to remove a buttons action
             self:RemoveButtonAction(buttonID)
         end
@@ -1064,7 +1078,7 @@ end
     Function:   TriggerBackup
     Purpose:    Compare two action bar button data tables.
 -----------------------------------------------------------------------------]]
-function ABSync:TriggerBackup(note)
+function ABSync:TriggerBackup(note, barsToProcess)
     -- Instantiate Standard Functions
     -- local StdFuncs = ABSync:GetModule("StandardFunctions")
     --@debug@
@@ -1092,23 +1106,30 @@ function ABSync:TriggerBackup(note)
     -- loop over the values and act on true's
     local backupData = {}
 
+    -- if barsToProcess is nil, set to the barsToSync for the character
+    if not barsToProcess then
+        barsToProcess = ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync
+    end
+
     -- for completeness sake, make sure records are found to be synced...this is actually done in the calling parent but if I decide to call this function elsewhere better check!
     local syncDataFound = false
-    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
+    for barID, syncOn in pairs(barsToProcess) do
         if syncOn ~= false then
             --@debug@
-            if self:GetDevMode() == true then self:Print((ABSync.L["Backing Up Action Bar '%s'..."]):format(barName)) end
+            if self:GetDevMode() == true then
+                self:Print((ABSync.L["Backing Up Action Bar '%s'..."]):format(barID))
+            end
             --@end-debug@
 
             -- make sync data found
             syncDataFound = true
 
-            -- instantiate the barName index
-            backupData[barName] = {}
+            -- instantiate the barID index
+            backupData[barID] = {}
 
-            -- get the current bar data for the current barName; not the profile bar data to sync
-            for buttonID, buttonData in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName]) do
-                backupData[barName][buttonID] = buttonData
+            -- get the current bar data for the current barID; not the profile bar data to sync
+            for buttonID, buttonData in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]) do
+                backupData[barID][buttonID] = buttonData
             end
         end
     end
@@ -1123,12 +1144,29 @@ function ABSync:TriggerBackup(note)
     for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
         backupCount = backupCount + 1
     end
+    --@debug@
+    if self:GetDevMode() == true then
+        self:Print(("Current Backup Count: %d"):format(backupCount))
+    end
+    --@end-debug@
 
     -- if more than 9 then remove the oldest 1
     -- next retrieves the key of the first entry in the backup table and then sets it to nil which removes it
     while backupCount > 9 do
-        local oldestBackup = next(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup)
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[oldestBackup] = nil
+        -- local oldestBackup = next(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup)
+        -- ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[oldestBackup] = nil
+        --@debug@
+        if self:GetDevMode() == true then
+            local oldestBackupDttm = ABSync.L["Unknown"]
+            if ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1] then
+                if ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1].dttm then
+                    oldestBackupDttm = ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1].dttm
+                end
+            end
+            self:Print(("Removing oldest backup entry dated: %s"):format(ABSync:FormatDateString(oldestBackupDttm)))
+        end
+        --@end-debug@
+        table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup, 1)
         backupCount = backupCount - 1
     end
 
@@ -1190,9 +1228,13 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
 
     -- determine differences
     if isRestore == false then
+        --@debug@
+        if self:GetDevMode() == true then
+            self:Print(("Player Server Spec: %s"):format(tostring(self.currentPlayerServerSpec)))
+        end
+        --@end-debug@
         -- compare the global barsToSync data to the user's current action bar data
         -- loop over only the bars the character wants to sync
-        print(("Player Server Spec: %s"):format(tostring(self.currentPlayerServerSpec)))
         for barID, sharedby in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
             --@debug@
             if self:GetDevMode() == true then
@@ -1680,29 +1722,64 @@ function ABSync:OnSpecializationChanged(event, ...)
     -- do not run function unless player has entered world event has triggered
     if self.hasPlayerEnteredWorld == false then
         --@debug@
-        if self:GetDevMode() == true then
-            self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
-        end
+        -- if self:GetDevMode() == true then
+        --     self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
+        -- end
         --@end-debug@
+        return
+    end
+
+    -- only allow this event content to trigger once
+    if not ABSync.specializationChangeProcessed or ABSync.specializationChangeProcessed == false then
+        -- set value to true which will run all the code below
+        ABSync.specializationChangeProcessed = true
+    else
+        -- set value to false and then return to skip the rest of the code
+        ABSync.specializationChangeProcessed = false
         return
     end
     
     --@debug@
+    -- event notification
     if self:GetDevMode() == true then 
         self:Print(ABSync.L["Specialization Changed"])
     end
+
+    -- capture ellipse properties into a table for processing
+    --[[local eventArgs = {...}
+    if self:GetDevMode() == true then 
+        self:Print(("Specialization Changed - Event: %s, Args Count: %d"):format(event, #eventArgs))
+        
+        -- loop through the ellipse properties
+        for argIndex, argValue in ipairs(eventArgs) do
+            local argType = type(argValue)
+            local displayValue = argValue
+            
+            -- handle different argument types for debugging
+            if argType == "string" then
+                displayValue = ("'%s'"):format(argValue)
+            elseif argType == "boolean" then
+                displayValue = argValue and ABSync.L["Yes"] or ABSync.L["No"]
+            elseif argType == "nil" then
+                displayValue = ABSync.L["Unknown"]
+            elseif argType == "table" then
+                displayValue = "Table"
+            else
+                displayValue = tostring(argValue)
+            end
+            
+            self:Print(("  Arg %d (%s): %s"):format(argIndex, argType, displayValue))
+        end
+    end]]
     --@end-debug@
-    
-    -- force close if the UI is open, then reopen
-    -- if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
-    --     self:Print("Specialization Changed - Refreshing UI")
-    --     ActionBarSyncMainFrame:Hide()
-    --     -- display the frame
-    --     C_Timer.After(2, function() ActionBarSyncMainFrame:Show() end)
-    -- end
 
     -- update content
     if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
+        -- update player keys
+        ABSync:SetKeyPlayerServerSpec()
+        ABSync:SetKeyPlayerServer()
+
+        -- act based on which tab is currently visible
         if ABSync:GetTab() == "sharesync" then
             ABSync:UpdateLastScanLabel()
             ABSync:UpdateLastSyncLabel()
@@ -1755,21 +1832,19 @@ function ABSync:RegisterAddonEvents()
         -- ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ABSync.L["Yes"] or ABSync.L["No"], tostring(isReload) and ABSync.L["Yes"] or ABSync.L["No"]))
         --@end-debug@
 
+        -- instantiate player keys
+        ABSync:SetKeyPlayerServerSpec()
+        ABSync:SetKeyPlayerServer()
+
+        -- run db initialize again but pass in barName to make sure all keys are setup for this barName
+        ABSync:InstantiateDB(nil)
+
         -- only run these commands if this is the initial login
         if isInitialLogin == true then
-            -- run db initialize again but pass in barName to make sure all keys are setup for this barName
-            ABSync:InstantiateDB(nil)
-
             -- get action bar data automatically if user has opted in through the settings checkbox
             if ABSync:GetAutoScanData() == true or ABSync:GetLastScan() == ABSync.L["Never"] then
                 ABSync:GetActionBarData()
             end
-
-        -- what to do on a reload
-        else
-            -- instantiate player keys
-            ABSync:SetKeyPlayerServerSpec()
-            ABSync:SetKeyPlayerServer()
         end
         
         -- update global variable for tracking if event has triggered
@@ -1831,12 +1906,12 @@ function ABSync:UpdateLookupHistory()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   UncheckAllChildCheckboxes
+    Function:   UncheckAllBackups
     Purpose:    Uncheck all child checkboxes, except the one just clicked, in the given frame.
     Inputs:     frame       - parent frame containing the checkboxes
                 checkbox    - checkbox that was just clicked; don't uncheck it
 -----------------------------------------------------------------------------]]
-function ABSync:UncheckAllChildCheckboxes(frame, checkbox)
+function ABSync:UncheckAllBackups(frame, checkbox)
     if frame:GetNumChildren() > 0 then
         for idx, child in ipairs({frame:GetChildren()}) do
             if child:IsObjectType("CheckButton") == true then
@@ -1845,19 +1920,6 @@ function ABSync:UncheckAllChildCheckboxes(frame, checkbox)
                 end
             end
         end
-    end
-end
-
---[[---------------------------------------------------------------------------
-    Function:   ClearBackupActionBarDropdown
-    Purpose:    Clear the action bar selection dropdown.
------------------------------------------------------------------------------]]
-function ABSync:ClearBackupActionBarDropdown()
-    if ABSync.ui.dropdown.currentBackupActionBars then
-        local data = {}
-        data["none"] = "None"
-        ABSync.ui.dropdown.currentBackupActionBars:SetList(data)
-        ABSync.ui.dropdown.currentBackupActionBars:SetValue("none")
     end
 end
 

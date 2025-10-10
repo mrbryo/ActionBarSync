@@ -39,7 +39,9 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetFlyoutDetails(buttonActionID)
     --@debug@
-    self:Print(("Getting details for Flyout ID: %s"):format(tostring(buttonActionID)))
+    if self:GetDevMode() == true then
+        self:Print(("Getting details for Flyout ID: %s"):format(tostring(buttonActionID)))
+    end
     --@end-debug@
     -- fetch blizzard flyout details
     local flyoutResult = self:SafeWoWAPICall(GetFlyoutInfo, buttonActionID)
