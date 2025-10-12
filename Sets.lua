@@ -21,24 +21,6 @@ function ABSync:SetAutoResetMountFilters(value)
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   SetAutoSyncData
-    Purpose:    Set the auto scan data status for the current character.
------------------------------------------------------------------------------]]
-function ABSync:SetAutoScanData(value)
-    -- make sure the current player key is set
-    if not self.currentPlayerServer then return end
-
-    -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
-
-    if isSet == true then
-        ActionBarSyncDB.profile[self.currentPlayerServer].autoGetActionBarData = value
-    else
-        self:Print(("Error Setting Auto Sync Data to: %s"):format(tostring(value)))
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   SetDevMode
     Purpose:    Set the development mode status for the current character.
 -----------------------------------------------------------------------------]]

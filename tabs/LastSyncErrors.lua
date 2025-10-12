@@ -79,11 +79,26 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
             if colDef.key == "type" then
                 colVal = ABSync.actionTypeLookup.data[colVal]
             end
+        
+            -- check for nil
+            if colVal == nil then
+                colVal = ABSync.L["Unknown"]
+            end
+
+            -- check for negative number
+            if type(colVal) == "number" and colVal < 0 then
+                colVal = 0
+            end
+            --@debug@
             -- print("ColVal: " .. tostring(colVal))
+            --@end-debug@
         end
 
+        -- must dividte the width by 100 to get a proper width between 0 and 1
+        local colWidth = colDef.width / 100
+
         -- create cell
-        local cellWidth, cellHeight = self:AddErrorCell(rowGroup, colVal, colDef.width, offsetX, isHeader)
+        local cellWidth, cellHeight = self:AddErrorCell(rowGroup, colVal, colWidth, offsetX, isHeader)
         maxHeight = math.max(maxHeight, cellHeight)
         offsetX = offsetX + cellWidth + 5
     end
@@ -103,6 +118,15 @@ function ABSync:ProcessErrorData()
     -- standard variables
     local padding = ABSync.constants.ui.generic.padding
 
+    -- get scroll content frame
+    local scrollContentGlobalName = self:GetObjectName("ErrorScrollContent")
+    local scrollContent = nil
+    if _G[scrollContentGlobalName] then
+        scrollContent = _G[scrollContentGlobalName]
+    else
+        return
+    end
+
     -- verify if we a last sync error
     local errorsExist = false
     if not ActionBarSyncDB.char then
@@ -114,18 +138,18 @@ function ABSync:ProcessErrorData()
         end
     end
     --@debug@
-    -- if self:GetDevMode() == true then
+    if self:GetDevMode() == true then
         self:Print(("Errors Exist: %s"):format(tostring(errorsExist)))
-    -- end
+    end
     --@end-debug@
 
     -- instantiate initial y offset
     offsetY = 5
 
     -- if the scroll frame has children, remove them
-    if ActionBarSyncErrorScrollContent then
-        if ActionBarSyncErrorScrollContent:GetNumChildren() > 0 then
-            self:RemoveFrameChildren(ActionBarSyncErrorScrollContent)
+    if scrollContent then
+        if scrollContent:GetNumChildren() > 0 then
+            self:RemoveFrameChildren(scrollContent)
         end
     end
     
@@ -148,11 +172,11 @@ function ABSync:ProcessErrorData()
             msg             the error message
             sharedby        the player who shared the action
             buttonID        the blizzard designation for the button; all buttons are stored in a single array so 1 to N where N is the number of action bars times 12
-    ]]
-    
+    ]]  
+
     -- locate the correct record
     local errorRecords = nil
-    if errorsExist == true and ActionBarSyncErrorScrollContent then
+    if errorsExist == true and scrollContent then
         -- loop over the error records
         for _, errorRcd in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
             -- continue to next row if key doesn't match
@@ -194,7 +218,7 @@ function ABSync:ProcessErrorData()
                         -- end
                         --@end-debug@
                         -- add the row
-                        local rowHeight = self:AddErrorRow(ActionBarSyncErrorScrollContent, errorRow, ABSync.errorColumns, offsetY)
+                        local rowHeight = self:AddErrorRow(scrollContent, errorRow, ABSync.errorColumns, offsetY)
 
                         -- add the row height and padding to the offset
                         offsetY = offsetY + rowHeight + padding
@@ -205,6 +229,9 @@ function ABSync:ProcessErrorData()
                 end
             end
         end
+
+        -- update the scroll content height
+        scrollContent:SetHeight(offsetY)
     end
 end
 
@@ -259,7 +286,7 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
 
     -- Create header row; important to add the header group to the parent group to maintain a proper layout
     local header = CreateFrame("Frame", nil, contentFrame)
-    header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, 0)
+    header:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, -5)
     header:SetPoint("TOPRIGHT", contentFrame, "TOPRIGHT", -27, 0)
     header:SetHeight(30)
     local offsetX = padding
@@ -268,15 +295,16 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     maxHeight = math.max(maxHeight, hdrRowHeight)
 
     -- update header height
-    header:SetHeight(maxHeight + padding)
+    header:SetHeight(maxHeight)
 
     -- create a container for the scroll region
     local scrollContainer = CreateFrame("ScrollFrame", nil, contentFrame, "UIPanelScrollFrameTemplate")
-    scrollContainer:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, -header:GetHeight())
+    scrollContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, 0)
     scrollContainer:SetPoint("BOTTOMRIGHT", contentFrame, "BOTTOMRIGHT", -27, 0)
 
     -- create a scroll container for the spreadsheet
-    local scrollContent = CreateFrame("Frame", "ActionBarSyncErrorScrollContent", scrollContainer)
+    local scrollContentGlobalName = self:GetObjectName("ErrorScrollContent")
+    local scrollContent = CreateFrame("Frame", scrollContentGlobalName, scrollContainer)
     scrollContent:SetWidth(scrollContainer:GetWidth())
     scrollContent:SetHeight(scrollContainer:GetHeight() - padding)
     scrollContainer:SetScrollChild(scrollContent)
@@ -288,7 +316,7 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     --@debug@
     -- if self:GetDevMode() == true then
     --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
-    --     local testdttmkey = date("%Y%m%d%H%M%S")
+    --     local testdttmkey = self:GetCurrentDateTime()
     --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
     --     local testerrors = {}
     --     for i = 1, 10 do

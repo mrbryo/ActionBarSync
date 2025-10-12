@@ -392,6 +392,9 @@ end
     Purpose:    Update the last sync label with the latest sync date/time.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLastSyncLabel()
+    if not self.ui.label.lastSync then
+        return
+    end
     self.ui.label.lastSync:SetText(self:FormatDateString(self:GetLastSynced()))
 end
 
@@ -489,12 +492,12 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", ABSync:GetAutoResetMountFilters(), nil, function(self, button, checked)
         ABSync:SetAutoResetMountFilters(checked)
     end)
-    self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ABSync:GetSyncOnLogon())
+    -- self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ABSync:GetSyncOnLogon())
 
     -- create checkbox for sync on login
-    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login", ABSync:GetSyncOnLogon(), nil, function(self, button, checked)
+    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login (no backups occur)", ABSync:GetSyncOnLogon(), nil, function(self, button, checked)
         ABSync:SetSyncOnLogon(checked)
-        self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
+        -- self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
     end)
     loginCheckBox:SetPoint("TOPLEFT", lastSyncTitle, "BOTTOMLEFT", 0, -offsetY)
     contentHeight = contentHeight + loginCheckBox:GetHeight() + offsetY

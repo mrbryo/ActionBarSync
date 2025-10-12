@@ -106,6 +106,8 @@ function ABSync:GetFlyoutDetails(buttonActionID)
             },
             -- C_Spell.GetSpellInfo           
             spellData = spellData or {},
+            -- data standardization for UpdateActionBars
+            name = flyoutName or spellData.blizData.name or ABSync.L["Unknown"],
         },
         buttonActionID = buttonActionID,
         errorText = errorText,
@@ -172,6 +174,11 @@ function ABSync:GetItemDetails(buttonActionID)
         toyID = toyInfo.id or -1
     end
 
+    --@debug@
+    -- if self:GetDevMode() == true then
+        -- self:Print(("Item Name: %s - Toy Name: %s - Is Toy: %s"):format(itemName, toyData.name, tostring(isToy)))
+    -- end
+    --@end-debug@
     -- finally return the data collected
     return {
         blizData = {
@@ -201,8 +208,9 @@ function ABSync:GetItemDetails(buttonActionID)
             toyUsable = toyUsable and ABSync.L["Yes"] or ABSync.L["No"],
             -- GetToyIDs (custom function)
             toyIndex = toyIndex,
-            ndex,
             toyID = toyID,
+            -- data standardization for UpdateActionBars
+            name = itemName or toyData.name or ABSync.L["Unknown"]
         },
         buttonActionID = buttonActionID,
         isToy = isToy,
@@ -302,7 +310,7 @@ function ABSync:GetMountinfo(buttonActionID)
         blizData = {
             -- GetMountInfoByID
             mountInfo = {
-                name = name,
+                name = name or ABSync.L["Unknown"],
                 spellID = spellID or -1,
                 icon = icon or -1,
                 isActive = isActive or false,
@@ -322,6 +330,8 @@ function ABSync:GetMountinfo(buttonActionID)
             extraInfo = extraInfo or {},
             -- GetMountLink
             mountLink = mountCreatureDisplayInfoLink or ABSync.L["Unknown"],    -- was displayInfoLink and was outside of blizData by one level
+            -- data standardization for UpdateActionBars
+            name = name or ABSync.L["Unknown"],
         },
         displayIndex = displayIndex or -1,
         buttonActionID = buttonActionID,
@@ -408,7 +418,7 @@ function ABSync:GetSpellDetails(buttonActionID)
     -- finally return the data collected
     return {
         blizData = {
-            name = spellName,
+            name = spellName or ABSync.L["Unknown"],
             iconID = spellData and spellData.iconID or -1,
             originalIconID = spellData and spellData.originalIconID or -1,
             castTime = spellData and spellData.castTime or -1,
@@ -423,6 +433,8 @@ function ABSync:GetSpellDetails(buttonActionID)
         isTalent = isTalentSpell,
         isPvp = isPvpSpell,
         overrideWithBaseID = overrideWithBaseID,
+        -- data standardization for UpdateActionBars
+        name = spellName or ABSync.L["Unknown"],
     }
 end
 

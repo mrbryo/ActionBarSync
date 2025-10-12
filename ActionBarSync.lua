@@ -82,7 +82,7 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
             ["macro"] = ABSync.L["Macro"],
             ["summonpet"] = ABSync.L["Pet"],
             ["summonmount"] = ABSync.L["Mount"],
-            ["flyout"] = ABSync.L["Flyout"]
+            ["flyout"] = ABSync.L["Flyout"],
         }
     }
     -- ABSync.actionTypeLookup = {
@@ -104,14 +104,14 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["developer"] = ABSync.L["Developer"],
     }
     ABSync.errorColumns = {
-        { name = "Bar Name", key = "barName", width = 0.10},        -- 10
-        { name = "Bar Pos", key = "barPosn", width = 0.05},         -- 15
-        { name = "Button ID", key = "buttonID", width = 0.10},      -- 25
-        { name = "Action Type", key = "type", width = 0.10},        -- 35
-        { name = "Action Name", key = "name", width = 0.20},        -- 55
-        { name = "Action ID", key = "id", width = 0.05},            -- 60
-        { name = "Shared By", key = "sharedby", width = 0.15},      -- 75
-        { name = "Message", key = "msg", width = 0.20}              -- 95
+        { name = "Bar Name", key = "barName", width = 10},          -- 10
+        { name = "Bar Pos", key = "barPosn", width = 5},            -- 15
+        { name = "Button ID", key = "buttonID", width = 7.5},       -- 22.5
+        { name = "Action Type", key = "type", width = 10},          -- 32.5
+        { name = "Action Name", key = "name", width = 20},          -- 52.5
+        { name = "Action ID", key = "buttonActionID", width = 10},  -- 62.5
+        { name = "Shared By", key = "sharedby", width = 15},        -- 77.5
+        { name = "Message", key = "msg", width = 17}                -- 94.5
     }
 
     -- Instantiate Standard Functions
@@ -241,7 +241,8 @@ function ABSync:BeginRestore(button)
     self:GetActionBarData()
 
     -- trigger message
-    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar))
+    local actionBarName = ABSync.barNameLanguageTranslate[ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar] or ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar
+    self:Print(("Restore Triggered for Backup \"%s\" for Action Bar \"%s\""):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), actionBarName))
 
     -- trigger the update with the backup date time and a true value for isRestore
     self:UpdateActionBars(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm, true)
@@ -259,12 +260,17 @@ end
         3. If bars are selected, ask the user for a note. If they click OK proceed. Or stop if they click cancel.
         4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
 -----------------------------------------------------------------------------]]
-function ABSync:BeginSync()
+function ABSync:BeginSync(autoTriggered)
     --@debug@
     -- self:Print("BeginSync Called")
     --@end-debug@
     -- track testing
     local barsToSync = false
+
+    -- check for nil autoTriggered
+    if autoTriggered == nil then
+        autoTriggered = false
+    end
     
     -- count entries
     for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
@@ -300,42 +306,57 @@ function ABSync:BeginSync()
         }
 
         -- add dialog to ask for backup name
-        StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
-            text = self.L["Enter a name for this backup:"],
-            button1 = self.L["ok"],
-            button2 = self.L["cancel"],
-            hasEditBox = true,
-            maxLetters = 64,
-            OnAccept = function(self)
-                --@debug@
-                -- ABSync:Print("Backup Accepted...")
-                --@end-debug@
-                -- capture the name
-                local backupName = self.EditBox:GetText()
-                -- start the actual backup passing in needed data
-                local backupdttm = ABSync:TriggerBackup(backupName)
+        if autoTriggered == false then
+            StaticPopupDialogs["ACTIONBARSYNC_BACKUP_NAME"] = {
+                text = self.L["Enter a name for this backup:"],
+                button1 = self.L["ok"],
+                button2 = self.L["cancel"],
+                hasEditBox = true,
+                maxLetters = 64,
+                OnAccept = function(self)
+                    --@debug@
+                    -- ABSync:Print("Backup Accepted...")
+                    --@end-debug@
+                    -- capture the name
+                    local backupName = self.EditBox:GetText()
 
-                -- update last synced...though this should be done in the sync function after the sync is successful
-                ABSync:SetLastSynced(backupdttm)
-                
-                -- update the UI last synced label
-                ABSync:UpdateLastSyncLabel()
-                -- sync the bars
-                ABSync:UpdateActionBars(backupdttm)
-            end, 
-            OnCancel = function(self)
-                StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
-            end,
-            OnShow = function(self)
-                self.EditBox:SetText(ABSync.L["Default Name"])
-                self.EditBox:SetFocus()
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-        StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
+                    -- start the actual backup passing in needed data
+                    local backupdttm = ABSync:TriggerBackup(backupName)
+
+                    -- update last synced...though this should be done in the sync function after the sync is successful
+                    ABSync:SetLastSynced(backupdttm)
+                    
+                    -- update the UI last synced label
+                    ABSync:UpdateLastSyncLabel()
+                    -- sync the bars
+                    ABSync:UpdateActionBars(backupdttm)
+                end, 
+                OnCancel = function(self)
+                    StaticPopup_Show("ACTIONBARSYNC_SYNC_CANCELLED")
+                end,
+                OnShow = function(self)
+                    self.EditBox:SetText(ABSync.L["Default Name"])
+                    self.EditBox:SetFocus()
+                end,
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+            }
+            StaticPopup_Show("ACTIONBARSYNC_BACKUP_NAME")
+        else
+            -- start the actual backup passing in needed data
+            local syncdttm = self:GetCurrentDateTime()
+
+            -- update last synced...though this should be done in the sync function after the sync is successful
+            ABSync:SetLastSynced(syncdttm)
+
+            -- update the UI last synced label
+            ABSync:UpdateLastSyncLabel()
+
+            -- sync the bars
+            ABSync:UpdateActionBars(syncdttm)
+        end
     end
 end
 
@@ -497,13 +518,8 @@ end
     Purpose:    Ensure the profile DB structure exists and has all necessary values.
 -----------------------------------------------------------------------------]]
 function ABSync:InstantiateDBProfile()
-    -- open to auto scan on player entering world; initially set to false
-    self:SetAutoScanData(false)
-
     -- auto reset mount journal filters flag; initially set to false
     self:SetAutoResetMountFilters(false)
-
-    -- removed setting the current tab as it resets each time this is called; it will get set later as the user changes tabs
 end
 
 --[[---------------------------------------------------------------------------
@@ -772,7 +788,10 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
         -- self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
 
     -- get action details
-    local actionDetails = self:GetActionData(buttonActionID, actionType, buttonID)
+    local actionDetails = {}
+    if actionType ~= ABSync.L["Unknown"] and actionType ~= nil then
+        actionDetails = self:GetActionData(buttonActionID, actionType, buttonID)
+    end
 
     --@debug@
     -- if self:GetDevMode() == true then
@@ -940,13 +959,11 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
 
     --[[ unknown action type ]]
 
-    elseif actionType == self.L["Unknown"] then
-        -- call function to remove a buttons action
-        self:RemoveButtonAction(buttonID)
-    
-    -- unknown action type, can't do anything
     else
+        -- response to unknown action type; should never get here since the default is set to 'Unknown'
         response.msg = "Not Picked Up - Unknown Action Type!"
+        -- basically duplicate but lets make sure its false
+        response.pickedUp = false
     end
 
     -- place action and clear the cursor
@@ -1086,7 +1103,7 @@ function ABSync:TriggerBackup(note, barsToProcess)
     --@end-debug@
 
     -- set up backup timestamp
-    local backupdttm = date("%Y%m%d%H%M%S")
+    local backupdttm = self:GetCurrentDateTime()
     -- local lastSyncedUpdated = self:SetLastSynced(backupdttm)
     
     -- update the UI last synced label
@@ -1317,11 +1334,18 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     if not isRestore or isRestore == nil then isRestore = false end
 
     --@debug@
-    if self:GetDevMode() == true then self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No")) end
+    if self:GetDevMode() == true then
+        self:Print(("(%s) Starting update process. Is Restore? %s"):format("UpdateActionBars", isRestore and "Yes" or "No"))
+    end
     --@end-debug@
 
     -- store differences
     local differences, differencesFound = self:GetActionBarDifferences(backupdttm, isRestore)
+
+    -- reset mount filter if user has the option checked
+    if ABSync:GetAutoResetMountFilters() == true then
+        ABSync:MountJournalFilterReset()
+    end
 
     -- do we have differences?
     if differencesFound == false then
@@ -1366,20 +1390,36 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                     barName = ABSync.barNameLanguageTranslate[diffData.barID],
                     barID = diffData.barID,
                     barPosn = diffData.shared.barPosn,
-                    buttonID = diffData.shared.buttonActionID,
+                    buttonID = placementResponse.placement.buttonID,
                     type = diffData.shared.blizData.actionInfo.actionType,
                     name = diffData.shared.blizData.name,
-                    buttonActionID = diffData.shared.buttonActionID,
+                    buttonActionID = diffData.shared.parameters.buttonActionID,
                     link = diffData.shared.blizData.link or ABSync.L["Unknown"],
                     sharedby = diffData.sharedBy,
                     msg = placementResponse.msg
                 }
                 table.insert(errors, err)
 
+                -- name is in various places based on action type
+                if diffData.shared.parameters.actionType == "item" then
+                    -- err.name = diffData.shared.blizData.itemInfo.name or ABSync.L["Unknown"]
+                    self:Print(("Error Item Name: %s, Item Name: %s"):format(tostring(err.name), tostring(diffData.shared.blizData.name)))
+                end
+
                 -- report mount issue
                 if err.type == "summonmount" then
                     mountIssueCount = mountIssueCount + 1
                     mountIssue = true
+                end
+
+                -- remove button if there was an error and user has the checkbox checked to remove on placement failure
+                if ABSync:GetPlacementErrorClearButton() == true then
+                    --@debug@
+                    -- if self:GetDevMode() == true then
+                        -- self:Print(("Removing action from buttonID: %s due to placement error."):format(tostring(err.buttonID)))
+                    -- end
+                    --@end-debug@
+                    self:RemoveButtonAction(err.buttonID)
                 end
             else
                 table.insert(successes, placementResponse)
@@ -1564,7 +1604,7 @@ function ABSync:GetActionBarData()
     end)
 
     -- set a new last scan date/time
-    self:SetLastScan(date("%Y%m%d%H%M%S"))
+    self:SetLastScan(self:GetCurrentDateTime())
 
     -- capture last scan data
     errs.lastScan = self:GetLastScan()
@@ -1650,7 +1690,7 @@ function ABSync:SlashCommand(text)
         elseif arg:lower() == "dodiffs" then
             self:Print("Doing Diffs...")
             local isRestore = false
-            local dttm = date("%Y%m%d%H%M%S")
+            local dttm = self:GetCurrentDateTime()
             ABSync:GetActionBarDifferences(dttm, isRestore)
         --@end-debug@
         else
@@ -1842,10 +1882,21 @@ function ABSync:RegisterAddonEvents()
 
         -- only run these commands if this is the initial login
         if isInitialLogin == true then
-            -- get action bar data automatically if user has opted in through the settings checkbox
-            if ABSync:GetAutoScanData() == true or ABSync:GetLastScan() == ABSync.L["Never"] then
-                ABSync:GetActionBarData()
-            end
+            -- name the timer
+            local timerName = "AutoSyncOnLogon"
+
+            -- set a timer to trigger an auto sync
+            ABSync:Timer(timerName, 5, function(timerName)
+                
+                -- get action bar data automatically if user has opted in through the settings checkbox
+                if ABSync:GetSyncOnLogon() == true or ABSync:GetLastScan() == ABSync.L["Never"] then
+                    ABSync:Print("Starting automatic action bar data scan...")
+                    ABSync:BeginSync(true)
+                end
+
+                -- clear timer
+                ABSync:TimerClear(timerName)
+            end)
         end
         
         -- update global variable for tracking if event has triggered
@@ -2252,33 +2303,6 @@ function ABSync:CreateMainFrame()
     -- finally return the frame
     return frame
 end
-
---[[---------------------------------------------------------------------------
-    Function:   UpdateTabButtons
-    Purpose:    Update the visual state of the tab buttons to reflect the active tab.
------------------------------------------------------------------------------]]
--- function ABSync:UpdateTabButtons(tabKey)
---     local tabButtons = ABSync.uitabs["buttons"]
---     --@debug@
---     -- self:Print(("(UpdateTabButtons) Tab Key: %s"):format(tostring(tabKey)))
---     --@end-debug@
---     -- fetch the button ID for the current tabKey
---     local buttonID = self.uitabs["buttonref"][tabKey]
-
---     -- update visual states for all tabs
---     for j, btn in ipairs(tabButtons) do
---         --@debug@
---         -- self:Print(("(UpdateTabButtons) Processing Button ID: %d, Expected ID: %d"):format(btn:GetID(), buttonID))
---         --@end-debug@
---         if btn:GetID() == buttonID then
---             -- Active tab
---             PanelTemplates_SelectTab(btn)
---         else
---             -- Inactive tab
---             PanelTemplates_DeselectTab(btn)
---         end
---     end
--- end
 
 --[[---------------------------------------------------------------------------
     Function:   ProcessTabSystem

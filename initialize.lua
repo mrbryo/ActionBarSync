@@ -241,7 +241,10 @@ ABSync = {
 		["buttons"] = {},
 		["buttonref"] = {},
 		["tabframe"] = {},
-	}
+	},
+
+	-- track timers
+	timers = {},
 }
 
 -- register the global addon object
@@ -289,6 +292,16 @@ function ABSync:GetModule(name)
 end
 
 --[[---------------------------------------------------------------------------
+	Function:   Print
+	Purpose:    Standard print function for the addon.
+-----------------------------------------------------------------------------]]
+function ABSync:Print(msg)
+	if msg then
+		print("|cffffd100Action Bar Sync:|r " .. msg)
+	end
+end
+
+--[[---------------------------------------------------------------------------
 	Function:   RegisterEvent
 	Purpose:    Register new events with in the addon.
 -----------------------------------------------------------------------------]]
@@ -301,43 +314,37 @@ function ABSync:RegisterEvent(event, handler)
 end
 
 --[[---------------------------------------------------------------------------
+	Function:   Timer
+	Purpose:    Create a timer to call a function after a delay.
+-----------------------------------------------------------------------------]]
+function ABSync:Timer(name, delay, func)
+	-- if timer already exists; clear and cancel it first
+	if ABSync.timers[name] then
+		ABSync.timers[name]:Cancel()
+		ABSync.TimerClear(name)
+	end
+
+	-- trigger new timer
+	ABSync.timers[name] = C_Timer.After(delay, func)
+end
+
+--[[---------------------------------------------------------------------------
+	Function:   TimerClear
+	Purpose:    Clear a timer by name.
+-----------------------------------------------------------------------------]]
+function ABSync:TimerClear(name)
+	if ABSync.timers[name] then
+		ABSync.timers[name] = nil
+	end
+end
+
+--[[---------------------------------------------------------------------------
 	Function:   UnregisterEvent
 	Purpose:    Unregister events within the addon.
 -----------------------------------------------------------------------------]]
 function ABSync:UnregisterEvent(event)
 	self.events[event] = nil
 	self.eventFrame:UnregisterEvent(event)
-end
-
---[[---------------------------------------------------------------------------
-	Function:   RegisterChatCommand
-	Purpose:    Register a chat command for the addon.
------------------------------------------------------------------------------]]
--- function ABSync:RegisterChatCommand(command, handler)
--- 	-- add handler to addon data structure
--- 	self.chatCommands[command] = handler
-
--- 	-- register the slash command with in the game
--- 	_G["SLASH_ACTIONBARSYNC_" .. command:upper()] = "/" .. command
-
--- 	-- register the function to call when the command is used
--- 	SlashCmdList[command:upper()] = function(msg)
--- 		if type(handler) == "string" then
--- 			self[handler](self, msg)
--- 		else
--- 			handler(msg)
--- 		end
--- 	end
--- end
-
---[[---------------------------------------------------------------------------
-	Function:   Print
-	Purpose:    Standard print function for the addon.
------------------------------------------------------------------------------]]
-function ABSync:Print(msg)
-	if msg then
-		print("|cffffd100Action Bar Sync:|r " .. msg)
-	end
 end
 
 --[[---------------------------------------------------------------------------

@@ -63,25 +63,6 @@ function ABSync:GetAutoResetMountFilters()
 end
 
 --[[---------------------------------------------------------------------------
-    Function:   GetAutoScanData
-    Purpose:    Get the auto scan data status for the current character.
------------------------------------------------------------------------------]]
-function ABSync:GetAutoScanData()
-    -- make sure the current player key is set
-    if not self.currentPlayerServer then return false end
-
-    -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
-
-    if isSet == true then
-        return ActionBarSyncDB.profile[self.currentPlayerServer].autoGetActionBarData
-    else
-        self:Print("Error Getting Auto Sync Data!")
-        return false
-    end
-end
-
---[[---------------------------------------------------------------------------
     Function:   GetBarCountCurrentScan
     Purpose:    Get the count of action bars from player last scan.
 -----------------------------------------------------------------------------]]
@@ -162,6 +143,14 @@ function ABSync:GetBarToShare(barID, playerID)
     else
         return next(ActionBarSyncDB.global.barsToSync[barID][playerID]) ~= nil
     end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   GetCurrentDateTime
+    Purpose:    Get the current date and time in YYYYMMDDHHMMSS format.
+-----------------------------------------------------------------------------]]
+function ABSync:GetCurrentDateTime()
+    return date("%Y%m%d%H%M%S")
 end
 
 --[[---------------------------------------------------------------------------
@@ -413,7 +402,7 @@ function ABSync:GetPlacementErrorClearButton()
         end
         --@debug@
         -- if self:GetDevMode() == true then
-            self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(self.currentPlayerServer), tostring(ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton)))
+        --     self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(self.currentPlayerServer), tostring(ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton)))
         -- end
         --@end-debug@
 
