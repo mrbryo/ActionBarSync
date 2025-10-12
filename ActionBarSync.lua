@@ -785,7 +785,9 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     local buttonID = ABSync.constants.actionButtonTranslation[actionBar][actionButton]
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
+        self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
+    -- end
+    --@end-debug@
 
     -- get action details
     local actionDetails = {}
@@ -823,9 +825,11 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     }
 
     -- check for valid buttonActionID
-    if sharedAction and sharedAction.parameters.buttonActionID <= 0 then
-        response.msg = "Not Picked Up - Invalid Shared Action ID!"
-        return response
+    if sharedAction then
+        if not sharedAction.parameters.buttonActionID then
+            response.msg = "Not Picked Up - Invalid Shared Action ID!"
+            return response
+        end
     else
         if actionDetails.parameters.buttonActionID <= 0 then
             response.msg = "Not Picked Up - Invalid Action ID!"
