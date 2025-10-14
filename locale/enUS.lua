@@ -67,6 +67,8 @@ L["Buy Me a Coffee"] = "Buy Me a Coffee"
 -- C
 -- share/sync tab; dev mode only; for troubleshooting
 L["called from"] = "called from"
+-- Generic; used in multiple places, normally cancel buttons.
+L["Cancel"] = "Cancel"
 -- about tab; label for language
 L["Chinese (Simplified)"] = "Chinese (Simplified)"
 -- about tab; label for language
@@ -83,6 +85,8 @@ L["Click the button below to refresh the mount database for this character. DB s
 L["Close"] = "Close"
 
 -- D
+-- Share/sync tab; default text for the backup name edit box in the popup when is triggered from clicking the sync button.
+L["Default Name"] = "Default Name"
 -- Dev tab; title at top of tab. Tab is only visible if a developer uses special command line value.
 L["Developer"] = "Developer"
 
@@ -99,6 +103,8 @@ L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found
 L["Errors Exist"] = "Errors Exist"
 
 -- F
+-- Share/sync tab; popup body message when no differences found to sync.
+L["For the action bars flagged for syncing, no differences were found."] = "For the action bars flagged for syncing, no differences were found."
 -- About tab; label for French language.
 L["French"] = "French"
 -- About tab; label for FAQ section.
@@ -195,6 +201,8 @@ L["No Error"] = "No Error"
 L["No Shared Action Bars Found"] = "No Shared Action Bars Found"
 
 -- O
+-- Generic; used in multiple places, normally OK buttons.
+L["OK"] = "OK"
 -- Share/sync tab; label for checkbox to remove current action button on placement failure.
 L["On Placement Failure Remove Current Action Button"] = "On Placement Failure Remove Current Action Button"
 

@@ -1435,12 +1435,6 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 }
                 table.insert(errors, err)
 
-                -- name is in various places based on action type
-                if diffData.shared.parameters.actionType == "item" then
-                    -- err.name = diffData.shared.blizData.itemInfo.name or ABSync.L["Unknown"]
-                    self:Print((ABSync.L["Error Item Name: %s, Item Name: %s"]):format(tostring(err.name), tostring(diffData.shared.blizData.name)))
-                end
-
                 -- report mount issue
                 if err.type == "summonmount" then
                     mountIssueCount = mountIssueCount + 1
@@ -2338,7 +2332,7 @@ function ABSync:ProcessTabSystem(parent)
         -- get global variable friendly tab name
         local tabID = self.uitabs["varnames"][tabKey]
         --@debug@
-        self:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ABSync.uitabs.tabs[tabKey])))
+        -- self:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ABSync.uitabs.tabs[tabKey])))
         --@end-debug@
 
         -- create the tab button ID
