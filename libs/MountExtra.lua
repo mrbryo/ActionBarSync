@@ -21,7 +21,7 @@ function ABSync:ClearMountDB()
     ActionBarSyncMountDB[playerID] = {}
 
     -- notify user its done
-    self:Print("Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character.")
+    self:Print(ABSync.L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ function ABSync:MountJournalFilterReset()
     C_MountJournal.SetAllTypeFilters(true)
 
     -- notify user
-    self:Print("Mount Journal filters have been set to show all collected mounts.")
+    self:Print(ABSync.L["Mount Journal filters have been set to show all collected mounts."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -151,5 +151,5 @@ function ABSync:RefreshMountDB()
     end
 
     -- notify user its done
-    self:Print("Mount DB Refreshed! Reload the UI by using this command: /reload")
+    self:Print(ABSync.L["Mount DB Refreshed! Reload the UI by using this command: /reload"])
 end

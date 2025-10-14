@@ -20,9 +20,10 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:CreateSyncCheckbox(parent, globalID, barName, playerID, currentPlayerID, padding)
     -- define labels for enabled and disabled states; set barName to green and playerID to orange
-    local labelEnabled = ("%s%s|r from |cffffa500%s|r"):format(self.constants.colors.green, barName, playerID)
+    local labelEnabled = ("%s%s|r %s %s%s|r"):format(self.constants.colors.green, barName, ABSync.L["from"], self.constants.colors.orange, playerID)
+
     -- set whole label to gray
-    local labelDisabled = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
+    local labelDisabled = ("%s%s %s %s|r"):format(self.constants.colors.gray, barName, ABSync.L["from"], playerID)
 
     -- create the checkbox since not found globally
     local checkbox = self:CreateCheckbox(parent, "-", self:IsSyncSet(barName, playerID), globalID, function(self, button, checked)
@@ -63,7 +64,7 @@ function ABSync:GetCheckboxGlobalName(barID, playerID)
     if not fixedBarName then
         fixedBarName = "UnknownBarName" .. self:GetRandom6DigitNumber()
         if self:GetDevMode() == true then
-            self:Print("(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: " .. fixedBarName)
+            self:Print(ABSync.L["(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: "] .. fixedBarName)
         end
     end
 
@@ -127,10 +128,10 @@ function ABSync:ProcessSyncRegion(callingFunction)
                     local nameLength = string.len(checkboxGlobalID)
 
                     -- define labels for enabled and disabled states; set barName to green and playerID to orange
-                    local labelEnabled = ("%s%s|r from |cffffa500%s|r"):format(self.constants.colors.green, barName, playerID)
+                    local labelEnabled = ("%s%s|r %s |cffffa500%s|r"):format(self.constants.colors.green, barName, ABSync.L["from"], playerID)
 
                     -- set whole label to gray
-                    local labelDisabled = ("%s%s from %s|r"):format(self.constants.colors.gray, barName, playerID)
+                    local labelDisabled = ("%s%s %s %s|r"):format(self.constants.colors.gray, barName, ABSync.L["from"], playerID)
 
                     -- create a checkbox if data is found
                     if foundData == true then                    
@@ -204,7 +205,7 @@ function ABSync:ProcessSyncRegion(callingFunction)
                     
                 -- position and set text
                 noDataLabel:SetPoint("TOPLEFT", self.ui.frame.syncContent, "TOPLEFT", padding + 5, -padding - 5)
-                noDataLabel:SetText("No Shared Action Bars Found")
+                noDataLabel:SetText(ABSync.L["No Shared Action Bars Found"])
             else
                 -- make visible
                 if not noDataLabel:IsVisible() then
@@ -220,7 +221,7 @@ function ABSync:ProcessSyncRegion(callingFunction)
     else
         --@debug@
         if self:GetDevMode() == true then
-            self:Print(("(%s) self.ui.frame.syncContent does not exist, cannot process sync region."):format("ProcessSyncRegion"))
+            self:Print(ABSync.L["(%s) self.ui.frame.syncContent does not exist, cannot process sync region."]:format("ProcessSyncRegion"))
         end
         --@end-debug@
     end
@@ -239,7 +240,7 @@ function ABSync:CreateSyncFromFrameContent(parent)
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Sync Action Bars From:")
+    regionLabel:SetText(ABSync.L["Sync Action Bars From"] .. ":")
 
     -- create inset frame for syncing from other characters
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -282,7 +283,7 @@ function ABSync:ProcessShareCheckboxes(callingFunction)
     --@debug@
     -- notify of function call
     if self:GetDevMode() == true then
-        self:Print(("(%s) called from: %s"):format(funcName, callingFunction or "Unknown"))
+        self:Print(("(%s) %s: %s"):format(funcName, ABSync.L["called from"], callingFunction or "Unknown"))
     end
     --@end-debug@
 
@@ -346,7 +347,7 @@ function ABSync:CreateShareFrameContent(parent)
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Select Action Bars to Share:")
+    regionLabel:SetText(ABSync.L["Select Action Bars to Share"] .. ":")
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -454,7 +455,7 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self.ui.label.lastScan:SetWidth(lastScanWidth)
 
     -- scan button
-    local scanButton = self:CreateStandardButton(regionContent, nil, "Scan Now", 100, function(self, button, down)
+    local scanButton = self:CreateStandardButton(regionContent, nil, ABSync.L["Scan Now"], 100, function(self, button, down)
         ABSync:UpdateCheckboxState(self, false) -- disable button while scanning
         ABSync:GetActionBarData()
         ABSync:ProcessSyncRegion("CreateShareSyncTopFrameContent:ScanButton")
@@ -476,26 +477,26 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self:UpdateLastSyncLabel()
 
     -- create button for manual sync
-    local manualSyncButton = self:CreateStandardButton(regionContent, nil, "Sync Now", 100, function()
+    local manualSyncButton = self:CreateStandardButton(regionContent, nil, ABSync.L["Sync Now"], 100, function()
         self:BeginSync()
     end)
     manualSyncButton:SetPoint("LEFT", self.ui.label.lastSync, "RIGHT", padding, 0)
     manualSyncButton:SetPoint("TOPLEFT", scanButton, "BOTTOMLEFT", 0, -buttonOffset)
 
     -- create button for manual mount filter reset
-    local manualMountFilterResetButton = self:CreateStandardButton(regionContent, nil, "Reset Mount Filters", 160, function()
+    local manualMountFilterResetButton = self:CreateStandardButton(regionContent, nil, ABSync.L["Reset Mount Filters"], 160, function()
         self:MountJournalFilterReset()
     end)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
     
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, "Automatically Reset Mount Journal Filters", ABSync:GetAutoResetMountFilters(), nil, function(self, button, checked)
+    self.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, ABSync.L["Automatically Reset Mount Journal Filters"], ABSync:GetAutoResetMountFilters(), nil, function(self, button, checked)
         ABSync:SetAutoResetMountFilters(checked)
     end)
     -- self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, ABSync:GetSyncOnLogon())
 
     -- create checkbox for sync on login
-    local loginCheckBox = self:CreateCheckbox(regionContent, "Enable Sync on Login (no backups occur)", ABSync:GetSyncOnLogon(), nil, function(self, button, checked)
+    local loginCheckBox = self:CreateCheckbox(regionContent, ABSync.L["Enable Sync on Login (no backups occur)"], ABSync:GetSyncOnLogon(), nil, function(self, button, checked)
         ABSync:SetSyncOnLogon(checked)
         -- self:UpdateCheckboxState(self.ui.checkbox.autoMountFilterReset, checked)
     end)
@@ -506,8 +507,10 @@ function ABSync:CreateShareSyncTopFrameContent(parent)
     self.ui.checkbox.autoMountFilterReset:SetPoint("TOPLEFT", loginCheckBox, "TOPRIGHT", self:GetCheckboxOffsetY(loginCheckBox), 0)
 
     -- create checkbox for removing action button if there is an error in placing the new one
-    self.ui.checkbox.removeActionButtonOnError = self:CreateCheckbox(regionContent, "On Placement Failure Remove Current Action Button", ABSync:GetPlacementErrorClearButton(), nil, function(self, button, checked)
-        print("SetPlacementErrorClearButton: " .. tostring(checked))
+    self.ui.checkbox.removeActionButtonOnError = self:CreateCheckbox(regionContent, ABSync.L["On Placement Failure Remove Current Action Button"], ABSync:GetPlacementErrorClearButton(), nil, function(self, button, checked)
+        --@debug@
+        -- print("SetPlacementErrorClearButton: " .. tostring(checked))
+        --@end-debug@
         ABSync:SetPlacementErrorClearButton(checked)
     end)
     self.ui.checkbox.removeActionButtonOnError:SetPoint("TOPLEFT", loginCheckBox, "BOTTOMLEFT", 0, 0)
@@ -550,7 +553,7 @@ function ABSync:ProcessShareSyncFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", mainShareFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText("Share & Sync")
+    title:SetText(ABSync.L["Share & Sync"])
 
     -- create main content frame
     local mainContentFrame = CreateFrame("Frame", nil, mainShareFrame)

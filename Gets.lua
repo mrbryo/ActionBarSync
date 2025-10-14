@@ -35,7 +35,7 @@ function ABSync:GetArgs(text)
     
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print(("Parsed %d arguments from: '%s'"):format(#args, text))
+        self:Print((ABSync.L["Parsed %d arguments from: '%s'"]):format(#args, text))
     end
     --@end-debug@
     
@@ -57,7 +57,7 @@ function ABSync:GetAutoResetMountFilters()
     if isSet == true then
         return ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters
     else
-        self:Print(("Error Getting Auto Reset Mount Filters for %s!"):format(tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Getting Auto Reset Mount Filters for %s!"]):format(tostring(self.currentPlayerServer)))
         return false
     end
 end
@@ -92,7 +92,7 @@ function ABSync:GetBarNames()
 
     -- what we do if we didn't loop; over ride final return statement
     if barCount == 0 then
-        return {L["No Scan Completed"]}
+        return {ABSync.L["No Scan Completed"]}
     end
 
     -- finally return the list of bar names
@@ -348,7 +348,7 @@ function ABSync:GetLastScan()
     if isSet == true then
         return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or L["Never"]
     else
-        self:Print(("Error Getting Last Scan for %s!"):format(tostring(self.currentPlayerServerSpec)))
+        self:Print((ABSync.L["Error Getting Last Scan for %s!"]):format(tostring(self.currentPlayerServerSpec)))
         return false
     end
 end
@@ -370,7 +370,7 @@ function ABSync:GetLastSynced()
     if isSet == true then
         return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced or L["Never"]
     else
-        self:Print(("Error Getting Last Synced for %s!"):format(tostring(self.currentPlayerServerSpec)))
+        self:Print((ABSync.L["Error Getting Last Synced for %s!"]):format(tostring(self.currentPlayerServerSpec)))
         return false
     end
 end
@@ -409,7 +409,7 @@ function ABSync:GetPlacementErrorClearButton()
         -- return the current value
         return ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton
     else
-        self:Print(("Error Getting Placement Error Clear Button for %s!"):format(tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Getting Placement Error Clear Button for %s!"]):format(tostring(self.currentPlayerServer)))
         return false
     end
 end
@@ -487,7 +487,7 @@ function ABSync:GetSyncOnLogon()
         -- return the value
         return ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon
     else
-        self:Print(("Error Getting Sync on Logon for %s!"):format(tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Getting Sync on Logon for %s!"]):format(tostring(self.currentPlayerServer)))
         return false
     end
 end
@@ -507,7 +507,7 @@ function ABSync:GetTab()
         --@end-debug@
         return tabValue
     else
-        self:Print(("Error Getting Tab for %s!"):format(tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Getting Tab for %s!"]):format(tostring(self.currentPlayerServer)))
         return "introduction"
     end
 end

@@ -31,7 +31,7 @@ function ABSync:AddRemoveAllActionButtonsByBar(parent)
     frameTitle:SetPoint("TOPLEFT", removeFrame, "TOPLEFT", 0, 0)
     frameTitle:SetPoint("TOPRIGHT", removeFrame, "TOPRIGHT", 0, 0)
     frameTitle:SetJustifyH("LEFT")
-    frameTitle:SetText("Remove Action Bar Buttons")
+    frameTitle:SetText(ABSync.L["Remove Action Bar Buttons"])
 
     -- update height
     local removeFrameHeight = frameTitle:GetStringHeight()
@@ -67,7 +67,7 @@ function ABSync:AddRemoveAllActionButtonsByBar(parent)
     local actionBarLabel = rowBar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBarLabel:SetPoint("LEFT", rowBar, "LEFT", 0, 0)
     actionBarLabel:SetJustifyH("LEFT")
-    actionBarLabel:SetText("Action Bar:")
+    actionBarLabel:SetText(ABSync.L["Action Bar:"])
 
     -- action bar drop down
     local barValues = self:GetBarValues()

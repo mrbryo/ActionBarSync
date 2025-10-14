@@ -10,9 +10,6 @@
     Purpose:    Check if the current character has a specific spell.
 -----------------------------------------------------------------------------]]
 function ABSync:CharacterHasSpell(spellID)
-    -- set language variable
-    local L = self.L
-
     -- find the spell in the player's spell book
     local spellBookItemSlotIndex, spellBookItemSpellBank = C_SpellBook.FindSpellBookSlotForSpell(spellID)
 
@@ -27,9 +24,9 @@ function ABSync:CharacterHasSpell(spellID)
 
     -- finally return yes or no
     if spellBookItemSlotIndex > 0 then
-        return L["Yes"]
+        return ABSync.L["Yes"]
     else
-        return L["No"]
+        return ABSync.L["No"]
     end
 end
 
@@ -40,18 +37,18 @@ end
 function ABSync:GetFlyoutDetails(buttonActionID)
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(("Getting details for Flyout ID: %s"):format(tostring(buttonActionID)))
+        self:Print((ABSync.L["Getting details for Flyout ID: %s"]):format(tostring(buttonActionID)))
     end
     --@end-debug@
     -- fetch blizzard flyout details
     local flyoutResult = self:SafeWoWAPICall(GetFlyoutInfo, buttonActionID)
-    local errorText = "No Error"
+    local errorText = ABSync.L["No Error"]
     local flyoutName = ABSync.L["Unknown"]
     local flyoutDescription = ABSync.L["Unknown"]
     local numSlots = 0
     local isKnown = ABSync.L["No"]
     if not flyoutResult.success then
-        errorText = ("GetFlyoutInfo failed: %s"):format(flyoutResult.error)
+        errorText = ("%s: %s"):format(ABSync.L["GetFlyoutInfo failed"], flyoutResult.error)
     else
         -- parse results
         flyoutName = select(1, flyoutResult.result)
@@ -240,13 +237,13 @@ function ABSync:GetMacroDetails(buttonActionID)
     -- finally return the data collected
     return {
         blizData = {
-            name = macroName or L["Unknown"],
+            name = macroName or ABSync.L["Unknown"],
             icon = iconTexture or -1,
-            body = body or L["Unknown"]
+            body = body or ABSync.L["Unknown"]
         },
         macroType = macroType,
         buttonActionID = buttonActionID,
-        hasMacro = macroName and L["Yes"] or L["No"],
+        hasMacro = macroName and ABSync.L["Yes"] or ABSync.L["No"],
     }
 end
 
@@ -410,7 +407,7 @@ function ABSync:GetSpellDetails(buttonActionID)
     local overrideWithBaseID = false
     if baseID > 0 and baseID ~= buttonActionID then
         --@debug@
-        if self:GetDevMode() == true then self:Print(("(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
+        if self:GetDevMode() == true then self:Print((ABSync.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
         --@end-debug@
         overrideWithBaseID = true
     end

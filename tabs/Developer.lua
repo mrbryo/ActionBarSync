@@ -1,3 +1,10 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			Developer.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the Developer tab in the UI.
+-----------------------------------------------------------------------------]]
+
 --[[---------------------------------------------------------------------------
     Function:   CreateDevMountDBContent
     Purpose:    Create the mount database content for the developer frame.
@@ -19,7 +26,7 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     mountDBTitle:SetPoint("TOPLEFT", mountDBFrame, "TOPLEFT", 0, 0)
     mountDBTitle:SetPoint("TOPRIGHT", mountDBFrame, "TOPRIGHT", 0, 0)
     mountDBTitle:SetJustifyH("LEFT")
-    mountDBTitle:SetText("Mount Database")
+    mountDBTitle:SetText(ABSync.L["Mount Database"])
     dbMountFrameHeight = dbMountFrameHeight + mountDBTitle:GetStringHeight()
 
     -- add inset frame to mount db frame
@@ -29,7 +36,7 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
 
     -- add label explaining the purpose of the button
     local mountDBRefreshInfoLabel = mountDBInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
-    mountDBRefreshInfoLabel:SetText("Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file.")
+    mountDBRefreshInfoLabel:SetText(ABSync.L["Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file."])
     mountDBRefreshInfoLabel:SetPoint("TOPLEFT", mountDBInsetFrame, "TOPLEFT", padding, -padding)
     mountDBRefreshInfoLabel:SetPoint("TOPRIGHT", mountDBInsetFrame, "TOPRIGHT", -padding, -padding)
     mountDBRefreshInfoLabel:SetJustifyH("LEFT")
@@ -37,20 +44,20 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshInfoLabel:GetStringHeight() + (padding * 2)
 
     -- create button to refresh mount db
-    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, nil, "Refresh Mount DB", 150, function()
+    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Refresh Mount DB"], 150, function()
         ABSync:RefreshMountDB()
     end)
     mountDBRefreshButton:SetPoint("TOPLEFT", mountDBRefreshInfoLabel, "BOTTOMLEFT", 0, -padding)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshButton:GetHeight() + padding
 
     -- create button to reload the ui
-    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame, nil,"Reload UI", 100, function()
+    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Reload UI"], 100, function()
         C_UI.Reload()
     end)
     mountDBReloadButton:SetPoint("TOPLEFT", mountDBRefreshButton, "TOPRIGHT", padding, 0)
 
     -- create button to clear db for this char
-    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, nil, "Clear Character Mount DB", 200, function()
+    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Clear Character Mount DB"], 200, function()
         ABSync:ClearMountDB()
     end)
     mountDBClearButton:SetPoint("TOPLEFT", mountDBRefreshButton, "BOTTOMLEFT", 0, -padding)
@@ -84,7 +91,7 @@ function CreateDevManualActionButton(parent, halfWidth, posnFrame)
     manualTitle:SetPoint("TOPLEFT", manualFrame, "TOPLEFT", 0, 0)
     manualTitle:SetPoint("TOPRIGHT", manualFrame, "TOPRIGHT", 0, 0)
     manualTitle:SetJustifyH("LEFT")
-    manualTitle:SetText("Manual Action Button Placement")
+    manualTitle:SetText(ABSync.L["Manual Action Button Placement"])
     manualFrameHeight = manualFrameHeight + manualTitle:GetStringHeight()
 
     -- add inset frame to mount db frame
@@ -94,7 +101,7 @@ function CreateDevManualActionButton(parent, halfWidth, posnFrame)
 
     -- add label explaining the purpose of the button
     local manualInfoLabel = manualInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
-    manualInfoLabel:SetText("Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes.")
+    manualInfoLabel:SetText(ABSync.L["Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes."])
     manualInfoLabel:SetPoint("TOPLEFT", manualInsetFrame, "TOPLEFT", padding, -padding)
     manualInfoLabel:SetPoint("TOPRIGHT", manualInsetFrame, "TOPRIGHT", -padding, -padding)
     manualInfoLabel:SetJustifyH("LEFT")
@@ -123,7 +130,7 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
 
     -- make sure devFrame was populated
     if not devFrame then
-        self:Print("Error: devFrame is nil in ProcessDeveloperFrame.")
+        self:Print(ABSync.L["Error: devFrame is nil in ProcessDeveloperFrame."])
         return nil
     end
 
@@ -137,7 +144,7 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", devFrame, "TOPRIGHT", 0, 0)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText("Developer")
+    title:SetText(ABSync.L["Developer"])
 
     --[[ warning! ]]
 

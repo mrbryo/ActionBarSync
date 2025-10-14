@@ -1,3 +1,10 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			About.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the About tab in the UI.
+-----------------------------------------------------------------------------]]
+
 --[[---------------------------------------------------------------------------
     Function:   ProcessAboutFrame
     Purpose:    Create the About frame for the addon.
@@ -35,7 +42,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
         text = {
             ["author"] = {
                 type = "data",
-                label = "Author",
+                label = ABSync.L["Author"],
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
                 disable = true,
                 tip = {
@@ -45,7 +52,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
             },
             ["version"] = {
                 type = "data",
-                label = "Version",
+                label = ABSync.L["Version"],
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
                 disable = true,
                 tip = {
@@ -55,46 +62,46 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
             },
             ["supportnote"] = {
                 type = "note",
-                text = "If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!",
+                text = ABSync.L["If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!"],
             },
             ["patreon"] = {
                 type = "data",
-                label = "Patreon",
+                label = ABSync.L["Patreon"],
                 text = "https://www.patreon.com/Bryo",
                 disable = false,
                 tip = {
                     disable = false,
-                    text = "If you like this addon and want to support me, please consider becoming a patron."
+                    text = ABSync.L["If you like this addon and want to support me, please consider becoming a patron."]
                 }
             },
             ["coffee"] = {
                 type = "data",
-                label = "Buy Me a Coffee",
+                label = ABSync.L["Buy Me a Coffee"],
                 text = "https://www.buymeacoffee.com/mrbryo",
                 disable = false,
             },
             ["issuenote"] = {
                 type = "note",
-                text = "If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits.",
+                text = ABSync.L["If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits."],
             },
             ["issues"] = {
                 type = "data",
-                label = "Issues",
+                label = ABSync.L["Issues"],
                 text = "https://github.com/mrbryo/ActionBarSync/issues",
                 disable = false,
             },
             ["localeauthors"] = {
                 type = "note",
-                text = "Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above.",
+                text = ABSync.L["Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above."],
             },
             ["localization"] = {
                 type = "data",
-                label = "Localization",
+                label = ABSync.L["Localization"],
                 text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
                 disable = false,
                 tip = {
                     disable = false,
-                    text = "Help translate this addon into your language.",
+                    text = ABSync.L["Help translate this addon into your language."],
                 },
             }
         }
@@ -191,7 +198,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText("About")
+    title:SetText(ABSync.L["About"])
 
     -- left hand side
     local leftInsetFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
@@ -274,7 +281,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     rightLabel:SetPoint("TOPRIGHT", rightFrame, "TOPRIGHT", 0, 0)
     rightLabel:SetHeight(30)
     rightLabel:SetJustifyH("LEFT")
-    rightLabel:SetText("Translators")
+    rightLabel:SetText(ABSync.L["Translators"])
 
     -- right hand side frame
     local rightInsetFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
@@ -296,7 +303,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     thankYou:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -spacing)
     thankYou:SetPoint("TOPRIGHT", rightScrollContentFrame, "TOPRIGHT", -spacing, -spacing)
     thankYou:SetJustifyH("LEFT")
-    thankYou:SetText("Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!")
+    thankYou:SetText(ABSync.L["Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!"])
     thankYou:SetWordWrap(true)
 
     -- reset y offset

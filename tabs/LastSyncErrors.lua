@@ -1,3 +1,10 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			LastSyncErrors.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the Last Sync Errors tab in the UI.
+-----------------------------------------------------------------------------]]
+
 --[[---------------------------------------------------------------------------
     Function:   AddErrorCell
     Purpose:    Add a cell of error information to the error display.
@@ -139,7 +146,7 @@ function ABSync:ProcessErrorData()
     end
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(("Errors Exist: %s"):format(tostring(errorsExist)))
+        self:Print(("%s: %s"):format(ABSync.L["Errors Exist"], tostring(errorsExist)))
     end
     --@end-debug@
 
@@ -218,7 +225,7 @@ function ABSync:ProcessErrorData()
                         -- end
                         --@end-debug@
                         -- add the row
-                        local rowHeight = self:AddErrorRow(scrollContent, errorRow, ABSync.errorColumns, offsetY)
+                        local rowHeight = self:AddErrorRow(scrollContent, errorRow, ABSync.columns.errorColumns, offsetY)
 
                         -- add the row height and padding to the offset
                         offsetY = offsetY + rowHeight + padding
@@ -291,7 +298,7 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     header:SetHeight(30)
     local offsetX = padding
     local maxHeight = 0
-    local hdrRowHeight = self:AddErrorRow(header, nil, ABSync.errorColumns, offsetY, true)
+    local hdrRowHeight = self:AddErrorRow(header, nil, ABSync.columns.errorColumns, offsetY, true)
     maxHeight = math.max(maxHeight, hdrRowHeight)
 
     -- update header height

@@ -16,7 +16,7 @@ function ABSync:SetAutoResetMountFilters(value)
     if isSet == true then
         ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters = value
     else
-        self:Print(("Error Setting Auto Reset Mount Filters to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Setting Auto Reset Mount Filters to: %s for %s!"]):format(tostring(value), tostring(self.currentPlayerServer)))
     end
 end
 
@@ -247,11 +247,11 @@ function ABSync:SetPlacementErrorClearButton(value)
         ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton = value
         --@debug@
         -- if self:GetDevMode() == true then
-            self:Print(("Set Placement Error Clear Button for %s to %s"):format(tostring(self.currentPlayerServer), tostring(value)))
+            self:Print((ABSync.L["Set Placement Error Clear Button for %s to %s"]):format(tostring(self.currentPlayerServer), tostring(value)))
         -- end
         --@end-debug@
     else
-        self:Print(("Error Setting Placement Error Clear Button to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Setting Placement Error Clear Button to: %s for %s!"]):format(tostring(value), tostring(self.currentPlayerServer)))
     end
 end
 
@@ -303,7 +303,7 @@ function ABSync:SetSyncOnLogon(value)
     if isSet == true then
         ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon = value
     else
-        self:Print(("Error Setting Sync On Logon to: %s for %s!"):format(tostring(value), tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Setting Sync On Logon to: %s for %s!"]):format(tostring(value), tostring(self.currentPlayerServer)))
     end
 end
 
@@ -324,7 +324,7 @@ function ABSync:SetTab(key)
     if isSet == true then
         ActionBarSyncDB.profile[self.currentPlayerServer].mytab = key
     else
-        self:Print(("Error Setting Last tab: %s for %s!"):format(tostring(key), tostring(self.currentPlayerServer)))
+        self:Print((ABSync.L["Error Setting Last tab: %s for %s!"]):format(tostring(key), tostring(self.currentPlayerServer)))
     end
 end
 

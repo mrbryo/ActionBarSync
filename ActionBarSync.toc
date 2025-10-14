@@ -40,7 +40,6 @@ tabs\Utilities.lua
 tabs\Developer.lua
 
 ## Libraries
-libs\StandardFunctions.lua
 libs\FontStringExamples.lua
 libs\StandardUI.lua
 libs\MountExtra.lua

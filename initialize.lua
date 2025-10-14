@@ -11,7 +11,7 @@ ABSync = {
 	hasPlayerEnteredWorld = false,
 	modules = {},
 	events = {},
-	name = "Action Bar Sync",
+	name = "@addon-name@",
 	version = "@project-version@",
 	prefix = "ActionBarSyncUIObject",
 
@@ -34,6 +34,13 @@ ABSync = {
 		clearbarBackupConfirmation = "ACTIONBARSYNC_CLEARBAR_BACKUP_NAME",
 		clearbarSyncCancelled = "ACTIONBARSYNC_CLEARBAR_SYNC_CANCELLED",
 		clearBarInvalidBarID = "ACTIONBARSYNC_CLEARBAR_INVALID_BARID",
+		missingKey = "ACTIONBARSYNC_INVALID_KEY",
+		noscan = "ACTIONBARSYNC_NO_SCAN",
+		nodiffsfound = "ACTIONBARSYNC_NO_DIFFS_FOUND",
+		mountissue = "ACTIONBARSYNC_MOUNT_ISSUE",
+		nosyncbars = "ACTIONBARSYNC_NO_SYNCBARS",
+		synccancelled = "ACTIONBARSYNC_SYNC_CANCELLED",
+		backupname = "ACTIONBARSYNC_BACKUP_NAME",
 	},
 
 	-- action bar keys and their order
@@ -228,16 +235,7 @@ ABSync = {
 			"utilities",
 			"developer",
 		},
-		["varnames"] = {
-			["about"] = "About",
-			["introduction"] = "Introduction",
-			["sharesync"] = "ShareSync",
-			["last_sync_errors"] = "LastSyncErrors",
-			["lookup"] = "Lookup",
-			["backup"] = "Backup",
-			["utilities"] = "Utilities",
-			["developer"] = "Developer",
-		},
+		["varnames"] = {},
 		["buttons"] = {},
 		["buttonref"] = {},
 		["tabframe"] = {},
@@ -297,7 +295,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:Print(msg)
 	if msg then
-		print("|cffffd100Action Bar Sync:|r " .. msg)
+		print(("%s%s:|r %s"):format("|cffffd100", ABSync.L["Action Bar Sync"], tostring(msg)))
 	end
 end
 

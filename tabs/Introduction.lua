@@ -1,3 +1,10 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			Introduction.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the Introduction tab in the UI.
+-----------------------------------------------------------------------------]]
+
 --[[---------------------------------------------------------------------------
     Function:   CreateInstructionsFrame
     Purpose:    Create the Introduction frame for the addon.
@@ -16,17 +23,19 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
 
     -- get instructions
     local instructions = {
-        "This step shouldn't be necessary. On the |cff00ff00Share/Sync|r tab click the |cff00ff00Scan Now|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00Scan Now|r button will be removed.",
-        "Optional (because this may be one of your source characters), on the |cff00ff00Share/Sync|r tab, select which action bars to share.",
-        "On the |cff00ff00Share/Sync|r tab, select the shared action bars from other characters to update this character's action bars.",
-        "On the |cff00ff00Share/Sync|r tab, once the previous step is done, click the |cff00ff00Sync Now|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00Auto Sync on Login|r option.",
-        "Done!",
+        (ABSync.L["On the |cff00ff00%s|r tab click the |cff00ff00%s|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00%s|r button will be removed."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Scan Now"], ABSync.L["Scan Now"]),
+        ABSync.L["Definition: Source Character - A character which has action bars you want to share with other characters."],
+        ABSync.L["Definition: Target Character - A character which will receive action bar data from one or more source characters."],
+        (ABSync.L["On the |cff00ff00%s|r tab for each Source Character, check each Action Bar you want to share in the |cff00ff00%s|r section."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Select Action Bars to Share"]),
+        (ABSync.L["On the |cff00ff00%s|r tab for each Target Character, check each Action Bar you want to update from one or more Source Characters in the |cff00ff00%s|r section."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Sync Action Bars From"]),
+        (ABSync.L["On the |cff00ff00%s|r tab, once the previous step is done, click the |cff00ff00%s|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00%s|r option."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Sync Now"], ABSync.L["Enable Sync on Login (no backups occur)"]),
+        ABSync.L["Done!"],
     }
 
     -- FAQ
     local faq = {
-        "If an action button does not sync and an error for the same button isn't on the 'Last Sync Errors' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures.",
-        "Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content.",
+        (ABSync.L["If an action button does not sync and an error for the same button isn't on the '%s' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures."]):format(ABSync.uitabs["tabs"]["last_sync_errors"]),
+        ABSync.L["Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content."],
     }
 
     -- set label height
@@ -42,7 +51,7 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", instructionsFrame, "TOPRIGHT", -10, -10)
     title:SetHeight(labelHeight)
     title:SetJustifyH("CENTER")
-    title:SetText("Instructions")
+    title:SetText(ABSync.L["Instructions"])
 
     -- create the scroll frame inset frame, parent to the instructions scrolling area
     local instructionsInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
@@ -68,7 +77,7 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     faqTitle:SetPoint("TOPRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", 0, 0)
     faqTitle:SetHeight(labelHeight)
     faqTitle:SetJustifyH("CENTER")
-    faqTitle:SetText("Frequently Asked Questions")
+    faqTitle:SetText(ABSync.L["Frequently Asked Questions"])
 
     -- create faq content frame
     local faqInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")

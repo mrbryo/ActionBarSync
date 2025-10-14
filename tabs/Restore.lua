@@ -1,3 +1,9 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			Restore.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the Restore tab in the UI.
+-----------------------------------------------------------------------------]]
 
 --[[---------------------------------------------------------------------------
     Function:   ClearBackupActionBarDropdown
@@ -45,7 +51,7 @@ function ABSync:LoadBackupActionBars(parent, backupKey)
 
             -- if no data added then apply default value
             if not dataAdded then
-                newData = {["none"] = "No Action Bars Backed Up"}
+                newData = {["none"] = ABSync.L["No Action Bars Backed Up"]}
                 itemOrder = {"none"}
                 selectedItem = "none"
             end
@@ -71,7 +77,7 @@ end
     Purpose:    Clear the action bar selection dropdown and reset to a single "None" value.
 -----------------------------------------------------------------------------]]
 function ABSync:ClearActionBarDropDown()
-    local items = {["none"] = "No Backups Selected"}
+    local items = {["none"] = ABSync.L["No Backups Selected"]}
     local itemOrder = {"none"}
     self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, items, "none")
 end
@@ -314,7 +320,7 @@ function ABSync:ProcessBackupListFrame()
                 checkboxNote:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 20, 0)
                 checkboxNote:SetPoint("RIGHT", scrollContent, "RIGHT", -5, 0)
                 checkboxNote:SetJustifyH("LEFT")
-                checkboxNote:SetText(backupRow.note or "No Description")
+                checkboxNote:SetText(backupRow.note or ABSync.L["No Description"])
                 checkboxNote:SetWordWrap(false)
             end
 
@@ -346,7 +352,7 @@ function ABSync:ProcessBackupListFrame()
         noDataLabel:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 5, -5)
         noDataLabel:SetPoint("RIGHT", scrollContent, "RIGHT", 0, 0)
         noDataLabel:SetJustifyH("LEFT")
-        noDataLabel:SetText("No Backups Found")
+        noDataLabel:SetText(ABSync.L["No Backups Found"])
     end
 
     -- insert empty records if no records inserted
@@ -388,7 +394,7 @@ function ABSync:CreateBackupListFrame(parent)
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Backups Available:")
+    regionLabel:SetText(ABSync.L["Backups Available:"])
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -441,7 +447,7 @@ function ABSync:CreateRestoreFrame(parent)
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText("Restore one Action Bar per Click:")
+    regionLabel:SetText(ABSync.L["Restore one Action Bar per Click:"])
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -452,10 +458,10 @@ function ABSync:CreateRestoreFrame(parent)
     -- label for dropdown
     local dropdownLabel = insetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     dropdownLabel:SetJustifyH("LEFT")
-    dropdownLabel:SetText("Select Action Bar to Restore:")
+    dropdownLabel:SetText(ABSync.L["Select Action Bar to Restore:"])
 
     -- create drop down based on selected backup, initially it will have a fake value
-    local items = {["none"] = "No Backups Selected"}
+    local items = {["none"] = ABSync.L["No Backups Selected"]}
     local itemOrder = {"none"}
     self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, itemOrder, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
         -- track choice by character
@@ -505,7 +511,7 @@ function ABSync:ProcessBackupFrame(parent, tabKey)
         title:SetPoint("TOPRIGHT", backupFrame, "TOPRIGHT", -padding, -padding)
         title:SetHeight(30)
         title:SetJustifyH("CENTER")
-        title:SetText("Backup and Restore")
+        title:SetText(ABSync.L["Restore"])
 
         -- add info label
         local infoFrame = CreateFrame("Frame", nil, backupFrame, "InsetFrameTemplate")
@@ -517,7 +523,7 @@ function ABSync:ProcessBackupFrame(parent, tabKey)
         infoLabel:SetPoint("BOTTOMRIGHT", infoFrame, "BOTTOMRIGHT", -padding, padding)
         infoLabel:SetJustifyH("LEFT")
         infoLabel:SetWordWrap(true)
-        infoLabel:SetText("Backups are stored per character. Select backups by date and time and the action bar (one at a time) to restore. Then click the 'Restore Selected Backup' button.")
+        infoLabel:SetText(ABSync.L["Backups are stored per character. Select backups by date and time and the action bar (one at a time) to restore. Then click the 'Restore Selected Backup' button."])
 
         -- adjust info frame to height of label
         infoFrame:SetHeight(infoLabel:GetStringHeight() + (2 * padding) + 10)

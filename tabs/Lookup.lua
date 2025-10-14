@@ -1,11 +1,15 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			Lookup.lua
+	Author: 		mrbryo
+	Create Date : 	2025-Oct-03
+	Description: 	Building the Lookup tab in the UI.
+-----------------------------------------------------------------------------]]
+
 --[[---------------------------------------------------------------------------
     Function:   LookupAction
     Purpose:    Look up the action based on the last entered action type and ID.
 -----------------------------------------------------------------------------]]
 function ABSync:LookupAction()
-    -- get language data
-    local L = self.L
-
     -- get the action type
     local actionType = self:GetLastActionType()
     
@@ -13,17 +17,17 @@ function ABSync:LookupAction()
     local buttonActionID = self:GetLastActionID()
 
     --@debug@
-    -- if self:GetDevMode() == true then
-        self:Print((L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
-    -- end
+    if self:GetDevMode() == true then
+        self:Print((ABSync.L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
+    end
     --@end-debug@
 
     -- instantiate lookup storage
     local lookupInfo = {
         type = actionType,
         id = buttonActionID,
-        name = self.L["Unknown"],
-        has = self.L["No"]
+        name = ABSync.L["Unknown"],
+        has = ABSync.L["No"]
     }
 
     -- perform lookup based on type
@@ -51,9 +55,6 @@ end
     Returns:    None
 -----------------------------------------------------------------------------]]
 function ABSync:CreateTopRegion(parent)
-    -- get language data
-    local L = self.L
-
     -- set standard values
     local labelWidth = 75
     local controlWidth = 200
@@ -77,7 +78,7 @@ function ABSync:CreateTopRegion(parent)
     introLabel:SetPoint("TOPLEFT", topContent, "TOPLEFT", padding, -padding)
     introLabel:SetPoint("TOPRIGHT", topContent, "TOPRIGHT", -padding, -padding)
     introLabel:SetJustifyH("LEFT")
-    introLabel:SetText(L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."])
+    introLabel:SetText(ABSync.L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."])
     -- topFrameHeight = topFrameHeight + introLabel:GetHeight() + padding
 
     -- build table
@@ -114,7 +115,7 @@ function ABSync:CreateTopRegion(parent)
     local actionIdLabel = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionIdLabel:SetPoint("LEFT", rowID, "LEFT", 0, 0)
     actionIdLabel:SetJustifyH("LEFT")
-    actionIdLabel:SetText(("%sID:|r"):format(ABSync.constants.colors.label))
+    actionIdLabel:SetText(("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["ID"]))
 
     -- action id row; edit box for entering action id
     local actionIdInput = self:CreateEditBox(rowID, controlWidth - paddingAdjust, nil, false, function(self)
@@ -123,7 +124,7 @@ function ABSync:CreateTopRegion(parent)
 
         -- trigger timer
         if value and value ~= "" then
-            ABSync:SetLabelWithTimer(ABSync.ui.label.actionIdSaved, L["Saved!"], 3, nil)
+            ABSync:SetLabelWithTimer(ABSync.ui.label.actionIdSaved, ABSync.L["Saved!"], 3, nil)
         end
     end)
     actionIdInput:SetPoint("LEFT", actionIdLabel, "RIGHT", padding + paddingAdjust, 0)
@@ -134,7 +135,7 @@ function ABSync:CreateTopRegion(parent)
     self.ui.label.actionIdSaved = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     self.ui.label.actionIdSaved:SetPoint("LEFT", actionIdInput, "RIGHT", padding, 0)
     self.ui.label.actionIdSaved:SetJustifyH("LEFT")
-    self.ui.label.actionIdSaved:SetText(L["Saved!"])
+    self.ui.label.actionIdSaved:SetText(ABSync.L["Saved!"])
     local savedWidthId = self.ui.label.actionIdSaved:GetWidth()
     self.ui.label.actionIdSaved:SetText("")  -- clear it out for now
 
@@ -144,7 +145,7 @@ function ABSync:CreateTopRegion(parent)
     local actionNameLabel = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionNameLabel:SetPoint("LEFT", rowName, "LEFT", 0, 0)
     actionNameLabel:SetJustifyH("LEFT")
-    actionNameLabel:SetText(("%sName:|r"):format(ABSync.constants.colors.label))
+    actionNameLabel:SetText(("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Name"]))
 
     -- edit box for enter action name
     local actionNameInput = self:CreateEditBox(rowName, controlWidth - paddingAdjust, nil, false, function(self)
@@ -153,7 +154,7 @@ function ABSync:CreateTopRegion(parent)
 
         -- trigger timer
         if value and value ~= "" then
-            ABSync:SetLabelWithTimer(ABSync.ui.label.actionNameSaved, L["Saved!"], 3, nil)
+            ABSync:SetLabelWithTimer(ABSync.ui.label.actionNameSaved, ABSync.L["Saved!"], 3, nil)
         end
     end)
     actionNameInput:SetPoint("LEFT", actionNameLabel, "RIGHT", padding + paddingAdjust, 0)
@@ -167,7 +168,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ action type row ]]
     
     -- label for drop down
-    local actionTypeLabelText = ("%sType:|r"):format(ABSync.constants.colors.label)
+    local actionTypeLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Type"])
     local actionTypeLabel = rowType:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionTypeLabel:SetPoint("LEFT", rowType, "LEFT", 0, 0)
     actionTypeLabel:SetJustifyH("LEFT")
@@ -198,7 +199,7 @@ function ABSync:CreateTopRegion(parent)
     -- topFrameHeight = topFrameHeight + actionTypeDropDown:GetHeight() + padding
 
     -- action type row; button to perform the lookup
-    local lookupButton = self:CreateStandardButton(rowType, nil, L["lookupbuttonname"], 75, function()
+    local lookupButton = self:CreateStandardButton(rowType, nil, ABSync.L["Lookup"], 75, function()
         ABSync:LookupAction()
     end)
     lookupButton:SetPoint("LEFT", actionTypeDropDown, "RIGHT", padding, 0)
@@ -207,7 +208,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ action bar choice row ]]
 
     -- label for drop down
-    local actionBarLabelText = ("%sBar:|r"):format(ABSync.constants.colors.label)
+    local actionBarLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Bar"])
     local actionBarLabel = rowBar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBarLabel:SetPoint("LEFT", rowBar, "LEFT", 0, 0)
     actionBarLabel:SetJustifyH("LEFT")
@@ -225,7 +226,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ action button drop down row]]
 
     -- label for button drop down
-    local actionBtnLabelText = ("%sButton:|r"):format(ABSync.constants.colors.label)
+    local actionBtnLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Button"])
     local actionBtnLabel = rowBtn:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBtnLabel:SetPoint("LEFT", rowBtn, "LEFT", 0, 0)
     actionBtnLabel:SetJustifyH("LEFT")
@@ -242,7 +243,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ place action button row ]]
 
     -- place action button
-    local applyActionButton = self:CreateStandardButton(rowTrigger, nil, "Place Action", 100, function()
+    local applyActionButton = self:CreateStandardButton(rowTrigger, nil, ABSync.L["Place Action"], 100, function()
         -- get stored values
         local buttonActionID = ABSync:GetLastActionID()
         local actionType = ABSync:GetLastActionType()
@@ -374,9 +375,6 @@ end
     Returns:    None
 -----------------------------------------------------------------------------]]
 function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
-    -- get language data
-    local L = self.L
-
     -- set standard values
     local labelWidth = 75
     local controlWidth = 200
@@ -398,7 +396,7 @@ function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
     title:SetPoint("TOPLEFT", historyContent, "TOPLEFT", 0, 0)
     title:SetPoint("TOPRIGHT", historyContent, "TOPRIGHT", 0, 0)
     title:SetJustifyH("LEFT")
-    title:SetText(L["History"])
+    title:SetText(ABSync.L["History"])
 
     -- add frame to show history
     local historyFrame = CreateFrame("Frame", nil, historyContent, "InsetFrameTemplate")

@@ -68,7 +68,7 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     end)
     
     -- set frame title following addon's color scheme
-    frame.TitleText:SetText(("%sAction Bar Identification Guide|r"):format(self.constants.colors.label))
+    frame.TitleText:SetText(("%s%s|r"):format(self.constants.colors.label, ABSync.L["Action Bar Identification Guide"]))
     
     -- create texture to display the image using actual dimensions
     local texture = frame:CreateTexture(nil, "ARTWORK")
@@ -90,7 +90,7 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print(("Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"):format(
+        self:Print((ABSync.L["Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"]):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
     --@end-debug@
@@ -125,14 +125,14 @@ function ABSync:CreateContentFrame(parent)
         contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
         
         -- create close button
-        local closeButton = self:CreateStandardButton(footer, nil, "Close", 80, function()
+        local closeButton = self:CreateStandardButton(footer, nil, ABSync.L["Close"], 80, function()
             parent:Hide()
         end)
         local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
         closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
     
         -- add button to show action bar guide
-        local guideButton = self:CreateStandardButton(footer, nil, "Show Action Bar Guide", 150, function()
+        local guideButton = self:CreateStandardButton(footer, nil, ABSync.L["Show Action Bar Guide"], 150, function()
             self:CreateBarIdentificationFrame(parent)
         end)
         guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
@@ -161,7 +161,7 @@ function ABSync:ProcessTabContentFrame(tabKey, parent)
 
     -- check if nil
     if tabID == ABSync.L["Unknown"] then
-        self:Print(("Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."):format(tostring(tabKey)))
+        self:Print((ABSync.L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."]):format(tostring(tabKey)))
         return nil, false
     end
 
