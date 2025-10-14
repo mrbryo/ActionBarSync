@@ -64,7 +64,7 @@ function ABSync:GetCheckboxGlobalName(barID, playerID)
     if not fixedBarName then
         fixedBarName = "UnknownBarName" .. self:GetRandom6DigitNumber()
         if self:GetDevMode() == true then
-            self:Print(ABSync.L["(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: "] .. fixedBarName)
+            self:Print(ABSync.L["(GetCheckboxGlobalName) Failed to Translate Bar Name! Please report as an issue. Using: "] .. fixedBarName)
         end
     end
 

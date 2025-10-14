@@ -71,214 +71,215 @@ L["called from"] = "called from"
 L["Chinese (Simplified)"] = "Chinese (Simplified)"
 -- about tab; label for language
 L["Chinese (Traditional)"] = "Chinese (Traditional)"
--- dev tab; label for button to clear mount db for this character
+-- Dev tab; label for button to clear mount db for this character. Tab is only visible if a developer uses special command line value.
 L["Clear Character Mount DB"] = "Clear Character Mount DB"
 -- utilities tab; label for button to trigger clear action bar
 L["Clear Selected Bar"] = "Clear Selected Bar"
--- dev tab; message about button (Manual Action Button Placement) purpose
+-- Dev tab; UI message about button (Manual Action Button Placement) purpose. Tab is only visible if a developer uses special command line value.
 L["Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes."] = "Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes."
--- dev tab; message about button (Refresh Mount DB) purpose
+-- Dev tab; UI message about button (Refresh Mount DB) purpose. Tab is only visible if a developer uses special command line value.
 L["Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file."] = "Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file."
--- main frame; close button label found in footer area
+-- Main frame; close button label found in footer area.
 L["Close"] = "Close"
 
 -- D
--- dev tab; title at top of tab
+-- Dev tab; title at top of tab. Tab is only visible if a developer uses special command line value.
 L["Developer"] = "Developer"
 
 -- E
--- share/sync tab; label for checkbox to auto sync on login
+-- Share/sync tab; label for checkbox to auto sync on login.
 L["Enable Sync on Login (no backups occur)"] = "Enable Sync on Login (no backups occur)"
--- popup text for asking for backup name from user
+-- Popup text for asking for backup name from user during manual sync.
 L["Enter a name for this backup:"] = "Enter a name for this backup:"
--- dev tab; info shown to user if the dev frame isn't created
+-- Dev tab; info shown to user if the dev frame isn't created.
 L["Error: devFrame is nil in ProcessDeveloperFrame."] = "Error: devFrame is nil in ProcessDeveloperFrame."
--- processing tab content function; if a tab key is invalid
+-- Processing tab content function; if a tab key is invalid. User can then open an issue.
 L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."] = "Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."
--- dev mode only; notification that errors exist on the Sync Errors tab
+-- Dev mode only; notification errors exist on the Sync Errors tab.
 L["Errors Exist"] = "Errors Exist"
 
 -- F
--- about tab; label for language
+-- About tab; label for French language.
 L["French"] = "French"
--- about tab; label for FAQ section
+-- About tab; label for FAQ section.
 L["Frequently Asked Questions"] = "Frequently Asked Questions"
--- generic; used in multiple places
+-- Generic; used in multiple places; simply a lower case 'from', that's it.
 L["from"] = "from"
 
 -- G
--- about tab; label for language
+-- About tab; label for German language.
 L["German"] = "German"
--- action function for flyouts; error text for returning data from function
+-- Action function for flyouts; error text for returning data from function. Other info appended to this string.
 L["GetFlyoutInfo failed"] = "GetFlyoutInfo failed"
 
 -- H
--- lookup tab; header for history section
+-- Lookup tab; header for history section. If user has the action or not.
 L["Has"] = "Has"
--- about tab; localization help request
+-- About tab; localization help request.
 L["Help translate this addon into your language."] = "Help translate this addon into your language."
--- lookup tab; header for history section
+-- Lookup tab; header for history section.
 L["History"] = "History"
 
 -- I
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["ID"] = "ID"
--- about tab; issues note
+-- About tab; issues note.
 L["If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits."] = "If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits."
--- about tab; support note
+-- About tab; support note.
 L["If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!"] = "If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!"
--- about tab; patreon support note
+-- About tab; patreon support note.
 L["If you like this addon and want to support me, please consider becoming a patron."] = "If you like this addon and want to support me, please consider becoming a patron."
--- intro tab; title for tab
+-- Intro tab; title for tab.
 L["Instructions"] = "Instructions"
--- about tab; issues label
-L["Issues"] = "Issues"
--- tab name and title for Introduction tab
+-- Introduction tab, tab name and title.
 L["Introduction"] = "Introduction"
--- about tab; label for language
+-- About tab; issues label.
+L["Issues"] = "Issues"
+-- About tab; label for Italian language.
 L["Italian"] = "Italian"
 
 -- J
 
 -- K
--- about tab; label for language
+-- About tab; label for Korean language.
 L["Korean"] = "Korean"
 
 -- L
--- global variable safe name for the last sync errors tab
-L["LastSyncErrors"] = "LastSyncErrors"
--- share/sync tab; label for last scan time
+-- Share/sync tab; label for last scan time.
 L["Last Scan on this Character"] = "Last Scan on this Character"
--- last sync error tab header and label
+-- Last sync error tab, header and label.
 L["Last Sync Errors"] = "Last Sync Errors"
--- share/sync tab; label for last sync time
+-- Share/sync tab; label for last sync time.
 L["Last Sync on this Character"] = "Last Sync on this Character"
--- about tab; localization label
+-- Global variable safe name for the last sync errors tab.
+L["LastSyncErrors"] = "LastSyncErrors"
+-- About tab; localization label.
 L["Localization"] = "Localization"
--- dev mode only; lookup action tab lookup action triggered
+-- Dev mode only; on lookup action tab when lookup action triggered.
 L["Looking up Action - Type: %s - ID: %s"] = "Looking up Action - Type: %s - ID: %s"
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Lookup"] = "Lookup"
--- lookup tab; section title
+-- Lookup tab; section title.
 L["Lookup & Assign"] = "Lookup & Assign"
 
 -- M
--- dev tab; area title for manual action placement section
+-- Dev tab; area title for manual action placement section.
 L["Manual Action Button Placement"] = "Manual Action Button Placement"
--- dev tab; frame title for mount db section
+-- Dev tab; frame title for mount db section.
 L["Mount Database"] = "Mount Database"
--- mount db cleared message
+-- Dev tab, mount db cleared message.
 L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."] = "Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."
--- mount db refreshed message
+-- Dev tab, mount db refreshed message.
 L["Mount DB Refreshed! Reload the UI by using this command: /reload"] = "Mount DB Refreshed! Reload the UI by using this command: /reload"
--- notify user mount filter has been reset
+-- Notify user mount filter has been reset.
 L["Mount Journal filters have been set to show all collected mounts."] = "Mount Journal filters have been set to show all collected mounts."
 
 -- N
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Name"] = "Name"
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Never"] = "Never"
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["No"] = "No"
--- restore tab; populate action bar drop down when no backups are found
+-- Restore tab; populates action bar drop down when no backups are found.
 L["No Action Bars Backed Up"] = "No Action Bars Backed Up"
--- restore tab; shown when no backups are found in the listing where backups would go
+-- Restore tab; shown when no backups are found in the listing where backups would go.
 L["No Backups Found"] = "No Backups Found"
--- restore tab; shown when no backups are selected
+-- Restore tab; shown when no backups are selected.
 L["No Backups Selected"] = "No Backups Selected"
--- restore tab; shown when no note is found for a backup
+-- Restore tab; shown when no note is found for a backup.
 L["No Description"] = "No Description"
--- default text for flyout data fetch
+-- Default text for flyout data fetch.
 L["No Error"] = "No Error"
--- share/sync tab; shown when no shared action bars are found from other characters
+-- Share/sync tab; shown when no shared action bars are found from other characters.
 L["No Shared Action Bars Found"] = "No Shared Action Bars Found"
 
 -- O
--- share/sync tab; label for checkbox to remove current action button on placement failure
+-- Share/sync tab; label for checkbox to remove current action button on placement failure.
 L["On Placement Failure Remove Current Action Button"] = "On Placement Failure Remove Current Action Button"
 
 -- P
--- about tab; label for patreon
+-- About tab; label for patreon.
 L["Patreon"] = "Patreon"
--- lookup tab; button to trigger action placement on action bar
+-- Lookup tab; button to trigger action placement on action bar.
 L["Place Action"] = "Place Action"
--- thank you for any translation work by others
+-- About tab, thank you for any translation work by others.
 L["Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!"] = "Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!"
--- about tab; label for language
+-- About tab; label for Portuguese Brazilian language.
 L["Portuguese (Brazil)"] = "Portuguese (Brazil)"
 
 -- Q
 
 -- R
--- dev tab; label for button to refresh mount db for this character
+-- Dev tab; label for button to refresh mount db for this character.
 L["Refresh Mount DB"] = "Refresh Mount DB"
--- dev tab; label for button to reload the ui
+-- Dev tab; label for button to reload the UI.
 L["Reload UI"] = "Reload UI"
--- utilities tab; frame title
+-- Utilities tab; frame title.
 L["Remove Action Bar Buttons"] = "Remove Action Bar Buttons"
--- share/sync tab; label for button to reset mount filters
+-- Share/sync tab; label for button to reset mount filters.
 L["Reset Mount Filters"] = "Reset Mount Filters"
--- restore tab; title for the entire tab
+-- Restore tab; title for the entire tab.
 L["Restore"] = "Restore"
--- restore tab; label for area to pick action bar to restore when a backup is selected
+-- Restore tab; label for area to pick action bar to restore when a backup is selected.
 L["Restore one Action Bar per Click:"] = "Restore one Action Bar per Click:"
--- about tab; label for language
+-- About tab; label for Russian language.
 L["Russian"] = "Russian"
 
 -- S
--- lookup tab; shown when an edit box is updated to show the value was saved
+-- Lookup tab; shown when an edit box is updated to show the value was saved.
 L["Saved!"] = "Saved!"
--- share/sync tab; button to trigger a scan of the action bars on the current character
+-- Share/sync tab; button to trigger a scan of the action bars on the current character.
 L["Scan Now"] = "Scan Now"
--- restore tab; label for action bar selection dropdown
+-- Restore tab; label for action bar selection dropdown.
 L["Select Action Bar to Restore:"] = "Select Action Bar to Restore:"
--- share/sync tab; title for action bar listing
+-- Share/sync tab; title for action bar listing. Colon left off intentionally.
 L["Select Action Bars to Share"] = "Select Action Bars to Share"
--- global variable safe name for the share & sync tab
-L["ShareSync"] = "ShareSync"
--- share/sync tab; title for tab
+-- Share/sync tab; title for tab.
 L["Share & Sync"] = "Share & Sync"
--- footer button for showing the action bar guide picture
+-- Global variable safe name for the share & sync tab title. No spaces!
+L["ShareSync"] = "ShareSync"
+-- Footer button for showing the action bar guide picture.
 L["Show Action Bar Guide"] = "Show Action Bar Guide"
--- about tab; label for language
+-- About tab; label for Spanish (Mexico) language.
 L["Spanish (Mexico)"] = "Spanish (Mexico)"
--- about tab; label for language
+-- About tab; label for Spanish (Spain) language.
 L["Spanish (Spain)"] = "Spanish (Spain)"
--- share/sync tab; title for area to pick whom to sync from
+-- Share/sync tab; title for area to pick whom to sync from.
 L["Sync Action Bars From"] = "Sync Action Bars From"
--- share/sync tab; button to trigger a sync of the action bars on the current character
+-- Share/sync tab; button to trigger a sync of the action bars on the current character.
 L["Sync Now"] = "Sync Now"
 
 -- T
--- intro description for lookup tab
+-- Lookup tab, intro description.
 L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."] = "This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."
--- dev tab; notification to non deveveloper users
+-- Dev tab; notification to non developer users. Tab is only visible if a developer uses special command line value.
 L["This tab is used for development purposes only."] = "This tab is used for development purposes only."
--- about tab; title for translator section
+-- About tab; title for translator section.
 L["Translators"] = "Translators"
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Type"] = "Type"
 
 -- U
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Unknown"] = "Unknown"
--- utilities tab; title for the tab
+-- Utilities tab; title for the tab.
 L["Utilities"] = "Utilities"
 
 -- V
--- about tab; label for version
+-- About tab; label for version.
 L["Version"] = "Version"
 
 -- W
+-- Dev tab; part of notification to developers. Tab is only visible if a developer uses special command line value.
 L["Warning"] = "Warning"
 
 -- X
 
 -- Y
--- generic; used in multiple places
+-- Generic; used in multiple places.
 L["Yes"] = "Yes"
--- popup text for no action bars selected to sync
+-- Popup text for no action bars selected to sync.
 L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."] = "You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."
 
 -- Z
@@ -286,7 +287,7 @@ L["You must select at least one action bar to sync. Go back to 'Sync Settings' a
 -- Other
 L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"] = "(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"
 
--- instructions
+-- Introduction tab; an instruction. Please leave '|cff00ff00' and '|r' intact as they are color codes.
 L["On the |cff00ff00%s|r tab click the |cff00ff00%s|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00%s|r button will be removed."] = "On the |cff00ff00%s|r tab click the |cff00ff00%s|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00%s|r button will be removed."
 L["Definition: Source Character - A character which has action bars you want to share with other characters."] = "Definition: Source Character - A character which has action bars you want to share with other characters."
 L["Definition: Target Character - A character which will receive action bar data from one or more source characters."] = "Definition: Target Character - A character which will receive action bar data from one or more source characters."
@@ -296,14 +297,15 @@ L["On the |cff00ff00%s|r tab, once the previous step is done, click the |cff00ff
 L["Done!"] = "Done!"
 
 -- FAQ
+-- Introduction tab; another FAQ.
 L["If an action button does not sync and an error for the same button isn't on the '%s' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures."] = "If an action button does not sync and an error for the same button isn't on the '%s' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures."
 L["Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content."] = "Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content."
 
 -- Dev Only
-L["(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: "] = "(ProcessSyncCheckbox) Failed to Translate Bar Name! Please report as an issue. Using: "
+L["(GetCheckboxGlobalName) Failed to Translate Bar Name! Please report as an issue. Using: "] = "(GetCheckboxGlobalName) Failed to Translate Bar Name! Please report as an issue. Using: "
 L["(%s) self.ui.frame.syncContent does not exist, cannot process sync region."] = "(%s) self.ui.frame.syncContent does not exist, cannot process sync region."
 
--- header for sync errors
+-- Sync error tab, table header.
 L["Bar Name"] = "Bar Name"
 L["Bar Pos"] = "Bar Pos"
 L["Button ID"] = "Button ID"
@@ -313,7 +315,7 @@ L["Action ID"] = "Action ID"
 L["Shared By"] = "Shared By"
 L["Message"] = "Message"
 
--- action types
+-- Action Type, used in multiple places.
 L["Spell"] = "Spell"
 L["Item"] = "Item"
 L["Macro"] = "Macro"
