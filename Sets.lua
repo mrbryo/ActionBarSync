@@ -241,14 +241,13 @@ function ABSync:SetPlacementErrorClearButton(value)
 
     -- make sure data structure exists
     local isSet = self:SetupProfileDB()
-    print("HERE1")
 
     if isSet == true then
         ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton = value
         --@debug@
-        -- if self:GetDevMode() == true then
-            self:Print((ABSync.L["Set Placement Error Clear Button for %s to %s"]):format(tostring(self.currentPlayerServer), tostring(value)))
-        -- end
+        if self:GetDevMode() == true then
+            self:Print(("Set Placement Error Clear Button for %s to %s"):format(tostring(self.currentPlayerServer), tostring(value)))
+        end
         --@end-debug@
     else
         self:Print((ABSync.L["Error Setting Placement Error Clear Button to: %s for %s!"]):format(tostring(value), tostring(self.currentPlayerServer)))

@@ -101,6 +101,8 @@ L["Error: devFrame is nil in ProcessDeveloperFrame."] = "Error: devFrame is nil 
 L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."] = "Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."
 -- Dev mode only; notification errors exist on the Sync Errors tab.
 L["Errors Exist"] = "Errors Exist"
+-- Share/sync tab; error text for checking the placement error clear button value. Other info appended to this string.
+L["Error Setting Placement Error Clear Button to: %s for %s!"] = "Error Setting Placement Error Clear Button to: %s for %s!"
 
 -- F
 -- Share/sync tab; popup body message when no differences found to sync.
