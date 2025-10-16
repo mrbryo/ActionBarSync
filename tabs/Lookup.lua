@@ -350,6 +350,7 @@ end
 --[[---------------------------------------------------------------------------
     Function:   UpdateLookupHistory
     Purpose:    Update the rows of data in the scroll region for lookup history.
+    TODO:       Replace the removal of frames with global names and reuse existing frames.
 -----------------------------------------------------------------------------]]
 function ABSync:UpdateLookupHistory()
     -- set initial offset

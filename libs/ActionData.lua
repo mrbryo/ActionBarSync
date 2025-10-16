@@ -177,11 +177,12 @@ function ABSync:GetItemDetails(buttonActionID)
     -- end
     --@end-debug@
     -- finally return the data collected
+    local finalItemName = itemName or toyData.name or ABSync.L["Unknown"]
     return {
         blizData = {
             -- C_Item.GetItemInfo
             itemInfo = {
-                name = itemName or ABSync.L["Unknown"],
+                name = finalItemName,
                 link = itemLink or ABSync.L["Unknown"],
                 quality = itemQuality or ABSync.L["Unknown"],
                 level = itemLevel or -1,
@@ -207,12 +208,13 @@ function ABSync:GetItemDetails(buttonActionID)
             toyIndex = toyIndex,
             toyID = toyID,
             -- data standardization for UpdateActionBars
-            name = itemName or toyData.name or ABSync.L["Unknown"]
+            name = finalItemName
         },
         buttonActionID = buttonActionID,
         isToy = isToy,
         userItemCount = itemCount,
         has = (itemCount > 0 or toyUsable) and ABSync.L["Yes"] or ABSync.L["No"],
+        name = finalItemName
     }
 end
 
@@ -243,7 +245,8 @@ function ABSync:GetMacroDetails(buttonActionID)
         },
         macroType = macroType,
         buttonActionID = buttonActionID,
-        hasMacro = macroName and ABSync.L["Yes"] or ABSync.L["No"],
+        has = macroName and ABSync.L["Yes"] or ABSync.L["No"],
+        name = macroName or ABSync.L["Unknown"],
     }
 end
 
@@ -333,6 +336,8 @@ function ABSync:GetMountinfo(buttonActionID)
         displayIndex = displayIndex or -1,
         buttonActionID = buttonActionID,
         mountJournalIndex = mountJournalIndex or -1,
+        name = name or ABSync.L["Unknown"],
+        has = isCollected and ABSync.L["Yes"] or ABSync.L["No"],
     }
 end
 
@@ -385,7 +390,8 @@ function ABSync:GetPetDetails(buttonActionID)
             obtainable = obtainable or false
         },
         buttonActionID = buttonActionID,
-        hasPet = name and ABSync.L["Yes"] or ABSync.L["No"]
+        has = name and ABSync.L["Yes"] or ABSync.L["No"],
+        name = name or ABSync.L["Unknown"],
     }
 end
 
@@ -397,7 +403,7 @@ function ABSync:GetSpellDetails(buttonActionID)
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, buttonActionID
     local spellData = C_Spell.GetSpellInfo(buttonActionID)
     local spellName = spellData and spellData.name or ABSync.L["Unknown"]
-    local hasSpell = self:CharacterHasSpell(buttonActionID)
+    local has = self:CharacterHasSpell(buttonActionID)
     local isTalentSpell = C_Spell.IsClassTalentSpell(buttonActionID) or false
     local isPvpSpell = C_Spell.IsPvPTalentSpell(buttonActionID) or false
     local spellLink = C_Spell.GetSpellLink(buttonActionID) or ABSync.L["Unknown"]
@@ -426,7 +432,7 @@ function ABSync:GetSpellDetails(buttonActionID)
             baseID = baseID,
         },
         buttonActionID = buttonActionID,
-        hasSpell = hasSpell,
+        has = has,
         isTalent = isTalentSpell,
         isPvp = isPvpSpell,
         overrideWithBaseID = overrideWithBaseID,

@@ -604,7 +604,7 @@ function ABSync:GetActionData(buttonActionID, actionType)
 
     -- process by type
     if actionType == "spell" then
-        -- get spell details: data, name, hasSpell
+        -- get spell details
         returnData = self:GetSpellDetails(buttonActionID)
     elseif actionType == "item" then
         -- get item details
@@ -874,11 +874,11 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     --[[ spell - do not override with sharedAction, we need current details for the same spell to act on ]]
 
     if actionType == "spell" then
-        -- if hasSpell is no, set message as not picked up and spell unknown
-        if actionDetails.hasSpell == ABSync.L["No"] then
+        -- if has is no, set message as not picked up and spell unknown
+        if actionDetails.has == ABSync.L["No"] then
             response.msg = ABSync.L["Not Picked Up - Spell not known!"]
 
-        -- otherwise hasSpell is yes, pick it up
+        -- otherwise has is yes, pick it up
         else
             -- track correct spellid
             local spellID = sharedAction.parameters.buttonActionID
@@ -932,7 +932,7 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
             response.msg = ABSync.L["Picked Up - General Macro"]
 
         -- not shared action so pick up based on current action details for this character
-        elseif actionDetails.hasMacro == ABSync.L["Yes"] then
+        elseif actionDetails.has == ABSync.L["Yes"] then
             PickupMacro(actionDetails.blizData.name)
             response.pickedUp = true
             response.msg = ABSync.L["Picked Up - Not Shared Macro"]
@@ -941,7 +941,7 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     --[[ summonpet - do not override with sharedAction, we need current details for the same pet to act on ]]
 
     elseif actionType == "summonpet" then
-        if actionDetails.hasPet == ABSync.L["No"] then
+        if actionDetails.has == ABSync.L["No"] then
             response.msg = ABSync.L["Not Picked Up - Pet not known!"]
         else
             -- pickup the pet
