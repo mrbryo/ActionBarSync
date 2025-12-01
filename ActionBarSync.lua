@@ -1303,6 +1303,25 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                 for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID][sharedby]) do
                     -- loop over checkValues
                     for _, testit in ipairs(checkValues) do
+
+                        --@debug@
+                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, self.currentPlayerServerSpec, barID, buttonID))
+                        -- local val1 = testit
+                        -- local val2 = buttonData.blizData.actionInfo[testit] or "nil"
+                        -- local val3 = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] or "nil"
+                        -- local val4 = self.currentPlayerServerSpec or "nil"
+                        -- local val5 = barID or "nil"
+                        -- local val6 = buttonID or "nil"
+                        --@end-debug@
+
+                        -- translate buttonID to the blizzard button it
+                        -- local blizzardActionButtonID = ABSync.constants.actionButtonTranslation[barID][buttonID]
+                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, self.currentPlayerServerSpec, barID, buttonID))
+                        -- Test It: sourceIDString, Player: Chenlei-Malfurion-Elemental, Bar ID: actionbar4, Button ID: 33
+                        -- Test It: sourceIDString, Player: Ranjun-Malfurion-Frost, Bar ID: actionbar2, Button ID: 61
+                        --                                                          Bar ID: actionbar1, Button ID: 1
+
+                        -- compare values
                         if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
                             differencesFound = true
                             table.insert(differences, {

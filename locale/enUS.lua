@@ -181,6 +181,8 @@ L["Mount DB Cleared! Reload the UI by using the button (to update data now) or w
 L["Mount DB Refreshed! Reload the UI by using this command: /reload"] = "Mount DB Refreshed! Reload the UI by using this command: /reload"
 -- Notify user mount filter has been reset.
 L["Mount Journal filters have been set to show all collected mounts."] = "Mount Journal filters have been set to show all collected mounts."
+-- Share/sync tab; used in response for trying to place an action button during a sync; mount successfully picked up so we record its index value
+L["Mount Journal Index: "] = "Mount Journal Index: "
 
 -- N
 -- Generic; used in multiple places.
@@ -201,6 +203,33 @@ L["No Description"] = "No Description"
 L["No Error"] = "No Error"
 -- Share/sync tab; shown when no shared action bars are found from other characters.
 L["No Shared Action Bars Found"] = "No Shared Action Bars Found"
+-- Share/sync tab; used in response for trying to place an action button during a sync; cursor empty means game not able to pick up the action button to place it or remove it
+L["Not Placed - Cursor Empty!"] = "Not Placed - Cursor Empty!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; shared macro successfully picked up
+L["Picked Up - General Macro"] = "Picked Up - General Macro"
+-- Share/sync tab; used in response for trying to place an action button during a sync; item is identified as a toy but character can't use it
+L["Not Picked Up - Item is a toy but not usable by character!"] = "Not Picked Up - Item is a toy but not usable by character!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; item is not a toy and not in player's inventory
+L["Not Picked Up - Item is not a toy and not in inventory!"] = "Not Picked Up - Item is not a toy and not in inventory!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; invalid action id
+L["Not Picked Up - Invalid Action ID!"] = "Not Picked Up - Invalid Action ID!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; invalid shared action id
+L["Not Picked Up - Invalid Shared Action ID!"] = "Not Picked Up - Invalid Shared Action ID!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; macro is character specific
+L["Not Picked Up - Macro from sync is character specific!"] = "Not Picked Up - Macro from sync is character specific!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; mount not found
+L["Not Picked Up - Mount not found! May need to reset mount filters and sync again."] = "Not Picked Up - Mount not found! May need to reset mount filters and sync again!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; character specific macro (or not shared or generic macro) picked up
+L["Picked Up - Not Shared Macro"] = "Picked Up - Not Shared Macro"
+-- Share/sync tab; used in response for trying to place an action button during a sync; pet not known
+L["Not Picked Up - Pet not known!"] = "Not Picked Up - Pet not known!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; spell not known
+L["Not Picked Up - Spell not known!"] = "Not Picked Up - Spell not known!"
+-- Share/sync tab; used in response for trying to place an action button during a sync; generic unknown reason
+L["Not Picked Up - Unknown"] = "Not Picked Up - Unknown"
+-- Share/sync tab; used in response for trying to place an action button during a sync; unknown action type
+L["Not Picked Up - Unknown Action Type!"] = "Not Picked Up - Unknown Action Type!"
+
 
 -- O
 -- Generic; used in multiple places, normally OK buttons.
@@ -211,6 +240,8 @@ L["On Placement Failure Remove Current Action Button"] = "On Placement Failure R
 -- P
 -- About tab; label for patreon.
 L["Patreon"] = "Patreon"
+-- Share/sync tab; used in response for trying to place an action button during a sync
+L["Picked Up"] = "Picked Up"
 -- Lookup tab; button to trigger action placement on action bar.
 L["Place Action"] = "Place Action"
 -- About tab, thank you for any translation work by others.
