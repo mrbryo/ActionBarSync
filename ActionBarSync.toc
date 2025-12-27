@@ -2,7 +2,7 @@
 ## Title: Action Bar Sync
 ## Notes: Pick which action bars to keep in sync from other characters.
 ## Author: mrbryo
-## Version: 0.0.1
+## Version: 0.0.14
 ## RequiredDeps:
 ## X-Curse-Project-ID: 1141659
 ## X-Curse-Project-Name: Action Bar Sync
