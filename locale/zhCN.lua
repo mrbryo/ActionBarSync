@@ -13,7 +13,7 @@ ABSync.locales["zhCN"] = {}
 local L = ABSync.locales["zhCN"]
 
 -- following line is replaced when packaged through curseforge using their localization tool
---@localization(locale="zhCN", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
+--@localization(locale="zhCN", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@
 
 --@do-not-package@ 
 --[[ leaving all for development purposes, export from curseforge ]]

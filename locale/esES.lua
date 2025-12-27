@@ -13,7 +13,7 @@ ABSync.locales["esES"] = {}
 local L = ABSync.locales["esES"]
 
 -- following line is replaced when packaged through curseforge using their localization tool
---@localization(locale="esES", format="lua_additive_table", same-key-is-true=true, handle-subnamespaces="concat", handle-unlocalized="english")@
+--@localization(locale="esES", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@
 
 --@do-not-package@ 
 --[[ leaving all for development purposes, export from curseforge ]]
