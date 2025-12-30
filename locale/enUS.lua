@@ -45,6 +45,11 @@ L["Another support option is to help with localizations. If you are fluent in ot
 L["Author"] = "Author"
 -- share/sync tab; label for checkbox to auto reset mount filters on sync
 L["Automatically Reset Mount Journal Filters"] = "Automatically Reset Mount Journal Filters"
+-- options panel
+L["Action Bar Sync Options"] = "Action Bar Sync Options"
+L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] = "Action Bar Sync allows you to synchronize action bar configurations between your characters."
+L["You can open the Action Bar Sync interface using the following slash commands:"] = "You can open the Action Bar Sync interface using the following slash commands:"
+L["Open Action Bar Sync"] = "Open Action Bar Sync"
 
 -- B
 -- global variable safe name for the backup & restore tab

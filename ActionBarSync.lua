@@ -154,6 +154,9 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
     -- Register Events using native system
     ABSync:RegisterAddonEvents()
 
+    -- Create and register the options panel
+    ABSync:CreateOptionsPanel()
+
 	-- unregister event
 	ABSync:UnregisterEvent("ADDON_LOADED")
 end)
@@ -2419,6 +2422,50 @@ function ABSync:ProcessTabSystem(parent)
 
     -- assign buttons to addon global
     ABSync.uitabs["buttons"] = tabButtons
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateOptionsPanel
+    Purpose:    Create a single options pane for the Interface Options.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateOptionsPanel()
+    -- create the main options panel frame
+    local panel = CreateFrame("Frame", "ActionBarSyncOptionsPanel", InterfaceOptionsFramePanelContainer)
+    panel.name = ABSync.L["Action Bar Sync Options"] or "Action Bar Sync Options"
+    
+    -- create title
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
+    title:SetText(ABSync.L["Action Bar Sync"] or "Action Bar Sync")
+    
+    -- create description
+    local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -16)
+    description:SetWidth(500)
+    description:SetJustifyH("LEFT")
+    description:SetWordWrap(true)
+    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands:"] .. "\n\n/actionbarsync\n/abs")
+    
+    -- create button to open the addon
+    local openButton = CreateFrame("Button", "ActionBarSyncOpenButton", panel, "UIPanelButtonTemplate")
+    openButton:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -24)
+    openButton:SetSize(150, 22)
+    openButton:SetText(ABSync.L["Open Action Bar Sync"] or "Open Action Bar Sync")
+    openButton:SetScript("OnClick", function()
+        ABSync:ShowUI()
+        InterfaceOptionsFrame:Hide()
+    end)
+    
+    -- add to Interface Options (compatible with both old and new systems)
+    if InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(panel)
+    elseif Settings and Settings.RegisterCanvasLayoutCategory then
+        -- Modern WoW Interface Options system
+        local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+        Settings.RegisterAddOnCategory(category)
+    end
+    
+    return panel
 end
 
 --EOF
