@@ -156,6 +156,9 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 
     -- Create and register the options panel
     ABSync:CreateOptionsPanel()
+    
+    -- Create minimap button using LibDBIcon
+    ABSync:CreateMinimapButton()
 
 	-- unregister event
 	ABSync:UnregisterEvent("ADDON_LOADED")
@@ -2431,7 +2434,7 @@ end
 function ABSync:CreateOptionsPanel()
     -- create the main options panel frame
     local panel = CreateFrame("Frame", "ActionBarSyncOptionsPanel", InterfaceOptionsFramePanelContainer)
-    panel.name = ABSync.L["Action Bar Sync Options"] or "Action Bar Sync Options"
+    panel.name = ABSync.L["Action Bar Sync"] or "Action Bar Sync"
     
     -- create title
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -2463,9 +2466,98 @@ function ABSync:CreateOptionsPanel()
         -- Modern WoW Interface Options system
         local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
         Settings.RegisterAddOnCategory(category)
+        -- Store category reference for opening later
+        panel.settingsCategory = category
     end
     
+    -- Store panel reference globally for minimap button access
+    ABSync.optionsPanel = panel
+    
     return panel
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CreateMinimapButton
+    Purpose:    Create minimap button using LibDBIcon-1.0.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateMinimapButton()
+    -- Check if LibStub and LibDBIcon are available
+    if not LibStub then
+        --@debug@
+        self:Print("LibStub not found, minimap button disabled")
+        --@end-debug@
+        return
+    end
+    
+    local LibDBIcon = LibStub:GetLibrary("LibDBIcon-1.0", true)
+    if not LibDBIcon then
+        --@debug@
+        self:Print("LibDBIcon-1.0 not found, minimap button disabled")
+        --@end-debug@
+        return
+    end
+    
+    local LDB = LibStub:GetLibrary("LibDataBroker-1.1", true)
+    if not LDB then
+        --@debug@
+        self:Print("LibDataBroker-1.1 not found, minimap button disabled")
+        --@end-debug@
+        return
+    end
+    
+    -- Create the data broker object
+    local minimapLDB = LDB:NewDataObject("ActionBarSync", {
+        type = "launcher",
+        text = "ActionBarSync",
+        icon = "Interface\\Icons\\inv_misc_coinbag_special",
+        OnClick = function(clickedframe, button)
+            if button == "LeftButton" then
+                ABSync:ShowUI()
+            elseif button == "RightButton" then
+                -- Try to open interface options to the addon panel
+                if ABSync.optionsPanel then
+                    -- For modern Settings system
+                    if ABSync.optionsPanel.settingsCategory and Settings and Settings.OpenToCategory then
+                        Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory)
+                    -- For legacy Interface Options system  
+                    elseif InterfaceOptionsFrame_OpenToCategory then
+                        InterfaceOptionsFrame_OpenToCategory(ABSync.optionsPanel)
+                    else
+                        -- Fallback: just open Interface Options
+                        if SettingsPanel and SettingsPanel.Show then
+                            SettingsPanel:Show()
+                        elseif InterfaceOptionsFrame then
+                            InterfaceOptionsFrame:Show()
+                        end
+                    end
+                else
+                    -- Fallback if panel reference is missing
+                    if InterfaceOptionsFrame then
+                        InterfaceOptionsFrame:Show()
+                    end
+                end
+            end
+        end,
+        OnTooltipShow = function(tooltip)
+            if not tooltip or not tooltip.AddLine then return end
+            tooltip:AddLine(ABSync.L["Action Bar Sync"] or "Action Bar Sync")
+            tooltip:AddLine(ABSync.L["Click to open ActionBarSync"] or "Click to open ActionBarSync", 1, 1, 1)
+            tooltip:AddLine(ABSync.L["Right-click for options"] or "Right-click for options", 1, 1, 1)
+        end,
+    })
+    
+    -- Initialize database for minimap settings if needed
+    if not ActionBarSyncDB.global.minimap then
+        ActionBarSyncDB.global.minimap = {
+            hide = false,
+        }
+    end
+    
+    -- Register with LibDBIcon
+    LibDBIcon:Register("ActionBarSync", minimapLDB, ActionBarSyncDB.global.minimap)
+    
+    -- Store reference
+    self.minimapLDB = minimapLDB
 end
 
 --EOF
