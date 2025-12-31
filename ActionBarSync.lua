@@ -2465,7 +2465,7 @@ function ABSync:CreateOptionsPanel()
     -- create checkbox for minimap button visibility
     local minimapCheckbox = ABSync:CreateCheckbox(
         panel,
-        ABSync.L["Show minimap button"] or "Show minimap button",
+        ABSync.L["Show Minimap Button"] or "Show Minimap Button",
         ABSync:GetMinimapButtonVisible(),
         "ActionBarSyncMinimapVisibilityCheckbox",
         function(self, button, checked)

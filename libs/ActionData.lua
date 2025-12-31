@@ -413,7 +413,7 @@ function ABSync:GetSpellDetails(buttonActionID)
     local overrideWithBaseID = false
     if baseID > 0 and baseID ~= buttonActionID then
         --@debug@
-        if self:GetDevMode() == true then self:Print((ABSync.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
+        -- if self:GetDevMode() == true then self:Print((ABSync.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
         --@end-debug@
         overrideWithBaseID = true
     end
