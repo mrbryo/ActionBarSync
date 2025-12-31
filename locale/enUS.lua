@@ -48,11 +48,11 @@ L["Automatically Reset Mount Journal Filters"] = "Automatically Reset Mount Jour
 -- options panel
 L["Action Bar Sync Options"] = "Action Bar Sync Options"
 L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] = "Action Bar Sync allows you to synchronize action bar configurations between your characters."
-L["You can open the Action Bar Sync interface using the following slash commands:"] = "You can open the Action Bar Sync interface using the following slash commands:"
+L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"] = "You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"
 L["Open Action Bar Sync"] = "Open Action Bar Sync"
 -- minimap button
-L["Click to open ActionBarSync"] = "Click to open ActionBarSync"
-L["Right-click for options"] = "Right-click for options"
+L["Click to open Action Bar Sync"] = "Click to open Action Bar Sync"
+L["Right-click for Options"] = "Right-click for Options"
 
 -- B
 -- global variable safe name for the backup & restore tab

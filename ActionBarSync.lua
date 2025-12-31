@@ -2447,7 +2447,7 @@ function ABSync:CreateOptionsPanel()
     description:SetWidth(500)
     description:SetJustifyH("LEFT")
     description:SetWordWrap(true)
-    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands:"] .. "\n\n/actionbarsync\n/abs")
+    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"] .. "\n\n - /actionbarsync\n - /abs")
     
     -- create button to open the addon
     local openButton = CreateFrame("Button", "ActionBarSyncOpenButton", panel, "UIPanelButtonTemplate")
@@ -2514,47 +2514,19 @@ function ABSync:CreateMinimapButton()
             elseif button == "RightButton" then
                 -- Open interface options to the addon panel (modern system only)
                 if ABSync.optionsPanel and ABSync.optionsPanel.settingsCategory and Settings then
-                    --@debug@
-                    ABSync:Print("Attempting to open addon settings...")
-                    --@end-debug@
-                    
-                    -- Try multiple approaches to open the settings
-                    if Settings.OpenToCategory then
-                        ABSync:Print("Using Settings.OpenToCategory")
-                        Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
-                    elseif SettingsPanel and SettingsPanel.OpenToCategory then
-                        ABSync:Print("Using SettingsPanel.OpenToCategory")
-                        SettingsPanel.OpenToCategory(ABSync.optionsPanel.settingsCategory)
-                    else
-                        ABSync:Print("Falling back to SettingsPanel:Show")
-                        -- Open settings panel and try to navigate
-                        if SettingsPanel and SettingsPanel.Show then
-                            SettingsPanel:Show()
-                            -- Try to select the category after a brief delay
-                            C_Timer.After(0.1, function()
-                                if SettingsPanel.SelectCategory then
-                                    SettingsPanel:SelectCategory(ABSync.optionsPanel.settingsCategory)
-                                end
-                            end)
-                        end
-                    end
+                    Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
                 else
-                    --@debug@
-                    ABSync:Print("Settings panel or category not available, opening general settings")
-                    --@end-debug@
-                    
-                    -- Fallback: just open Settings panel
-                    if SettingsPanel and SettingsPanel.Show then
-                        SettingsPanel:Show()
-                    end
+                    -- let user know there was an issue, then open the options panel normally
+                    ABSync:Print("Issue with addon options panel, cannot open settings.")
+                    SettingsPanel:Show()
                 end
             end
         end,
         OnTooltipShow = function(tooltip)
             if not tooltip or not tooltip.AddLine then return end
             tooltip:AddLine(ABSync.L["Action Bar Sync"] or "Action Bar Sync")
-            tooltip:AddLine(ABSync.L["Click to open ActionBarSync"] or "Click to open ActionBarSync", 1, 1, 1)
-            tooltip:AddLine(ABSync.L["Right-click for options"] or "Right-click for options", 1, 1, 1)
+            tooltip:AddLine(ABSync.L["Click to open Action Bar Sync"] or "Click to open Action Bar Sync", 1, 1, 1)
+            tooltip:AddLine(ABSync.L["Right-click for Options"] or "Right-click for Options", 1, 1, 1)
         end,
     })
     
