@@ -2456,11 +2456,24 @@ function ABSync:CreateOptionsPanel()
     openButton:SetText(ABSync.L["Open Action Bar Sync"] or "Open Action Bar Sync")
     openButton:SetScript("OnClick", function()
         ABSync:ShowUI()
-        -- Hide the settings panel if it exists (modern system)
+        -- Close the settings panel properly using WoW's UI system
         if SettingsPanel and SettingsPanel:IsShown() then
-            SettingsPanel:Hide()
+            HideUIPanel(SettingsPanel)
         end
     end)
+    
+    -- create checkbox for minimap button visibility
+    local minimapCheckbox = ABSync:CreateCheckbox(
+        panel,
+        ABSync.L["Show minimap button"] or "Show minimap button",
+        ABSync:GetMinimapButtonVisible(),
+        "ActionBarSyncMinimapVisibilityCheckbox",
+        function(self, button, checked)
+            ABSync:SetMinimapButtonVisible(checked)
+            ABSync:UpdateMinimapButtonVisibility()
+        end
+    )
+    minimapCheckbox:SetPoint("TOPLEFT", openButton, "BOTTOMLEFT", 0, -16)
     
     -- add to Interface Options (modern system only)
     local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name, panel.name)
@@ -2542,6 +2555,24 @@ function ABSync:CreateMinimapButton()
     
     -- Store reference
     self.minimapLDB = minimapLDB
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   UpdateMinimapButtonVisibility
+    Purpose:    Update the minimap button visibility using LibDBIcon.
+-----------------------------------------------------------------------------]]
+function ABSync:UpdateMinimapButtonVisibility()
+    local LibDBIcon = LibStub and LibStub:GetLibrary("LibDBIcon-1.0", true)
+    if not LibDBIcon or not self.minimapLDB then
+        return
+    end
+    
+    local shouldShow = self:GetMinimapButtonVisible()
+    if shouldShow then
+        LibDBIcon:Show("ActionBarSync")
+    else
+        LibDBIcon:Hide("ActionBarSync")
+    end
 end
 
 --EOF

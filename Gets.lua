@@ -83,6 +83,22 @@ function ABSync:GetBarCountCurrentScan()
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetMinimapButtonVisible
+    Purpose:    Get whether the minimap button should be visible (defaults to true).
+-----------------------------------------------------------------------------]]
+function ABSync:GetMinimapButtonVisible()
+    if not ActionBarSyncDB or not ActionBarSyncDB.global then
+        return true -- default to showing the button
+    end
+    
+    if ActionBarSyncDB.global.minimap and ActionBarSyncDB.global.minimap.hide ~= nil then
+        return not ActionBarSyncDB.global.minimap.hide -- LibDBIcon uses 'hide' property, we want 'show'
+    end
+    
+    return true -- default to showing the button
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetBarNames
     Purpose:    Return list of action bar names from the global storage.
 -----------------------------------------------------------------------------]]

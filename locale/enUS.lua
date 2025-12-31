@@ -53,6 +53,7 @@ L["Open Action Bar Sync"] = "Open Action Bar Sync"
 -- minimap button
 L["Click to open Action Bar Sync"] = "Click to open Action Bar Sync"
 L["Right-click for Options"] = "Right-click for Options"
+L["Show minimap button"] = "Show minimap button"
 
 -- B
 -- global variable safe name for the backup & restore tab
