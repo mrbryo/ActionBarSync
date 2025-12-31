@@ -2456,24 +2456,22 @@ function ABSync:CreateOptionsPanel()
     openButton:SetText(ABSync.L["Open Action Bar Sync"] or "Open Action Bar Sync")
     openButton:SetScript("OnClick", function()
         ABSync:ShowUI()
-        InterfaceOptionsFrame:Hide()
+        -- Hide the settings panel if it exists (modern system)
+        if SettingsPanel and SettingsPanel:IsShown() then
+            SettingsPanel:Hide()
+        end
     end)
     
-    -- add to Interface Options (compatible with both old and new systems)
-    if InterfaceOptions_AddCategory then
-        InterfaceOptions_AddCategory(panel)
-    elseif Settings and Settings.RegisterCanvasLayoutCategory then
-        -- Modern WoW Interface Options system
-        local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
-        Settings.RegisterAddOnCategory(category)
-        -- Store category reference for opening later
-        panel.settingsCategory = category
-    end
+    -- add to Interface Options (modern system only)
+    local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name, panel.name)
+    -- must set the category ID
+    category.ID = panel.name
+    Settings.RegisterAddOnCategory(category)
+    -- store category reference for opening later
+    panel.settingsCategory = category
     
-    -- Store panel reference globally for minimap button access
+    -- store panel reference globally for minimap button access
     ABSync.optionsPanel = panel
-    
-    return panel
 end
 
 --[[---------------------------------------------------------------------------
@@ -2481,7 +2479,7 @@ end
     Purpose:    Create minimap button using LibDBIcon-1.0.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateMinimapButton()
-    -- Check if LibStub and LibDBIcon are available
+    -- check if LibStub and LibDBIcon are available
     if not LibStub then
         --@debug@
         self:Print("LibStub not found, minimap button disabled")
@@ -2514,26 +2512,40 @@ function ABSync:CreateMinimapButton()
             if button == "LeftButton" then
                 ABSync:ShowUI()
             elseif button == "RightButton" then
-                -- Try to open interface options to the addon panel
-                if ABSync.optionsPanel then
-                    -- For modern Settings system
-                    if ABSync.optionsPanel.settingsCategory and Settings and Settings.OpenToCategory then
-                        Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory)
-                    -- For legacy Interface Options system  
-                    elseif InterfaceOptionsFrame_OpenToCategory then
-                        InterfaceOptionsFrame_OpenToCategory(ABSync.optionsPanel)
+                -- Open interface options to the addon panel (modern system only)
+                if ABSync.optionsPanel and ABSync.optionsPanel.settingsCategory and Settings then
+                    --@debug@
+                    ABSync:Print("Attempting to open addon settings...")
+                    --@end-debug@
+                    
+                    -- Try multiple approaches to open the settings
+                    if Settings.OpenToCategory then
+                        ABSync:Print("Using Settings.OpenToCategory")
+                        Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
+                    elseif SettingsPanel and SettingsPanel.OpenToCategory then
+                        ABSync:Print("Using SettingsPanel.OpenToCategory")
+                        SettingsPanel.OpenToCategory(ABSync.optionsPanel.settingsCategory)
                     else
-                        -- Fallback: just open Interface Options
+                        ABSync:Print("Falling back to SettingsPanel:Show")
+                        -- Open settings panel and try to navigate
                         if SettingsPanel and SettingsPanel.Show then
                             SettingsPanel:Show()
-                        elseif InterfaceOptionsFrame then
-                            InterfaceOptionsFrame:Show()
+                            -- Try to select the category after a brief delay
+                            C_Timer.After(0.1, function()
+                                if SettingsPanel.SelectCategory then
+                                    SettingsPanel:SelectCategory(ABSync.optionsPanel.settingsCategory)
+                                end
+                            end)
                         end
                     end
                 else
-                    -- Fallback if panel reference is missing
-                    if InterfaceOptionsFrame then
-                        InterfaceOptionsFrame:Show()
+                    --@debug@
+                    ABSync:Print("Settings panel or category not available, opening general settings")
+                    --@end-debug@
+                    
+                    -- Fallback: just open Settings panel
+                    if SettingsPanel and SettingsPanel.Show then
+                        SettingsPanel:Show()
                     end
                 end
             end
