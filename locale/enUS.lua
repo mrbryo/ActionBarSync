@@ -39,6 +39,8 @@ L["Action Bar Identification Guide"] = "Action Bar Identification Guide"
 L["Action Bar Sync"] = "Action Bar Sync"
 -- popup text for sync cancelled
 L["Action Bar Sync has been cancelled."] = "Action Bar Sync has been cancelled."
+-- Dev tab; label for section to show addon main frame size.
+L["Addon Main Frame Size"] = "Addon Main Frame Size"
 -- about tab; description for support option to help with localizations
 L["Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above."] = "Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above."
 -- about tab; label for author
@@ -130,6 +132,8 @@ L["GetFlyoutInfo failed"] = "GetFlyoutInfo failed"
 L["Has"] = "Has"
 -- About tab; localization help request.
 L["Help translate this addon into your language."] = "Help translate this addon into your language."
+-- Dev tab; label for height of main addon window frame.
+L["Height: "] = "Height: "
 -- Lookup tab; header for history section.
 L["History"] = "History"
 
@@ -287,6 +291,8 @@ L["Share & Sync"] = "Share & Sync"
 L["ShareSync"] = "ShareSync"
 -- Footer button for showing the action bar guide picture.
 L["Show Action Bar Guide"] = "Show Action Bar Guide"
+-- Dev tab; description for addon window size section.
+L["Shows the width and height of the main addon window frame."] = "Shows the width and height of the main addon window frame."
 -- About tab; label for Spanish (Mexico) language.
 L["Spanish (Mexico)"] = "Spanish (Mexico)"
 -- About tab; label for Spanish (Spain) language.
@@ -319,6 +325,8 @@ L["Version"] = "Version"
 -- W
 -- Dev tab; part of notification to developers. Tab is only visible if a developer uses special command line value.
 L["Warning"] = "Warning"
+-- Dev tab; display width of main addon window frame.
+L["Width: "] = "Width: "
 
 -- X
 

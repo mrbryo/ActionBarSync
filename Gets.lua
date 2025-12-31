@@ -213,6 +213,26 @@ function ABSync:GetFramePosition(frameName)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   GetMainFrameSize
+    Purpose:    Get the current size of the addon main frame.
+    Returns:    Table with width and height properties, or nil if frame doesn't exist
+-----------------------------------------------------------------------------]]
+function ABSync:GetMainFrameSize()
+    -- check if the main frame exists
+    if not ActionBarSyncMainFrame then
+        return nil
+    end
+    
+    -- get the current size
+    local width, height = ActionBarSyncMainFrame:GetSize()
+    
+    return {
+        width = width,
+        height = height
+    }
+end
+
+--[[---------------------------------------------------------------------------
     Function:   GetKeyPlayerServer
     Purpose:    Get a formatted value with player and server name.
 -----------------------------------------------------------------------------]]

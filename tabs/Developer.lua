@@ -70,7 +70,12 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     return mountDBFrame
 end
 
-function CreateDevManualActionButton(parent, halfWidth, posnFrame)
+--[[---------------------------------------------------------------------------
+    Function:   CreateDevManualActionButton
+    Purpose:    Create the manual action button placement content for the developer frame.
+    Note:       Currently not used.
+-----------------------------------------------------------------------------]]
+function ABSync:CreateDevManualActionButton(parent, halfWidth, posnFrame)
     -- get language data
     local L = ABSync.localeData
 
@@ -110,6 +115,63 @@ function CreateDevManualActionButton(parent, halfWidth, posnFrame)
 
     -- create button to open the dialog
     
+end
+
+function ABSync:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
+    -- standard variables
+    local padding = ABSync.constants.ui.generic.padding
+
+    -- make the frame just high enough for the content, track its height
+    local windowSizeFrameHeight = 0
+
+    -- create frame for addon window size
+    local windowSizeFrame = CreateFrame("Frame", nil, parent)
+    windowSizeFrame:SetPoint("TOPLEFT", posnFrame, "TOPRIGHT", padding, 0)
+    windowSizeFrame:SetHeight(300)
+    windowSizeFrame:SetWidth(halfWidth)
+
+    -- add title to mount db frame
+    local windowSizeTitle = windowSizeFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    windowSizeTitle:SetPoint("TOPLEFT", windowSizeFrame, "TOPLEFT", 0, 0)
+    windowSizeTitle:SetPoint("TOPRIGHT", windowSizeFrame, "TOPRIGHT", 0, 0)
+    windowSizeTitle:SetJustifyH("LEFT")
+    windowSizeTitle:SetText(ABSync.L["Addon Main Frame Size"])
+    windowSizeFrameHeight = windowSizeFrameHeight + windowSizeTitle:GetStringHeight()
+
+    -- add inset frame to mount db frame
+    local windowSizeInsetFrame = CreateFrame("Frame", nil, windowSizeFrame, "InsetFrameTemplate")
+    windowSizeInsetFrame:SetPoint("TOPLEFT", windowSizeTitle, "BOTTOMLEFT", 0, 0)
+    windowSizeInsetFrame:SetPoint("BOTTOMRIGHT", windowSizeFrame, "BOTTOMRIGHT", 0, 0)
+
+    -- add label explaining the purpose of the button
+    local windowSizeInfoLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
+    windowSizeInfoLabel:SetText(ABSync.L["Shows the width and height of the main addon window frame."])
+    windowSizeInfoLabel:SetPoint("TOPLEFT", windowSizeInsetFrame, "TOPLEFT", padding, -padding)
+    windowSizeInfoLabel:SetPoint("TOPRIGHT", windowSizeInsetFrame, "TOPRIGHT", -padding, -padding)
+    windowSizeInfoLabel:SetJustifyH("LEFT")
+    windowSizeInfoLabel:SetWordWrap(true)
+    windowSizeFrameHeight = windowSizeFrameHeight + windowSizeInfoLabel:GetStringHeight() + (padding * 2)
+
+    -- get the main frame width and height
+    local mainFrameSize = ABSync:GetMainFrameSize()
+
+    -- create label for height
+    local windowSizeHeightLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    windowSizeHeightLabel:SetText(ABSync.L["Height: "] .. tostring(mainFrameSize.height))
+    windowSizeHeightLabel:SetPoint("TOPLEFT", windowSizeInfoLabel, "BOTTOMLEFT", 0, -padding)
+    windowSizeFrameHeight = windowSizeFrameHeight + windowSizeHeightLabel:GetStringHeight() + padding
+
+    -- create label for width
+    local windowSizeWidthLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    windowSizeWidthLabel:SetText(ABSync.L["Width: "] .. tostring(mainFrameSize.width))
+    windowSizeWidthLabel:SetPoint("TOPLEFT", windowSizeHeightLabel, "BOTTOMLEFT", 0, -padding)
+    windowSizeFrameHeight = windowSizeFrameHeight + windowSizeWidthLabel:GetStringHeight() + padding
+
+    -- adjust height of mount db frame
+    windowSizeFrame:SetHeight(windowSizeFrameHeight)
+
+    -- return object in case I need it
+    return windowSizeFrame
 end
 
 --[[---------------------------------------------------------------------------
@@ -168,6 +230,9 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
 
     --[[ mount db refresh ]]
     local mountDBFrame = self:CreateDevMountDBContent(devFrame, halfWidth, warningFrame)
+
+    --[[ addon window size ]]
+    local windowSizeFrame = self:CreateAddonWindowSizeContent(devFrame, halfWidth, mountDBFrame)
 
     --[[ manual action button placement ]]
     -- local manualFrame = self:CreateDevManualActionButton(parent, halfWidth, mountDBFrame)
