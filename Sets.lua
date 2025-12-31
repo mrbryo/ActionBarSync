@@ -33,6 +33,24 @@ function ABSync:SetDevMode(value)
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   SetMinimapButtonVisible
+    Purpose:    Set whether the minimap button should be visible.
+-----------------------------------------------------------------------------]]
+function ABSync:SetMinimapButtonVisible(visible)
+    if not ActionBarSyncDB or not ActionBarSyncDB.global then
+        return
+    end
+    
+    -- Initialize minimap settings if they don't exist
+    if not ActionBarSyncDB.global.minimap then
+        ActionBarSyncDB.global.minimap = {}
+    end
+    
+    -- LibDBIcon uses 'hide' property, so we invert our 'visible' boolean
+    ActionBarSyncDB.global.minimap.hide = not visible
+end
+
+--[[---------------------------------------------------------------------------
     Function:   SetFramePosition
     Purpose:    Store the position of a frame in the profile database.
     Parameters: frameName - the name of the frame

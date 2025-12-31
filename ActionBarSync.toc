@@ -3,11 +3,12 @@
 ## Notes: Pick which action bars to keep in sync from other characters.
 ## Author: mrbryo
 ## Version: 0.0.14
-## RequiredDeps:
+## OptionalDeps: LibDBIcon-1.0
 ## X-Curse-Project-ID: 1141659
 ## X-Curse-Project-Name: Action Bar Sync
 ## SavedVariables: ActionBarSyncDB, ActionBarSyncMountDB
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
+## IconTexture: Interface\Icons\inv_misc_coinbag_special
 
 ## Initialize Addon
 Initialize.lua
