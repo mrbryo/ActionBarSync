@@ -373,7 +373,6 @@ L["Mount"] = "Mount"
 L["Flyout"] = "Flyout"
 
 -- options panel
-L["Action Bar Sync Options"] = "Action Bar Sync Options"
 L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] = "Action Bar Sync allows you to synchronize action bar configurations between your characters."
 L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"] = "You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"
 L["Open Action Bar Sync"] = "Open Action Bar Sync"
