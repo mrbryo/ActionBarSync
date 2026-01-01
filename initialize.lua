@@ -18,6 +18,13 @@ ABSync = {
 	-- addon ui columns
 	columns = {},
 
+	-- track minimap button issues
+	minimap = {
+		libdbiconStatus = true,
+		libdbStatus = true,
+		libstubStatus = true,
+	},
+
 	-- addon access to UI elements
 	ui = {
 		label = {},

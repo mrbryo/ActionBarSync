@@ -153,12 +153,12 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 
     -- Register Events using native system
     ABSync:RegisterAddonEvents()
-
-    -- Create and register the options panel
-    ABSync:CreateOptionsPanel()
     
     -- Create minimap button using LibDBIcon
     ABSync:CreateMinimapButton()
+
+    -- Create and register the options panel
+    ABSync:CreateOptionsPanel()
 
 	-- unregister event
 	ABSync:UnregisterEvent("ADDON_LOADED")
@@ -2438,6 +2438,7 @@ end
 --[[---------------------------------------------------------------------------
     Function:   CreateOptionsPanel
     Purpose:    Create a single options pane for the Interface Options.
+    Note:       This function should be called after the mini-map button is created in order to get proper visibility status.
 -----------------------------------------------------------------------------]]
 function ABSync:CreateOptionsPanel()
     -- create the main options panel frame
@@ -2452,10 +2453,10 @@ function ABSync:CreateOptionsPanel()
     -- create description
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -16)
-    description:SetWidth(500)
+    description:SetPoint ("RIGHT", panel, "RIGHT", -16, 0)
     description:SetJustifyH("LEFT")
     description:SetWordWrap(true)
-    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"] .. "\n\n - /actionbarsync\n - /abs")
+    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"] .. "\n\n - /actionbarsync\n - /abs")
     
     -- create button to open the addon
     local openButton = CreateFrame("Button", "ActionBarSyncOpenButton", panel, "UIPanelButtonTemplate")
@@ -2473,7 +2474,7 @@ function ABSync:CreateOptionsPanel()
     -- create checkbox for minimap button visibility
     local minimapCheckbox = ABSync:CreateCheckbox(
         panel,
-        ABSync.L["Show Minimap Button"] or "Show Minimap Button",
+        ABSync.L["Show Mini-map Button"],
         ABSync:GetMinimapButtonVisible(),
         "ActionBarSyncMinimapVisibilityCheckbox",
         function(self, button, checked)
@@ -2482,6 +2483,16 @@ function ABSync:CreateOptionsPanel()
         end
     )
     minimapCheckbox:SetPoint("TOPLEFT", openButton, "BOTTOMLEFT", 0, -16)
+
+    -- add a note if any of the libraries are missing
+    if ABSync.minimap.libstubStatus == false or ABSync.minimap.libdbiconStatus == false or ABSync.minimap.libdbStatus == false then
+        local libStubNote = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        libStubNote:SetPoint("TOPLEFT", minimapCheckbox, "BOTTOMLEFT", 0, -8)
+        libStubNote:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
+        libStubNote:SetJustifyH("LEFT")
+        libStubNote:SetWordWrap(true)
+        libStubNote:SetText(ABSync.L["Note: LibDBIcon-1.0 is missing or one of its dependencies (LibStub and LibDataBroker), therefore, mini-map button cannot be created. Also, not sure why, but LibDBIcon-1.0 may not show up in the addon list even if it is installed."])
+    end
     
     -- add to Interface Options (modern system only)
     local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name, panel.name)
@@ -2502,25 +2513,19 @@ end
 function ABSync:CreateMinimapButton()
     -- check if LibStub and LibDBIcon are available
     if not LibStub then
-        --@debug@
-        self:Print("LibStub not found, minimap button disabled")
-        --@end-debug@
+        ABSync.minimap.libstubStatus = false
         return
     end
     
     local LibDBIcon = LibStub:GetLibrary("LibDBIcon-1.0", true)
     if not LibDBIcon then
-        --@debug@
-        self:Print(ABSync.L["LibDBIcon not found, minimap button disabled!"])
-        --@end-debug@
+        ABSync.minimap.libdbiconStatus = false
         return
     end
     
     local LDB = LibStub:GetLibrary("LibDataBroker-1.1", true)
     if not LDB then
-        --@debug@
-        self:Print(ABSync.L["LibDataBroker add-on not found, mini-map button disabled!"])
-        --@end-debug@
+        ABSync.minimap.libdbStatus = false
         return
     end
     

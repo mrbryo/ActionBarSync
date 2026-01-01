@@ -389,4 +389,5 @@ L["Open Action Bar Sync"] = "Open Action Bar Sync"
 L["Click to open Action Bar Sync"] = "Click to open Action Bar Sync"
 L["Right-click for Options"] = "Right-click for Options"
 L["Show Mini-map Button"] = "Show Mini-map Button"
+L["Note: LibDBIcon-1.0 is missing or one of its dependencies (LibStub and LibDataBroker), therefore, mini-map button cannot be created. Also, not sure why, but LibDBIcon-1.0 may not show up in the addon list even if it is installed."] = "Note: LibDBIcon-1.0 is missing or one of its dependencies (LibStub and LibDataBroker), therefore, mini-map button cannot be created. Also, not sure why, but LibDBIcon-1.0 may not show up in the addon list even if it is installed."
 --@end-do-not-package@
