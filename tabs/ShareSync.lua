@@ -319,7 +319,7 @@ function ABSync:ProcessShareCheckboxes(callingFunction)
             checkBox = _G[checkboxFrameID]
 
             -- update the checked state
-            checkBox:SetChecked(self:GetBarToShare(checkboxName, self.currentPlayerServerSpec))
+            checkBox:SetChecked(self:GetBarToShare(checkboxID, self.currentPlayerServerSpec))
         else
             checkBox = self:CreateCheckbox(parent, checkboxName, self:GetBarToShare(checkboxID, self.currentPlayerServerSpec), checkboxFrameID, function(self, button, checked)
                 ABSync:ShareBar(checkboxID, checked, checkBox)
