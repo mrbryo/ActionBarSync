@@ -2277,6 +2277,14 @@ function ABSync:CreateMainFrame()
     -- set initial sizes
     local frameWidth = screenWidth * 0.4
     local frameHeight = screenHeight * 0.4
+
+    -- make sure its the minimum size
+    if frameWidth < ABSync.constants.ui.mainFrame.minWidth then
+        frameWidth = ABSync.constants.ui.mainFrame.minWidth
+    end
+    if frameHeight < ABSync.constants.ui.mainFrame.minHeight then
+        frameHeight = ABSync.constants.ui.mainFrame.minHeight
+    end
     
     -- use PortraitFrameTemplate which is more reliable in modern WoW
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
@@ -2503,7 +2511,7 @@ function ABSync:CreateMinimapButton()
     local LibDBIcon = LibStub:GetLibrary("LibDBIcon-1.0", true)
     if not LibDBIcon then
         --@debug@
-        self:Print("LibDBIcon-1.0 not found, minimap button disabled")
+        self:Print(ABSync.L["LibDBIcon not found, minimap button disabled!"])
         --@end-debug@
         return
     end
@@ -2511,7 +2519,7 @@ function ABSync:CreateMinimapButton()
     local LDB = LibStub:GetLibrary("LibDataBroker-1.1", true)
     if not LDB then
         --@debug@
-        self:Print("LibDataBroker-1.1 not found, minimap button disabled")
+        self:Print(ABSync.L["LibDataBroker add-on not found, mini-map button disabled!"])
         --@end-debug@
         return
     end
@@ -2530,7 +2538,7 @@ function ABSync:CreateMinimapButton()
                     Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
                 else
                     -- let user know there was an issue, then open the options panel normally
-                    ABSync:Print("Issue with addon options panel, cannot open settings.")
+                    ABSync:Print(ABSync.L["Issue with addon options panel, cannot open settings."])
                     SettingsPanel:Show()
                 end
             end

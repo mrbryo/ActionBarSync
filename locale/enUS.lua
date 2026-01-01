@@ -147,6 +147,8 @@ L["Instructions"] = "Instructions"
 L["Introduction"] = "Introduction"
 -- About tab; issues label.
 L["Issues"] = "Issues"
+-- Some issue with the WoW UI where the options is not available.
+L["Issue with addon options panel, cannot open settings."] = "Issue with addon options panel, cannot open settings."
 -- About tab; label for Italian language.
 L["Italian"] = "Italian"
 
@@ -165,6 +167,10 @@ L["Last Sync Errors"] = "Last Sync Errors"
 L["Last Sync on this Character"] = "Last Sync on this Character"
 -- Global variable safe name for the last sync errors tab.
 L["LastSyncErrors"] = "LastSyncErrors"
+-- When the LibDataBroker add-on is not installed.
+L["LibDataBroker add-on not found, mini-map button disabled!"] = "LibDataBroker add-on not found, mini-map button disabled!"
+-- When the LibDBIcon add-on is not installed.
+L["LibDBIcon not found, mini-map button disabled!"] = "LibDBIcon not found, mini-map button disabled!"
 -- About tab; localization label.
 L["Localization"] = "Localization"
 -- Dev mode only; on lookup action tab when lookup action triggered.
@@ -310,6 +316,8 @@ L["Type"] = "Type"
 -- U
 -- Generic; used in multiple places.
 L["Unknown"] = "Unknown"
+-- Printed to message frame when user enters an unknown slash command.
+L["Unknown Command: %s"] = "Unknown Command: %s"
 -- Utilities tab; title for the tab.
 L["Utilities"] = "Utilities"
 
@@ -374,11 +382,11 @@ L["Flyout"] = "Flyout"
 
 -- options panel
 L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] = "Action Bar Sync allows you to synchronize action bar configurations between your characters."
-L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"] = "You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the minimap button:"
+L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"] = "You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"
 L["Open Action Bar Sync"] = "Open Action Bar Sync"
 
--- minimap button
+-- mini-map button
 L["Click to open Action Bar Sync"] = "Click to open Action Bar Sync"
 L["Right-click for Options"] = "Right-click for Options"
-L["Show Minimap Button"] = "Show Minimap Button"
+L["Show Mini-map Button"] = "Show Mini-map Button"
 --@end-do-not-package@

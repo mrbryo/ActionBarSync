@@ -75,7 +75,11 @@ ABSync = {
 			},
 			generic = {
 				padding = 10
-			}
+			},
+			mainFrame = {
+				minWidth = 855,
+				minHeight = 480
+			},
 		},
 		objectNames = {
 			tabContentFrame = "TabContentFrame",
