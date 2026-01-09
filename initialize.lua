@@ -14,6 +14,7 @@ ABSync = {
 	name = "@addon-name@",
 	version = "@project-version@",
 	prefix = "ActionBarSyncUIObject",
+	optionID = "ActionBarSync",
 
 	-- addon ui columns
 	columns = {},
