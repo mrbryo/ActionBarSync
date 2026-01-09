@@ -126,7 +126,7 @@ end
 -----------------------------------------------------------------------------]]
 function ABSync:GetItemDetails(buttonActionID)
     -- fetch blizzard item details
-    local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(buttonActionID)
+    local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent, itemDescription = C_Item.GetItemInfo(buttonActionID)
 
     -- does player have the item
     local itemCount = self:GetItemCount(buttonActionID)
