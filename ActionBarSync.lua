@@ -2540,7 +2540,7 @@ function ABSync:CreateMinimapButton()
             elseif button == "RightButton" then
                 -- Open interface options to the addon panel (modern system only)
                 if ABSync.optionsPanel and ABSync.optionsPanel.settingsCategory and Settings then
-                    Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
+                    Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.ID or ABSync.optionsPanel.settingsCategory.name)
                 else
                     -- let user know there was an issue, then open the options panel normally
                     ABSync:Print(ABSync.L["Issue with addon options panel, cannot open settings."])
