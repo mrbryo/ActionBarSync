@@ -2495,12 +2495,14 @@ function ABSync:CreateOptionsPanel()
     end
     
     -- add to Interface Options (modern system only)
-    local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name, panel.name)
+    local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+    
     -- must set the category ID
-    category.ID = panel.name
+    category.ID = ABSync.optionID
     Settings.RegisterAddOnCategory(category)
+
     -- store category reference for opening later
-    panel.settingsCategory = category
+    panel.optionsCategory = category
     
     -- store panel reference globally for minimap button access
     ABSync.optionsPanel = panel
@@ -2538,9 +2540,11 @@ function ABSync:CreateMinimapButton()
             if button == "LeftButton" then
                 ABSync:ShowUI()
             elseif button == "RightButton" then
-                -- Open interface options to the addon panel (modern system only)
-                if ABSync.optionsPanel and ABSync.optionsPanel.settingsCategory and Settings then
-                    Settings.OpenToCategory(ABSync.optionsPanel.settingsCategory.name)
+                -- open to addon options pane if it was created successfully, if not just open the panel normally
+                -- ABSync.optionsPanel is the actual frame built for the addon options
+                -- ABSync.optionID is the static string value assigned to the addons options pane
+                if ABSync.optionsPanel and Settings then
+                    Settings.OpenToCategory(ABSync.optionID)
                 else
                     -- let user know there was an issue, then open the options panel normally
                     ABSync:Print(ABSync.L["Issue with addon options panel, cannot open settings."])

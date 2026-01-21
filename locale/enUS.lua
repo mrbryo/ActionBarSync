@@ -274,6 +274,8 @@ L["Reset Mount Filters"] = "Reset Mount Filters"
 L["Restore"] = "Restore"
 -- Restore tab; label for area to pick action bar to restore when a backup is selected.
 L["Restore one Action Bar per Click:"] = "Restore one Action Bar per Click:"
+-- Restore tab; notification to user the restore process has started.
+L["Restore Triggered for Backup '%s' for Action Bar '%s'"] = "Restore Triggered for Backup '%s' for Action Bar '%s'"
 -- About tab; label for Russian language.
 L["Russian"] = "Russian"
 
