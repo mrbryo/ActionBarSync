@@ -1771,7 +1771,7 @@ function ABSync:EventPlayerLogout()
 
     -- clear currentBarData and actionBars when not in developer mode
     if self:GetDevMode() == false then
-        ABSync.db.profile[self.currentPlayerServer].currentBarData = {}
+        ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
         ABSync:ClearMountDB()
     end
 end
