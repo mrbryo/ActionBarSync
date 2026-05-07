@@ -1,4 +1,4 @@
-## Interface: 110200, 120000
+## Interface: 120000
 ## Title: Action Bar Sync
 ## Notes: Pick which action bars to keep in sync from other characters.
 ## Author: mrbryo
