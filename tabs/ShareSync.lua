@@ -120,7 +120,7 @@ function ns:ProcessSyncRegion(callingFunction)
                     -- to see if enabled, the buttonData must be a table and have at least 1 record
                     -- count variable
                     local foundData = false
-                    
+
                     -- make sure buttonData is a table
                     if type(buttonData) == "table" then
                         -- next returns the first key in the table or nil if the table is empty
@@ -157,7 +157,7 @@ function ns:ProcessSyncRegion(callingFunction)
                             -- print(("Checkbox - Create: %s (%d)"):format(checkboxGlobalID, nameLength))
                             --@end-debug@
                             -- checkbox = self:CreateSyncCheckbox(ns.data.ui.frame.syncContent, checkboxGlobalID, barName, playerID, currentPlayerID, padding)
-                            
+
                             -- create the checkbox since not found globally
                             checkbox = self:CreateCheckbox(ns.data.ui.frame.syncContent, "-", self:IsSyncSet(barID, playerID), checkboxGlobalID, function(self, button, checked)
                                 ns:SyncOnValueChanged(checked, barID, playerID)
@@ -210,7 +210,7 @@ function ns:ProcessSyncRegion(callingFunction)
         if visibleCheckboxes == false then
             if not noDataLabel then
                 noDataLabel = ns.data.ui.frame.syncContent:CreateFontString(noSharedActionBarLabelID, "ARTWORK", "GameFontHighlight")
-                    
+
                 -- position and set text
                 noDataLabel:SetPoint("TOPLEFT", ns.data.ui.frame.syncContent, "TOPLEFT", padding + 5, -padding - 5)
                 noDataLabel:SetText(ns.L["No Shared Action Bars Found"])
@@ -300,7 +300,7 @@ function ns:ProcessShareCheckboxes(callingFunction)
 
     -- set the parent
     local parent = ActionBarSyncShareScrollContent
-    
+
     -- loop over the action bars and create a checkbox for each one
     for _, checkboxID in pairs(ns.data.actionBarOrder) do
         --@debug@
@@ -308,13 +308,13 @@ function ns:ProcessShareCheckboxes(callingFunction)
         --@end-debug@
         -- get variable friendly name for the action bar
         local varName = self.barNameTranslate[checkboxID]
-        
+
         -- get the checkbox name
         local checkboxName = self.barNameLanguageTranslate[checkboxID]
 
         -- create a checkbox for each action bar
         local checkboxFrameID = self:GetObjectName(ns.data.constants.objectNames.shareCheckboxes .. varName)
-        
+
         -- instantiate variable to hold checkbox
         local checkBox = nil
 
@@ -426,9 +426,6 @@ end
     Purpose:    Create the Scan frame for the addon.
 -----------------------------------------------------------------------------]]
 function ns:CreateShareSyncTopFrameContent(parent)
-    -- set language variable
-    local L = self.L
-    
     -- debugging
     local funcName = "CreateShareSyncTopFrameContent"
 
@@ -496,7 +493,7 @@ function ns:CreateShareSyncTopFrameContent(parent)
         self:MountJournalFilterReset()
     end)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
-    
+
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
     ns.data.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, ns.L["Automatically Reset Mount Journal Filters"], ns:GetAutoResetMountFilters(), nil, function(self, button, checked)
         ns:SetAutoResetMountFilters(checked)
