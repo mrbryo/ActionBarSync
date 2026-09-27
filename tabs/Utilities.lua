@@ -5,15 +5,17 @@
 	Description: 	Building the Utilities tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function: 	AddRemoveAllActionButtonsByBar
     Parameters: parent - the parent frame to attach this content to
     Returns: 	none
     Purpose: 	This function builds the UI components needed to remove all action buttons in a selected action bar.
 -----------------------------------------------------------------------------]]
-function ABSync:AddRemoveAllActionButtonsByBar(parent)
+function ns:AddRemoveAllActionButtonsByBar(parent)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
     local rowHeight = 30
     local controlWidth = 200
 
@@ -31,7 +33,7 @@ function ABSync:AddRemoveAllActionButtonsByBar(parent)
     frameTitle:SetPoint("TOPLEFT", removeFrame, "TOPLEFT", 0, 0)
     frameTitle:SetPoint("TOPRIGHT", removeFrame, "TOPRIGHT", 0, 0)
     frameTitle:SetJustifyH("LEFT")
-    frameTitle:SetText(ABSync.L["Remove Action Bar Buttons"])
+    frameTitle:SetText(ns.L["Remove Action Bar Buttons"])
 
     -- update height
     local removeFrameHeight = frameTitle:GetStringHeight()
@@ -67,13 +69,13 @@ function ABSync:AddRemoveAllActionButtonsByBar(parent)
     local actionBarLabel = rowBar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBarLabel:SetPoint("LEFT", rowBar, "LEFT", 0, 0)
     actionBarLabel:SetJustifyH("LEFT")
-    actionBarLabel:SetText(ABSync.L["Action Bar:"])
+    actionBarLabel:SetText(ns.L["Action Bar:"])
 
     -- action bar drop down
     local barValues = self:GetBarValues()
     local lastBarAction = self:GetLastActionBarUtilities()
     local actionBarDropDown = self:CreateDropdown(rowBar, barValues.order, barValues.data, lastBarAction, self:GetObjectName("UtilitiesDropdownActionBar"), function(key)
-        ABSync:SetLastActionBarUtilities(key)
+        ns:SetLastActionBarUtilities(key)
     end)
     actionBarDropDown:SetWidth(controlWidth)
     actionBarDropDown:SetPoint("LEFT", actionBarLabel, "RIGHT", padding, 0)
@@ -85,8 +87,8 @@ function ABSync:AddRemoveAllActionButtonsByBar(parent)
 
     -- add button to row
     local globalButtonName = self:GetObjectName("UtilitiesClearButton")
-    local clearButton = self:CreateStandardButton(rowButton, globalButtonName, ABSync.L["Clear Selected Bar"], 75, function()
-        ABSync:BeginActionBarClear()
+    local clearButton = self:CreateStandardButton(rowButton, globalButtonName, ns.L["Clear Selected Bar"], 75, function()
+        ns:BeginActionBarClear()
     end)
     clearButton:SetPoint("LEFT", rowButton, "LEFT", 0, 0)
     clearButton:SetHeight(clearButton.Text:GetStringHeight() + 10)
@@ -111,9 +113,9 @@ end
     Returns: 	the main frame for the tab
     Purpose: 	This function builds the Utilities tab in the main UI.
 ----------------------------------------------------------------------------]]
-function ABSync:ProcessUtilitiesFrame(parent, tabKey)
+function ns:ProcessUtilitiesFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local mainFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -132,7 +134,7 @@ function ABSync:ProcessUtilitiesFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Utilities"])
+    title:SetText(ns.L["Utilities"])
 
     -- create main content frame
     local mainContentFrame = CreateFrame("Frame", nil, mainFrame)

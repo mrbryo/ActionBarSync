@@ -3,14 +3,10 @@
     Language: Portuguese (ptBR)
 -----------------------------------------------------------------------------]]
 
--- make sure locales variable exists
-if not ABSync.locales then
-    ABSync.locales = {}
-end
+local addonName, ns = ...
+if GetLocale() ~= "ptBR" then return end
 
--- add the locale
-ABSync.locales["ptBR"] = {}
-local L = ABSync.locales["ptBR"]
+local L = ns.L
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="ptBR", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@

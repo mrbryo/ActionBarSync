@@ -5,16 +5,18 @@
 	Description: 	Building the Restore tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   ClearBackupActionBarDropdown
     Purpose:    Clear the action bar selection dropdown.
 -----------------------------------------------------------------------------]]
---[[function ABSync:ClearBackupActionBarDropdown()
-    if ABSync.ui.dropdown.currentBackupActionBars then
+--[[function ns:ClearBackupActionBarDropdown()
+    if ns.data.ui.dropdown.currentBackupActionBars then
         local data = {}
         data["none"] = "None"
-        ABSync.ui.dropdown.currentBackupActionBars:SetList(data)
-        ABSync.ui.dropdown.currentBackupActionBars:SetValue("none")
+        ns.data.ui.dropdown.currentBackupActionBars:SetList(data)
+        ns.data.ui.dropdown.currentBackupActionBars:SetValue("none")
     end
 end]]
 
@@ -22,10 +24,10 @@ end]]
     Function:   LoadBackupActionBars
     Purpose:    Load the action bars from a selected backup into the action bar selection dropdown.
 -----------------------------------------------------------------------------]]
-function ABSync:LoadBackupActionBars(parent, backupKey)
+function ns:LoadBackupActionBars(parent, backupKey)
     -- find the backup record
     local found = false
-    for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
+    for _, backupRow in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) do
         if backupRow.dttm == backupKey then
             -- instantiate needed data
             local newData = {}
@@ -34,9 +36,9 @@ function ABSync:LoadBackupActionBars(parent, backupKey)
             local selectedItem = self:GetRestoreChoiceActionBar()
 
             -- loop over the action bars in the backup record and create a checkbox for each one
-            for idx, actionBarID in ipairs(ABSync.actionBarOrder) do
+            for idx, actionBarID in ipairs(ns.data.actionBarOrder) do
                 local tmprow = backupRow.data[actionBarID]
-                local actionBarName = ABSync.barNameLanguageTranslate[actionBarID] or ABSync.L["Unknown"]
+                local actionBarName = ns.barNameLanguageTranslate[actionBarID] or ns.L["Unknown"]
                 if tmprow then
                     newData[actionBarID] = actionBarName
                     table.insert(itemOrder, actionBarID)
@@ -51,13 +53,13 @@ function ABSync:LoadBackupActionBars(parent, backupKey)
 
             -- if no data added then apply default value
             if not dataAdded then
-                newData = {["none"] = ABSync.L["No Action Bars Backed Up"]}
+                newData = {["none"] = ns.L["No Action Bars Backed Up"]}
                 itemOrder = {"none"}
                 selectedItem = "none"
             end
 
             -- update list
-            self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, newData, selectedItem)
+            ns.data.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, newData, selectedItem)
 
             -- set found to true
             found = true
@@ -76,27 +78,27 @@ end
     Function:   ClearActionBarDropDown
     Purpose:    Clear the action bar selection dropdown and reset to a single "None" value.
 -----------------------------------------------------------------------------]]
-function ABSync:ClearActionBarDropDown()
-    local items = {["none"] = ABSync.L["No Backups Selected"]}
+function ns:ClearActionBarDropDown()
+    local items = {["none"] = ns.L["No Backups Selected"]}
     local itemOrder = {"none"}
-    self.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, items, "none")
+    ns.data.ui.dropdown.actionBarSelection:UpdateItems(itemOrder, items, "none")
 end
 
 --[[---------------------------------------------------------------------------
     Function:   UncheckAllBackups
     Purpose:    Uncheck all checkboxes stored in the backup list for checkboxes.
 -----------------------------------------------------------------------------]]
-function ABSync:UncheckAllBackups(parent, exclude)
+function ns:UncheckAllBackups(parent, exclude)
     -- track unchecked boxes
     local processed = {}
 
     -- verify records exist
-    if not ABSync.ui.checkbox.backupList then
+    if not ns.data.ui.checkbox.backupList then
         return
     end
 
     -- loop over the tracking variables and uncheck each checkbox
-    for key, checkboxName in ipairs(ABSync.ui.checkbox.backupList or {}) do
+    for key, checkboxName in ipairs(ns.data.ui.checkbox.backupList or {}) do
         --@debug@
         -- if self:GetDevMode() == true then
             -- self:Print(("(UncheckAllBackups) Processing Checkbox: %s"):format(checkboxName))
@@ -116,14 +118,14 @@ function ABSync:UncheckAllBackups(parent, exclude)
     end
 
     -- override backupList with only checkboxes which exist
-    ABSync.ui.checkbox.backupList = processed
+    ns.data.ui.checkbox.backupList = processed
 end
 
 --[[---------------------------------------------------------------------------
     Function:   ClearAllChildFrames
     Purpose:    Clear all child frames of the specified parent frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ClearAllChildFrames(parent)
+function ns:ClearAllChildFrames(parent)
     -- loop over all children and remove them
     for _, child in ipairs({parent:GetChildren()}) do
         child:Hide()
@@ -136,7 +138,7 @@ end
     Function:   HideAllChildFrames
     Purpose:    Hide all child frames of the specified parent frame.
 -----------------------------------------------------------------------------]]
-function ABSync:HideAllChildFrames(parent)
+function ns:HideAllChildFrames(parent)
     -- loop over all children and hide them
     for _, child in ipairs({parent:GetChildren()}) do
         child:Hide()
@@ -152,20 +154,20 @@ end
     Function:   AddBackupGlobalNames
     Purpose:    Track the global names of the backup checkboxes and groups for later reference.
 -----------------------------------------------------------------------------]]
-function ABSync:AddBackupGlobalNames(globalGroupName, globalCheckboxName)
+function ns:AddBackupGlobalNames(globalGroupName, globalCheckboxName)
     -- add checkbox global name to tracking array
-    if not ABSync.ui.checkbox.backupList then
-        ABSync.ui.checkbox.backupList = {}
+    if not ns.data.ui.checkbox.backupList then
+        ns.data.ui.checkbox.backupList = {}
     end
 
     -- add checkbox group global name to tracking array
-    if not ABSync.ui.group.backupList then
-        ABSync.ui.group.backupList = {}
+    if not ns.data.ui.group.backupList then
+        ns.data.ui.group.backupList = {}
     end
 
     -- make sure global name isn't already tracked
     local found = false
-    for _, name in ipairs(ABSync.ui.checkbox.backupList) do
+    for _, name in ipairs(ns.data.ui.checkbox.backupList) do
         if name == globalCheckboxName then
             found = true
             break
@@ -174,12 +176,12 @@ function ABSync:AddBackupGlobalNames(globalGroupName, globalCheckboxName)
 
     -- insert if not found
     if not found then
-        table.insert(ABSync.ui.checkbox.backupList, globalCheckboxName)
+        table.insert(ns.data.ui.checkbox.backupList, globalCheckboxName)
     end
 
     -- make sure global group name isn't already tracked
     found = false
-    for _, name in ipairs(ABSync.ui.group.backupList) do
+    for _, name in ipairs(ns.data.ui.group.backupList) do
         if name == globalGroupName then
             found = true
             break
@@ -188,7 +190,7 @@ function ABSync:AddBackupGlobalNames(globalGroupName, globalCheckboxName)
 
     -- insert if not found
     if not found then
-        table.insert(ABSync.ui.group.backupList, globalGroupName)
+        table.insert(ns.data.ui.group.backupList, globalGroupName)
     end
 end
 
@@ -196,9 +198,9 @@ end
     Function:   ProcessBackupListFrame
     Purpose:    Load the checkboxes for available backups into the scroll frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessBackupListFrame()
+function ns:ProcessBackupListFrame()
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- get the content frame for updating
     local scrollContent = nil
@@ -211,17 +213,17 @@ function ABSync:ProcessBackupListFrame()
     end
 
     -- remove all existing children from the scroll frame
-    ABSync:HideAllChildFrames(scrollContent)
+    ns:HideAllChildFrames(scrollContent)
 
     -- add the available backups
     local trackInserts = 0
     local offsetY = 5
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(ProcessBackupListFrame) Current Character/Server Spec: %s - Backup Rows: %d"):format(self.currentPlayerServerSpec, #ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) or 0)
+        -- self:Print(("(ProcessBackupListFrame) Current Character/Server Spec: %s - Backup Rows: %d"):format(ns.data.currentPlayerServerSpec, #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) or 0)
     -- end
     --@end-debug@
-    for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
+    for _, backupRow in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) do
         --@debug@
         -- if self:GetDevMode() == true then
             -- print(("(ProcessBackupListFrame) Found Backup Record: %s, Note: %s"):format(backupRow.dttm, backupRow.note or "No Description"))
@@ -276,7 +278,7 @@ function ABSync:ProcessBackupListFrame()
             checkbox = self:CreateCheckbox(checkboxGroup, self:FormatDateString(backupRow.dttm), isChecked, checkboxGlobalName, function(self, button, value)
                 -- get the content frame for updating
                 local scrollContent = nil
-                local scrollContentName = ABSync:GetObjectName("BackupListScrollContent")
+                local scrollContentName = ns:GetObjectName("BackupListScrollContent")
                 if _G[scrollContentName] then
                     scrollContent = _G[scrollContentName]
                 else
@@ -285,22 +287,22 @@ function ABSync:ProcessBackupListFrame()
                 end
 
                 -- clear all other checkboxes
-                ABSync:UncheckAllBackups(scrollContent, self)
+                ns:UncheckAllBackups(scrollContent, self)
                 
                 -- if checked, load the action bars for this backup into the action bar selection scroll region
                 if value == true then
                     -- track choice by character
-                    ABSync:SetRestoreChoiceDateTime(backupRow.dttm)
+                    ns:SetRestoreChoiceDateTime(backupRow.dttm)
 
                     -- update the drop down with action bars for this backup
-                    ABSync:LoadBackupActionBars(scrollContent, backupRow.dttm)
+                    ns:LoadBackupActionBars(scrollContent, backupRow.dttm)
                 else
                     -- blank out selected backup
-                    ABSync:SetRestoreChoiceDateTime(ABSync.L["None"])
-                    ABSync:SetRestoreChoiceActionBar(ABSync.L["None"])
+                    ns:SetRestoreChoiceDateTime(ns.L["None"])
+                    ns:SetRestoreChoiceActionBar(ns.L["None"])
 
                     -- clear dropdown and choice
-                    ABSync:ClearActionBarDropDown()
+                    ns:ClearActionBarDropDown()
                 end
             end)
 
@@ -320,7 +322,7 @@ function ABSync:ProcessBackupListFrame()
                 checkboxNote:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 20, 0)
                 checkboxNote:SetPoint("RIGHT", scrollContent, "RIGHT", -5, 0)
                 checkboxNote:SetJustifyH("LEFT")
-                checkboxNote:SetText(backupRow.note or ABSync.L["No Description"])
+                checkboxNote:SetText(backupRow.note or ns.L["No Description"])
                 checkboxNote:SetWordWrap(false)
             end
 
@@ -352,7 +354,7 @@ function ABSync:ProcessBackupListFrame()
         noDataLabel:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 5, -5)
         noDataLabel:SetPoint("RIGHT", scrollContent, "RIGHT", 0, 0)
         noDataLabel:SetJustifyH("LEFT")
-        noDataLabel:SetText(ABSync.L["No Backups Found"])
+        noDataLabel:SetText(ns.L["No Backups Found"])
     end
 
     -- insert empty records if no records inserted
@@ -366,7 +368,7 @@ function ABSync:ProcessBackupListFrame()
         noDataLabel:Hide()
 
         -- update dropdown
-        ABSync:LoadBackupActionBars(scrollContent, self:GetRestoreChoiceDateTime())
+        ns:LoadBackupActionBars(scrollContent, self:GetRestoreChoiceDateTime())
     else
         --@debug@
         -- if self:GetDevMode() == true then
@@ -385,16 +387,16 @@ end
     Function:   CreateBackupListFrame
     Purpose:    Create the backup list frame for displaying available backups.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateBackupListFrame(parent)
+function ns:CreateBackupListFrame(parent)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- region label
     local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText(ABSync.L["Backups Available:"])
+    regionLabel:SetText(ns.L["Backups Available:"])
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -438,16 +440,16 @@ end
     Function:   CreateRestoreFrame
     Purpose:    Create the restore frame for selecting which action bars to restore and a button to trigger it.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateRestoreFrame(parent)
+function ns:CreateRestoreFrame(parent)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- region label
     local regionLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     regionLabel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     regionLabel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
     regionLabel:SetJustifyH("LEFT")
-    regionLabel:SetText(ABSync.L["Restore one Action Bar per Click:"])
+    regionLabel:SetText(ns.L["Restore one Action Bar per Click:"])
 
     -- create inset frame
     local insetFrame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
@@ -458,31 +460,31 @@ function ABSync:CreateRestoreFrame(parent)
     -- label for dropdown
     local dropdownLabel = insetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     dropdownLabel:SetJustifyH("LEFT")
-    dropdownLabel:SetText(ABSync.L["Select Action Bar to Restore:"])
+    dropdownLabel:SetText(ns.L["Select Action Bar to Restore:"])
 
     -- create drop down based on selected backup, initially it will have a fake value
-    local items = {["none"] = ABSync.L["No Backups Selected"]}
+    local items = {["none"] = ns.L["No Backups Selected"]}
     local itemOrder = {"none"}
-    self.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, itemOrder, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
+    ns.data.ui.dropdown.actionBarSelection = self:CreateDropdown(insetFrame, itemOrder, items, "none", self:GetObjectName("DropdownRestoreActionBar"), function(key)
         -- track choice by character
         if key ~= "none" and key ~= nil then
-            ABSync:SetRestoreChoiceActionBar(key)
-            -- ABSync.db.char[self.currentPlayerServerSpec].restore.choice.actionBar = key
+            ns:SetRestoreChoiceActionBar(key)
+            -- ns.db.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar = key
             --@debug@
             -- print("(ActionBarDropdownOnClick) Selected Action Bar to Restore:", key)
             --@end-debug@
         end
     end)
-    self.ui.dropdown.actionBarSelection:SetWidth(200)
+    ns.data.ui.dropdown.actionBarSelection:SetWidth(200)
 
     -- position the label and then dropdown
-    local dropdownOffset = (self.ui.dropdown.actionBarSelection:GetHeight() - dropdownLabel:GetStringHeight()) / 2
+    local dropdownOffset = (ns.data.ui.dropdown.actionBarSelection:GetHeight() - dropdownLabel:GetStringHeight()) / 2
     dropdownLabel:SetPoint("TOPLEFT", insetFrame, "TOPLEFT", padding, -(padding + dropdownOffset))
-    self.ui.dropdown.actionBarSelection:SetPoint("LEFT", dropdownLabel, "RIGHT", padding, 0)
+    ns.data.ui.dropdown.actionBarSelection:SetPoint("LEFT", dropdownLabel, "RIGHT", padding, 0)
 
     -- add button to trigger restore
     local restoreButton = self:CreateStandardButton(insetFrame, nil, "Restore", 100, function(self, button, down)        
-        ABSync:BeginRestore(self)
+        ns:BeginRestore(self)
     end)
     restoreButton:SetPoint("TOPLEFT", dropdownLabel, "BOTTOMLEFT", 0, -(padding + dropdownOffset))
 end
@@ -491,9 +493,9 @@ end
     Function:   ProcessBackupFrame
     Purpose:    Create the backup frame for displaying and restoring backups.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessBackupFrame(parent, tabKey)
+function ns:ProcessBackupFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local backupFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -511,7 +513,7 @@ function ABSync:ProcessBackupFrame(parent, tabKey)
         title:SetPoint("TOPRIGHT", backupFrame, "TOPRIGHT", -padding, -padding)
         title:SetHeight(30)
         title:SetJustifyH("CENTER")
-        title:SetText(ABSync.L["Restore"])
+        title:SetText(ns.L["Restore"])
 
         -- add info label
         local infoFrame = CreateFrame("Frame", nil, backupFrame, "InsetFrameTemplate")
@@ -523,7 +525,7 @@ function ABSync:ProcessBackupFrame(parent, tabKey)
         infoLabel:SetPoint("BOTTOMRIGHT", infoFrame, "BOTTOMRIGHT", -padding, padding)
         infoLabel:SetJustifyH("LEFT")
         infoLabel:SetWordWrap(true)
-        infoLabel:SetText(ABSync.L["Backups are stored per character. Select backups by date and time and the action bar (one at a time) to restore. Then click the 'Restore Selected Backup' button."])
+        infoLabel:SetText(ns.L["Backups are stored per character. Select backups by date and time and the action bar (one at a time) to restore. Then click the 'Restore Selected Backup' button."])
 
         -- adjust info frame to height of label
         infoFrame:SetHeight(infoLabel:GetStringHeight() + (2 * padding) + 10)

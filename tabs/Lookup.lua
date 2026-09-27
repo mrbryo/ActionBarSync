@@ -5,11 +5,13 @@
 	Description: 	Building the Lookup tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   LookupAction
     Purpose:    Look up the action based on the last entered action type and ID.
 -----------------------------------------------------------------------------]]
-function ABSync:LookupAction()
+function ns:LookupAction()
     -- get the action type
     local actionType = self:GetLastActionType()
     
@@ -18,7 +20,7 @@ function ABSync:LookupAction()
 
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ABSync.L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
+        self:Print((ns.L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
     end
     --@end-debug@
 
@@ -26,8 +28,8 @@ function ABSync:LookupAction()
     local lookupInfo = {
         type = actionType,
         id = buttonActionID,
-        name = ABSync.L["Unknown"],
-        has = ABSync.L["No"]
+        name = ns.L["Unknown"],
+        has = ns.L["No"]
     }
 
     -- perform lookup based on type
@@ -54,11 +56,11 @@ end
     Arguments:  parent  - The parent frame to attach this frame to
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:CreateTopRegion(parent)
+function ns:CreateTopRegion(parent)
     -- set standard values
     local labelWidth = 75
     local controlWidth = 200
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
     local paddingAdjust = 5 -- to align edit boxes with drop downs, add N padding to the left of edit boxes and make the size N smaller
     local rowHeight = 30
 
@@ -78,7 +80,7 @@ function ABSync:CreateTopRegion(parent)
     introLabel:SetPoint("TOPLEFT", topContent, "TOPLEFT", padding, -padding)
     introLabel:SetPoint("TOPRIGHT", topContent, "TOPRIGHT", -padding, -padding)
     introLabel:SetJustifyH("LEFT")
-    introLabel:SetText(ABSync.L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."])
+    introLabel:SetText(ns.L["This tab allows you to look up actions by ID, Name and Type. You can also assign the action to an action bar."])
     -- topFrameHeight = topFrameHeight + introLabel:GetHeight() + padding
 
     -- build table
@@ -115,16 +117,16 @@ function ABSync:CreateTopRegion(parent)
     local actionIdLabel = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionIdLabel:SetPoint("LEFT", rowID, "LEFT", 0, 0)
     actionIdLabel:SetJustifyH("LEFT")
-    actionIdLabel:SetText(("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["ID"]))
+    actionIdLabel:SetText(("%s%s:|r"):format(ns.data.constants.colors.label, ns.L["ID"]))
 
     -- action id row; edit box for entering action id
     local actionIdInput = self:CreateEditBox(rowID, controlWidth - paddingAdjust, nil, false, function(self)
         local value = self:GetText()
-        ABSync:SetLastActionID(value)
+        ns:SetLastActionID(value)
 
         -- trigger timer
         if value and value ~= "" then
-            ABSync:SetLabelWithTimer(ABSync.ui.label.actionIdSaved, ABSync.L["Saved!"], 3, nil)
+            ns:SetLabelWithTimer(ns.data.ui.label.actionIdSaved, ns.L["Saved!"], 3, nil)
         end
     end)
     actionIdInput:SetPoint("LEFT", actionIdLabel, "RIGHT", padding + paddingAdjust, 0)
@@ -132,12 +134,12 @@ function ABSync:CreateTopRegion(parent)
     -- topFrameHeight = topFrameHeight + actionIdInput:GetHeight() + padding
 
     -- save confirmation
-    self.ui.label.actionIdSaved = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    self.ui.label.actionIdSaved:SetPoint("LEFT", actionIdInput, "RIGHT", padding, 0)
-    self.ui.label.actionIdSaved:SetJustifyH("LEFT")
-    self.ui.label.actionIdSaved:SetText(ABSync.L["Saved!"])
-    local savedWidthId = self.ui.label.actionIdSaved:GetWidth()
-    self.ui.label.actionIdSaved:SetText("")  -- clear it out for now
+    ns.data.ui.label.actionIdSaved = rowID:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    ns.data.ui.label.actionIdSaved:SetPoint("LEFT", actionIdInput, "RIGHT", padding, 0)
+    ns.data.ui.label.actionIdSaved:SetJustifyH("LEFT")
+    ns.data.ui.label.actionIdSaved:SetText(ns.L["Saved!"])
+    local savedWidthId = ns.data.ui.label.actionIdSaved:GetWidth()
+    ns.data.ui.label.actionIdSaved:SetText("")  -- clear it out for now
 
     --[[ action name row]]
 
@@ -145,30 +147,30 @@ function ABSync:CreateTopRegion(parent)
     local actionNameLabel = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionNameLabel:SetPoint("LEFT", rowName, "LEFT", 0, 0)
     actionNameLabel:SetJustifyH("LEFT")
-    actionNameLabel:SetText(("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Name"]))
+    actionNameLabel:SetText(("%s%s:|r"):format(ns.data.constants.colors.label, ns.L["Name"]))
 
     -- edit box for enter action name
     local actionNameInput = self:CreateEditBox(rowName, controlWidth - paddingAdjust, nil, false, function(self)
         local value = self:GetText()
-        ABSync:SetLastActionName(value)
+        ns:SetLastActionName(value)
 
         -- trigger timer
         if value and value ~= "" then
-            ABSync:SetLabelWithTimer(ABSync.ui.label.actionNameSaved, ABSync.L["Saved!"], 3, nil)
+            ns:SetLabelWithTimer(ns.data.ui.label.actionNameSaved, ns.L["Saved!"], 3, nil)
         end
     end)
     actionNameInput:SetPoint("LEFT", actionNameLabel, "RIGHT", padding + paddingAdjust, 0)
     actionNameInput:SetText(self:GetLastActionName())
 
     -- save confirmation
-    self.ui.label.actionNameSaved = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    self.ui.label.actionNameSaved:SetPoint("LEFT", actionNameInput, "RIGHT", padding, 0)
-    self.ui.label.actionNameSaved:SetJustifyH("LEFT")
+    ns.data.ui.label.actionNameSaved = rowName:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    ns.data.ui.label.actionNameSaved:SetPoint("LEFT", actionNameInput, "RIGHT", padding, 0)
+    ns.data.ui.label.actionNameSaved:SetJustifyH("LEFT")
 
     --[[ action type row ]]
     
     -- label for drop down
-    local actionTypeLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Type"])
+    local actionTypeLabelText = ("%s%s:|r"):format(ns.data.constants.colors.label, ns.L["Type"])
     local actionTypeLabel = rowType:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionTypeLabel:SetPoint("LEFT", rowType, "LEFT", 0, 0)
     actionTypeLabel:SetJustifyH("LEFT")
@@ -185,13 +187,13 @@ function ABSync:CreateTopRegion(parent)
     -- action type row; drop down for selecting action type
     local actionTypeLookup = self:GetActionTypeValues()
     local actionTypeDropDown = self:CreateDropdown(rowType, actionTypeLookup.order, actionTypeLookup.data, self:GetLastActionType(), self:GetObjectName("DropdownActionType"), function(key)
-        ABSync:SetLastActionType(key)
+        ns:SetLastActionType(key)
     end)
     --@debug@
     -- swap this in for CreateDropdown to see if size is really same as the action id row; it normally is and the drop down is more narrow for some reason
     -- local actionTypeDropDown = self:CreateEditBox(rowType, controlWidth, nil, false, function(self)
     --     local value = self:GetText()
-    --     ABSync:SetLastActionType(value)
+    --     ns:SetLastActionType(value)
     -- end)
     --@end-debug@
     actionTypeDropDown:SetWidth(controlWidth)
@@ -199,8 +201,8 @@ function ABSync:CreateTopRegion(parent)
     -- topFrameHeight = topFrameHeight + actionTypeDropDown:GetHeight() + padding
 
     -- action type row; button to perform the lookup
-    local lookupButton = self:CreateStandardButton(rowType, nil, ABSync.L["Lookup"], 75, function()
-        ABSync:LookupAction()
+    local lookupButton = self:CreateStandardButton(rowType, nil, ns.L["Lookup"], 75, function()
+        ns:LookupAction()
     end)
     lookupButton:SetPoint("LEFT", actionTypeDropDown, "RIGHT", padding, 0)
     -- topFrameHeight = topFrameHeight + lookupButton:GetHeight() + padding
@@ -208,7 +210,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ action bar choice row ]]
 
     -- label for drop down
-    local actionBarLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Bar"])
+    local actionBarLabelText = ("%s%s:|r"):format(ns.data.constants.colors.label, ns.L["Bar"])
     local actionBarLabel = rowBar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBarLabel:SetPoint("LEFT", rowBar, "LEFT", 0, 0)
     actionBarLabel:SetJustifyH("LEFT")
@@ -218,7 +220,7 @@ function ABSync:CreateTopRegion(parent)
     local barValues = self:GetBarValues()
     local lastBarAction = self:GetLastActionBar()
     local actionBarDropDown = self:CreateDropdown(rowBar, barValues.order, barValues.data, lastBarAction, self:GetObjectName("DropdownActionBar"), function(key)
-        ABSync:SetLastActionBar(key)
+        ns:SetLastActionBar(key)
     end)
     actionBarDropDown:SetWidth(controlWidth)
     actionBarDropDown:SetPoint("LEFT", actionBarLabel, "RIGHT", padding, 0)
@@ -226,7 +228,7 @@ function ABSync:CreateTopRegion(parent)
     --[[ action button drop down row]]
 
     -- label for button drop down
-    local actionBtnLabelText = ("%s%s:|r"):format(ABSync.constants.colors.label, ABSync.L["Button"])
+    local actionBtnLabelText = ("%s%s:|r"):format(ns.data.constants.colors.label, ns.L["Button"])
     local actionBtnLabel = rowBtn:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     actionBtnLabel:SetPoint("LEFT", rowBtn, "LEFT", 0, 0)
     actionBtnLabel:SetJustifyH("LEFT")
@@ -235,7 +237,7 @@ function ABSync:CreateTopRegion(parent)
     -- action button drop down
     local actionButtonValues = self:GetButtonValues()
     local actionBtnDropDown = self:CreateDropdown(rowBtn, actionButtonValues, nil, self:GetLastActionButton(), self:GetObjectName("DropdownActionButton"), function(key)
-        ABSync:SetLastActionButton(key)
+        ns:SetLastActionButton(key)
     end)
     actionBtnDropDown:SetWidth(controlWidth)
     actionBtnDropDown:SetPoint("LEFT", actionBtnLabel, "RIGHT", padding, 0)
@@ -243,13 +245,13 @@ function ABSync:CreateTopRegion(parent)
     --[[ place action button row ]]
 
     -- place action button
-    local applyActionButton = self:CreateStandardButton(rowTrigger, nil, ABSync.L["Place Action"], 100, function()
+    local applyActionButton = self:CreateStandardButton(rowTrigger, nil, ns.L["Place Action"], 100, function()
         -- get stored values
-        local buttonActionID = ABSync:GetLastActionID()
-        local actionType = ABSync:GetLastActionType()
-        local actionBar = ABSync:GetLastActionBar()
-        local actionButton = ABSync:GetLastActionButton()
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton)
+        local buttonActionID = ns:GetLastActionID()
+        local actionType = ns:GetLastActionType()
+        local actionBar = ns:GetLastActionBar()
+        local actionButton = ns:GetLastActionButton()
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastActionPlacement = ns:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton)
     end)
     applyActionButton:SetPoint("LEFT", rowTrigger, "LEFT", 0, 0)
 
@@ -271,7 +273,7 @@ end
     Function:   AddRow
     Purpose:    Add a row of information to the UI table.
 -----------------------------------------------------------------------------]]
-function ABSync:AddRow(parent, data, columns, offsetY, isHeader)
+function ns:AddRow(parent, data, columns, offsetY, isHeader)
     -- default isHeader to false
     isHeader = isHeader or false
     -- print("Adding Error Row, isHeader: " .. tostring(isHeader))
@@ -312,7 +314,7 @@ function ABSync:AddRow(parent, data, columns, offsetY, isHeader)
             -- translate data if necessary
             colVal = data[colDef.key]
             if colDef.key == "type" then
-                colVal = ABSync.actionTypeLookup.data[colVal]
+                colVal = ns.data.actionTypeLookup.data[colVal]
             end
             -- print("ColVal: " .. tostring(colVal))
         end
@@ -334,12 +336,12 @@ end
     Function:   LookupHistoryRemoveAllRows
     Purpose:    Remove all rows from the lookup history.
 -----------------------------------------------------------------------------]]
--- function ABSync:LookupHistoryRemoveAllRows()
+-- function ns:LookupHistoryRemoveAllRows()
 --     -- if no scroll region, nothing to do
---     if not ABSync.ui.scroll.lookupHistory then return end
+--     if not ns.data.ui.scroll.lookupHistory then return end
 
 --     -- loop over children and remove them
---     for i, child in ipairs({ ABSync.ui.scroll.lookupHistory:GetChildren() }) do
+--     for i, child in ipairs({ ns.data.ui.scroll.lookupHistory:GetChildren() }) do
 --         child:Hide()
 --         child:SetParent(nil)
 --         child = nil
@@ -352,17 +354,17 @@ end
     Purpose:    Update the rows of data in the scroll region for lookup history.
     TODO:       Replace the removal of frames with global names and reuse existing frames.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateLookupHistory()
+function ns:UpdateLookupHistory()
     -- set initial offset
     local offsetY = 5
 
     -- remove all existing rows
-    self:RemoveFrameChildren(ABSync.ui.scroll.lookupHistory)
+    self:RemoveFrameChildren(ns.data.ui.scroll.lookupHistory)
 
     -- if 1 or more rows loop and add a row for each history record
-    if #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory > 0 then
-        for _, histRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory) do
-            local rowHeight = self:AddRow(ABSync.ui.scroll.lookupHistory, histRow, ABSync.columns.lookupHistory, offsetY, false)
+    if #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory > 0 then
+        for _, histRow in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory) do
+            local rowHeight = self:AddRow(ns.data.ui.scroll.lookupHistory, histRow, ns.data.columns.lookupHistory, offsetY, false)
             offsetY = offsetY + rowHeight
         end
     end
@@ -375,11 +377,11 @@ end
                 frameOffsetY- The Y offset from the top of the parent frame
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
+function ns:CreateLookupHistoryFrame(parent, frameOffsetY)
     -- set standard values
     local labelWidth = 75
     local controlWidth = 200
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
     local paddingAdjust = 5 -- to align edit boxes with drop downs, add N padding to the left of edit boxes and make the size N smaller
 
     -- track heights and widths
@@ -397,7 +399,7 @@ function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
     title:SetPoint("TOPLEFT", historyContent, "TOPLEFT", 0, 0)
     title:SetPoint("TOPRIGHT", historyContent, "TOPRIGHT", 0, 0)
     title:SetJustifyH("LEFT")
-    title:SetText(ABSync.L["History"])
+    title:SetText(ns.L["History"])
 
     -- add frame to show history
     local historyFrame = CreateFrame("Frame", nil, historyContent, "InsetFrameTemplate")
@@ -412,7 +414,7 @@ function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
     local offsetX = padding
     local offsetY = 5
     local maxHeight = 0
-    local hdrRowheight = self:AddRow(header, nil, ABSync.columns.lookupHistory, offsetY, true)
+    local hdrRowheight = self:AddRow(header, nil, ns.data.columns.lookupHistory, offsetY, true)
     maxHeight = math.max(maxHeight, hdrRowheight)
     header:SetHeight(maxHeight)
 
@@ -422,13 +424,13 @@ function ABSync:CreateLookupHistoryFrame(parent, frameOffsetY)
     scrollContainer:SetPoint("BOTTOMRIGHT", historyFrame, "BOTTOMRIGHT", -27, 0)
 
     -- add scroll frame to container
-    ABSync.ui.scroll.lookupHistory = CreateFrame("Frame", nil, scrollContainer)
-    ABSync.ui.scroll.lookupHistory:SetWidth(scrollContainer:GetWidth())
-    ABSync.ui.scroll.lookupHistory:SetHeight(scrollContainer:GetHeight() - padding)
-    scrollContainer:SetScrollChild(ABSync.ui.scroll.lookupHistory)
+    ns.data.ui.scroll.lookupHistory = CreateFrame("Frame", nil, scrollContainer)
+    ns.data.ui.scroll.lookupHistory:SetWidth(scrollContainer:GetWidth())
+    ns.data.ui.scroll.lookupHistory:SetHeight(scrollContainer:GetHeight() - padding)
+    scrollContainer:SetScrollChild(ns.data.ui.scroll.lookupHistory)
     
     -- populate the scroll frame
-    -- self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
+    -- self:InsertLookupHistoryRows(ns.data.ui.scroll.lookupHistory, ns.data.columns.lookupHistory)
     self:UpdateLookupHistory()
 end
 
@@ -438,9 +440,9 @@ end
     Arguments:  parent  - The parent frame to attach this frame to
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessLookupFrame(parent, tabKey)
+function ns:ProcessLookupFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local mainFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -459,7 +461,7 @@ function ABSync:ProcessLookupFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Lookup & Assign"])
+    title:SetText(ns.L["Lookup & Assign"])
 
     -- create main content frame
     local mainContentFrame = CreateFrame("Frame", nil, mainFrame)

@@ -5,13 +5,15 @@
 	Description: 	Building the About tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   ProcessAboutFrame
     Purpose:    Create the About frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessAboutFrame(parent, tabKey)
+function ns:ProcessAboutFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local aboutFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -42,7 +44,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
         text = {
             ["author"] = {
                 type = "data",
-                label = ABSync.L["Author"],
+                label = ns.L["Author"],
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Author"),
                 disable = true,
                 tip = {
@@ -52,7 +54,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
             },
             ["version"] = {
                 type = "data",
-                label = ABSync.L["Version"],
+                label = ns.L["Version"],
                 text = C_AddOns.GetAddOnMetadata("ActionBarSync", "Version"),
                 disable = true,
                 tip = {
@@ -62,46 +64,46 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
             },
             ["supportnote"] = {
                 type = "note",
-                text = ABSync.L["If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!"],
+                text = ns.L["If you find this addon useful, please consider supporting its development through one of these options below. Addon development can take hours for the simplest complexity to months for very complex. Thank you for your support!"],
             },
             ["patreon"] = {
                 type = "data",
-                label = ABSync.L["Patreon"],
+                label = ns.L["Patreon"],
                 text = "https://www.patreon.com/Bryo",
                 disable = false,
                 tip = {
                     disable = false,
-                    text = ABSync.L["If you like this addon and want to support me, please consider becoming a patron."]
+                    text = ns.L["If you like this addon and want to support me, please consider becoming a patron."]
                 }
             },
             ["coffee"] = {
                 type = "data",
-                label = ABSync.L["Buy Me a Coffee"],
+                label = ns.L["Buy Me a Coffee"],
                 text = "https://www.buymeacoffee.com/mrbryo",
                 disable = false,
             },
             ["issuenote"] = {
                 type = "note",
-                text = ABSync.L["If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits."],
+                text = ns.L["If you encounter any issues or bugs, please report them on the issues page linked below. I will do my best to address them as soon as time permits."],
             },
             ["issues"] = {
                 type = "data",
-                label = ABSync.L["Issues"],
+                label = ns.L["Issues"],
                 text = "https://github.com/mrbryo/ActionBarSync/issues",
                 disable = false,
             },
             ["localeauthors"] = {
                 type = "note",
-                text = ABSync.L["Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above."],
+                text = ns.L["Another support option is to help with localizations. If you are fluent in other language(s) and would like to help translate this addon, please use the link below. I'm still learning about CurseForge's localization system. My hope, as translations are submitted, they are added automatically and the project deploys a new version. If not, please let me know through a ticket using the issues link above."],
             },
             ["localization"] = {
                 type = "data",
-                label = ABSync.L["Localization"],
+                label = ns.L["Localization"],
                 text = "https://legacy.curseforge.com/wow/addons/action-bar-sync/localization",
                 disable = false,
                 tip = {
                     disable = false,
-                    text = ABSync.L["Help translate this addon into your language."],
+                    text = ns.L["Help translate this addon into your language."],
                 },
             }
         }
@@ -198,7 +200,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", aboutFrame, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["About"])
+    title:SetText(ns.L["About"])
 
     -- left hand side
     local leftInsetFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
@@ -253,7 +255,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
             label:SetText(rowData.label .. ":")
             
             -- column 2 is an edit box
-            local editBox = self:CreateEditBox(leftContent, editBoxWidth, label:GetHeight(), rowData.disable)
+            local editBox = self:CreateEditBox(leftContent, nil, label:GetHeight(), rowData.disable)
             editBox:SetPoint("LEFT", label, "RIGHT", columnSpacing, 0)
             editBox:SetPoint("RIGHT", leftContent, "RIGHT", -spacing, 0)
             editBox:SetText(rowData.text)
@@ -281,7 +283,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     rightLabel:SetPoint("TOPRIGHT", rightFrame, "TOPRIGHT", 0, 0)
     rightLabel:SetHeight(30)
     rightLabel:SetJustifyH("LEFT")
-    rightLabel:SetText(ABSync.L["Translators"])
+    rightLabel:SetText(ns.L["Translators"])
 
     -- right hand side frame
     local rightInsetFrame = CreateFrame("Frame", nil, aboutFrame, "InsetFrameTemplate")
@@ -303,7 +305,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
     thankYou:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -spacing)
     thankYou:SetPoint("TOPRIGHT", rightScrollContentFrame, "TOPRIGHT", -spacing, -spacing)
     thankYou:SetJustifyH("LEFT")
-    thankYou:SetText(ABSync.L["Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!"])
+    thankYou:SetText(ns.L["Please accept this pre-emptive thank you to all community members who help translate this addon into different languages!"])
     thankYou:SetWordWrap(true)
 
     -- reset y offset
@@ -315,7 +317,7 @@ function ABSync:ProcessAboutFrame(parent, tabKey)
         local localeLabel = rightScrollContentFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         localeLabel:SetPoint("TOPLEFT", rightScrollContentFrame, "TOPLEFT", spacing, -currentY)
         localeLabel:SetJustifyH("LEFT")
-        localeLabel:SetText(ABSync.constants.colors.orange .. localeData.label .. ":|r")
+        localeLabel:SetText(ns.data.constants.colors.orange .. localeData.label .. ":|r")
         
         -- update y offset
         -- currentY = currentY + (localeLabel:GetHeight() + 5)

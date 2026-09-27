@@ -5,8 +5,11 @@
 	Description: 	All initialization needed for the addon to function.
 -----------------------------------------------------------------------------]]
 
+---@class ns
+local addonName, ns = ...
+
 -- instantiate variable to hold functionality!
-ABSync = {
+ns.data = {
 	-- always set to false so the event can set it to true
 	hasPlayerEnteredWorld = false,
 	modules = {},
@@ -257,9 +260,6 @@ ABSync = {
 	timers = {},
 }
 
--- register the global addon object
-_G.ABSync = ABSync
-
 -- initialize the main db
 if not ActionBarSyncDB then
 	ActionBarSyncDB = {}
@@ -275,21 +275,21 @@ end
 -- register slash commands
 SLASH_ACTIONBARSYNC1 = "/actionbarsync"
 SLASH_ACTIONBARSYNC2 = "/abs"
- 
+
 -- register slash command function
 SlashCmdList.ACTIONBARSYNC = function(msg, editBox)
-	ABSync:SlashCommand(msg)
+	ns:SlashCommand(msg)
 end
 
 --[[---------------------------------------------------------------------------
 	Function:   AddModule
 	Purpose:    Add a module to the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:AddModule(name, module)
-	local module = {}
-	module.name = name
-	module.parent = self
-	self.modules[name] = module
+function ns:AddModule(name, module)
+	local newModule = {}
+	newModule.name = name
+	newModule.parent = self
+	ns.data.modules[name] = module
 	return module
 end
 
@@ -297,17 +297,17 @@ end
 	Function:   GetModule
 	Purpose:    Retrieve a module from the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:GetModule(name)
-	return self.modules[name]
+function ns:GetModule(name)
+	return ns.data.modules[name]
 end
 
 --[[---------------------------------------------------------------------------
 	Function:   Print
 	Purpose:    Standard print function for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:Print(msg)
+function ns:Print(msg)
 	if msg then
-		print(("%s%s:|r %s"):format("|cffffd100", ABSync.L["Action Bar Sync"], tostring(msg)))
+		print(("%s%s:|r %s"):format("|cffffd100", ns.L["Action Bar Sync"], tostring(msg)))
 	end
 end
 
@@ -315,11 +315,11 @@ end
 	Function:   RegisterEvent
 	Purpose:    Register new events with in the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:RegisterEvent(event, handler)
+function ns:RegisterEvent(event, handler)
 	--@debug@
 	-- self:Print(("Registering Event: %s"):format(event))
 	--@end-debug@
-	self.events[event] = handler or function() end
+	ns.data.events[event] = handler or function() end
 	self.eventFrame:RegisterEvent(event)
 end
 
@@ -327,24 +327,24 @@ end
 	Function:   Timer
 	Purpose:    Create a timer to call a function after a delay.
 -----------------------------------------------------------------------------]]
-function ABSync:Timer(name, delay, func)
+function ns:Timer(name, delay, func)
 	-- if timer already exists; clear and cancel it first
-	if ABSync.timers[name] then
-		ABSync.timers[name]:Cancel()
-		ABSync.TimerClear(name)
+	if ns.data.timers[name] then
+		ns.data.timers[name]:Cancel()
+		ns.TimerClear(name)
 	end
 
 	-- trigger new timer
-	ABSync.timers[name] = C_Timer.After(delay, func)
+	ns.data.timers[name] = C_Timer.After(delay, func)
 end
 
 --[[---------------------------------------------------------------------------
 	Function:   TimerClear
 	Purpose:    Clear a timer by name.
 -----------------------------------------------------------------------------]]
-function ABSync:TimerClear(name)
-	if ABSync.timers[name] then
-		ABSync.timers[name] = nil
+function ns:TimerClear(name)
+	if ns.data.timers[name] then
+		ns.data.timers[name] = nil
 	end
 end
 
@@ -352,16 +352,16 @@ end
 	Function:   UnregisterEvent
 	Purpose:    Unregister events within the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:UnregisterEvent(event)
-	self.events[event] = nil
+function ns:UnregisterEvent(event)
+	ns.data.events[event] = nil
 	self.eventFrame:UnregisterEvent(event)
 end
 
 --[[---------------------------------------------------------------------------
 	Initialize addon loaded event.
 -----------------------------------------------------------------------------]]
-ABSync.eventFrame = CreateFrame("Frame")
-ABSync.eventFrame:SetScript("OnEvent", function(self, event, ...)
+ns.eventFrame = CreateFrame("Frame")
+ns.eventFrame:SetScript("OnEvent", function(self, event, ...)
 	-- trigger function handler assigned to the registered event
-	ABSync.events[event](self, event, ...)
+	ns.data.events[event](self, event, ...)
 end)

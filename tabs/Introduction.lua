@@ -5,13 +5,15 @@
 	Description: 	Building the Introduction tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   CreateInstructionsFrame
     Purpose:    Create the Introduction frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessIntroductionFrame(parent, tabKey)
+function ns:ProcessIntroductionFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local instructionsFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -23,19 +25,19 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
 
     -- get instructions
     local instructions = {
-        (ABSync.L["On the |cff00ff00%s|r tab click the |cff00ff00%s|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00%s|r button will be removed."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Scan Now"], ABSync.L["Scan Now"]),
-        ABSync.L["Definition: Source Character - A character which has action bars you want to share with other characters."],
-        ABSync.L["Definition: Target Character - A character which will receive action bar data from one or more source characters."],
-        (ABSync.L["On the |cff00ff00%s|r tab for each Source Character, check each Action Bar you want to share in the |cff00ff00%s|r section."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Select Action Bars to Share"]),
-        (ABSync.L["On the |cff00ff00%s|r tab for each Target Character, check each Action Bar you want to update from one or more Source Characters in the |cff00ff00%s|r section."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Sync Action Bars From"]),
-        (ABSync.L["On the |cff00ff00%s|r tab, once the previous step is done, click the |cff00ff00%s|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00%s|r option."]):format(ABSync.uitabs["tabs"]["sharesync"], ABSync.L["Sync Now"], ABSync.L["Enable Sync on Login (no backups occur)"]),
-        ABSync.L["Done!"],
+        (ns.L["On the |cff00ff00%s|r tab click the |cff00ff00%s|r button. An initial scan is required for the addon to function. It should have a date/time to show a scan has already been done. The addon should perform a scan before it does any work. Eventually, the |cff00ff00%s|r button will be removed."]):format(ns.data.uitabs["tabs"]["sharesync"], ns.L["Scan Now"], ns.L["Scan Now"]),
+        ns.L["Definition: Source Character - A character which has action bars you want to share with other characters."],
+        ns.L["Definition: Target Character - A character which will receive action bar data from one or more source characters."],
+        (ns.L["On the |cff00ff00%s|r tab for each Source Character, check each Action Bar you want to share in the |cff00ff00%s|r section."]):format(ns.data.uitabs["tabs"]["sharesync"], ns.L["Select Action Bars to Share"]),
+        (ns.L["On the |cff00ff00%s|r tab for each Target Character, check each Action Bar you want to update from one or more Source Characters in the |cff00ff00%s|r section."]):format(ns.data.uitabs["tabs"]["sharesync"], ns.L["Sync Action Bars From"]),
+        (ns.L["On the |cff00ff00%s|r tab, once the previous step is done, click the |cff00ff00%s|r button to sync your action bars. If you want your bars auto synced, enable the |cff00ff00%s|r option."]):format(ns.data.uitabs["tabs"]["sharesync"], ns.L["Sync Now"], ns.L["Enable Sync on Login (no backups occur)"]),
+        ns.L["Done!"],
     }
 
     -- FAQ
     local faq = {
-        (ABSync.L["If an action button does not sync and an error for the same button isn't on the '%s' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures."]):format(ABSync.uitabs["tabs"]["last_sync_errors"]),
-        ABSync.L["Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content."],
+        (ns.L["If an action button does not sync and an error for the same button isn't on the '%s' tab, it means the action can't be picked up and placed through Blizzard's API via this addon. Trying to figure out how to capture pickup or placement failures."]):format(ns.data.uitabs["tabs"]["last_sync_errors"]),
+        ns.L["Be sure to open all sources of action bar buttons in order for the game to load that particular data into the game memory so the WoW API can access it. For example, if you have a toy on an action button, open your toy box. You won't see any addon or WoW errors, but the addon won't be able to capture or place the toy on the action button and no errors will be recorded. All sources could be spells, items, toys, mounts, pets and macros. If you forget to do this, just rescan and then try syncing again after opening all game content."],
     }
 
     -- set label height
@@ -51,7 +53,7 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", instructionsFrame, "TOPRIGHT", -10, -10)
     title:SetHeight(labelHeight)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Instructions"])
+    title:SetText(ns.L["Instructions"])
 
     -- create the scroll frame inset frame, parent to the instructions scrolling area
     local instructionsInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")
@@ -77,7 +79,7 @@ function ABSync:ProcessIntroductionFrame(parent, tabKey)
     faqTitle:SetPoint("TOPRIGHT", instructionsInsetFrame, "BOTTOMRIGHT", 0, 0)
     faqTitle:SetHeight(labelHeight)
     faqTitle:SetJustifyH("CENTER")
-    faqTitle:SetText(ABSync.L["Frequently Asked Questions"])
+    faqTitle:SetText(ns.L["Frequently Asked Questions"])
 
     -- create faq content frame
     local faqInsetFrame = CreateFrame("Frame", nil, instructionsFrame, "InsetFrameTemplate")

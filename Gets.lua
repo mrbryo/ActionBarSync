@@ -1,6 +1,10 @@
---[[---------------------------------------------------------------------------
-        INSERT IN ALPHABETICAL ORDER!!!
+--[[ ------------------------------------------------------------------------
+	Title: 			Gets.lua
+	Author: 		mrbryo
+	Description: 	Functions for Blizzards Addon Compartment system, which provides a minimap dropdown button without needing LibDataBroker or custom minimap handling.
 -----------------------------------------------------------------------------]]
+
+local addonName, ns = ...
 
 --[[---------------------------------------------------------------------------
     Function:   GetArgs
@@ -8,37 +12,37 @@
     Arguments:  text - The input string to parse
     Returns:    Table of parsed arguments
 -----------------------------------------------------------------------------]]
-function ABSync:GetArgs(text)
+function ns:GetArgs(text)
     -- set language variable
     local L = self.L
-    
+
     -- initialize return table
     local args = {}
-    
+
     -- check if text is valid
     if not text or text == "" then
         return args
     end
-    
+
     -- trim leading and trailing whitespace
     text = string.gsub(text, "^%s*(.-)%s*$", "%1")
-    
+
     -- if still empty after trim, return empty table
     if text == "" then
         return args
     end
-    
+
     -- parse the string by spaces
     for arg in string.gmatch(text, "%S+") do
         table.insert(args, arg)
     end
-    
+
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print((ABSync.L["Parsed %d arguments from: '%s'"]):format(#args, text))
+        self:Print((ns.L["Parsed %d arguments from: '%s'"]):format(#args, text))
     end
     --@end-debug@
-    
+
     -- finally return the parsed arguments
     return args
 end
@@ -47,17 +51,17 @@ end
     Function:   GetAutoResetMountFilters
     Purpose:    Get the auto reset mount filters status for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetAutoResetMountFilters()
+function ns:GetAutoResetMountFilters()
     -- make sure the current player key is set
-    if not self.currentPlayerServer then return false end
+    if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
     local isSet = self:SetupProfileDB()
 
     if isSet == true then
-        return ActionBarSyncDB.profile[self.currentPlayerServer].autoResetMountFilters
+        return ActionBarSyncDB.profile[ns.data.currentPlayerServer].autoResetMountFilters
     else
-        self:Print((ABSync.L["Error Getting Auto Reset Mount Filters for %s!"]):format(tostring(self.currentPlayerServer)))
+        self:Print((ns.L["Error Getting Auto Reset Mount Filters for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -66,13 +70,13 @@ end
     Function:   GetBarCountCurrentScan
     Purpose:    Get the count of action bars from player last scan.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarCountCurrentScan()
+function ns:GetBarCountCurrentScan()
     -- track if we looped or not
     local barCount = 0
-    
+
     -- loop over current scan data and get the bar names
-    if ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData then
-        for barName, _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData) do
+    if ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData then
+        for barName, _ in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData) do
             -- count bars as well loop
             barCount = barCount + 1
         end
@@ -86,15 +90,15 @@ end
     Function:   GetMinimapButtonVisible
     Purpose:    Get whether the minimap button should be visible (defaults to true).
 -----------------------------------------------------------------------------]]
-function ABSync:GetMinimapButtonVisible()
+function ns:GetMinimapButtonVisible()
     if not ActionBarSyncDB or not ActionBarSyncDB.global then
         return true -- default to showing the button
     end
-    
+
     if ActionBarSyncDB.global.minimap and ActionBarSyncDB.global.minimap.hide ~= nil then
         return not ActionBarSyncDB.global.minimap.hide -- LibDBIcon uses 'hide' property, we want 'show'
     end
-    
+
     return true -- default to showing the button
 end
 
@@ -102,13 +106,13 @@ end
     Function:   GetBarNames
     Purpose:    Return list of action bar names from the global storage.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarNames()
+function ns:GetBarNames()
     -- track if we looped or not
     local barCount = #ActionBarSyncDB.global.actionBars or 0
 
     -- what we do if we didn't loop; over ride final return statement
     if barCount == 0 then
-        return {ABSync.L["No Scan Completed"]}
+        return {ns.L["No Scan Completed"]}
     end
 
     -- finally return the list of bar names
@@ -119,13 +123,13 @@ end
     Function:   GetBarValues
     Purpose:    Get the action bar values.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarValues()
+function ns:GetBarValues()
     -- initialize temporary table
     -- local lookups = {}
     -- return ActionBarSyncDB.global.actionBars
     return {
-        order = ABSync.actionBarOrder,
-        data = ABSync.barNameLanguageTranslate,
+        order = ns.data.actionBarOrder,
+        data = ns.barNameLanguageTranslate,
     }
 end
 
@@ -133,23 +137,23 @@ end
     Function:   GetButtonValues
     Purpose:    Get the action button values.
 -----------------------------------------------------------------------------]]
-function ABSync:GetButtonValues()
-    return ABSync.constants.actionButtons
+function ns:GetButtonValues()
+    return ns.data.constants.actionButtons
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetActionTypeValues
     Purpose:    Get the action type values.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionTypeValues()
-    return ABSync.actionTypeLookup
+function ns:GetActionTypeValues()
+    return ns.data.actionTypeLookup
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetBarToShare
     Purpose:    Check if a specific action bar is set to share for a specific player.
 -----------------------------------------------------------------------------]]
-function ABSync:GetBarToShare(barID, playerID)
+function ns:GetBarToShare(barID, playerID)
     if not ActionBarSyncDB.global.barsToSync then
         return false
     elseif not ActionBarSyncDB.global.barsToSync[barID] then
@@ -165,7 +169,7 @@ end
     Function:   GetCurrentDateTime
     Purpose:    Get the current date and time in YYYYMMDDHHMMSS format.
 -----------------------------------------------------------------------------]]
-function ABSync:GetCurrentDateTime()
+function ns:GetCurrentDateTime()
     return date("%Y%m%d%H%M%S")
 end
 
@@ -173,7 +177,7 @@ end
     Function:   GetDevMode
     Purpose:    Get the developer mode for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetDevMode()
+function ns:GetDevMode()
     local defaultValue = false
     defaultValue = false
     --@debug@
@@ -182,7 +186,7 @@ function ABSync:GetDevMode()
     --@end-debug@
 
     -- get player unique key; if not already set
-    if not self.currentPlayerServerSpec and self.currentPlayerServerSpec ~= ABSync.L["Unknown"] then
+    if not ns.data.currentPlayerServerSpec and ns.data.currentPlayerServerSpec ~= ns.L["Unknown"] then
         return defaultValue
     end
 
@@ -190,19 +194,19 @@ function ABSync:GetDevMode()
     if not ActionBarSyncDB.char then
         ActionBarSyncDB.char = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec] = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec] then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec] = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = false
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].isDevMode then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].isDevMode = false
     end
 
     --@debug@
-    -- ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode = defaultValue
+    -- ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].isDevMode = defaultValue
     --@end-debug@
 
     -- finally return the dev mode value
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].isDevMode
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].isDevMode
 end
 
 --[[---------------------------------------------------------------------------
@@ -210,19 +214,19 @@ end
     Purpose:    Retrieve the position of a frame from the profile database.
     Parameters: frameName - the name of the frame
 -----------------------------------------------------------------------------]]
-function ABSync:GetFramePosition(frameName)
+function ns:GetFramePosition(frameName)
     -- make sure the current player key is set
-    if not self.currentPlayerServer then return false end
-    
+    if not ns.data.currentPlayerServer then return false end
+
     -- set language variable
     local L = self.L
 
     -- ensure profile DB structure exists
     local isSet = self:SetupProfileDB()
-    
+
     if isSet == true then
         -- retrieve position data
-        return ActionBarSyncDB.profile[self.currentPlayerServer].ui.positions[frameName] or L["Unknown"]
+        return ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName] or L["Unknown"]
     else
         return L["Unknown"]
     end
@@ -233,15 +237,15 @@ end
     Purpose:    Get the current size of the addon main frame.
     Returns:    Table with width and height properties, or nil if frame doesn't exist
 -----------------------------------------------------------------------------]]
-function ABSync:GetMainFrameSize()
+function ns:GetMainFrameSize()
     -- check if the main frame exists
     if not ActionBarSyncMainFrame then
         return nil
     end
-    
+
     -- get the current size
     local width, height = ActionBarSyncMainFrame:GetSize()
-    
+
     return {
         width = width,
         height = height
@@ -252,16 +256,16 @@ end
     Function:   GetKeyPlayerServer
     Purpose:    Get a formatted value with player and server name.
 -----------------------------------------------------------------------------]]
-function ABSync:GetKeyPlayerServer(nospace)
+function ns:GetKeyPlayerServer(nospace)
     -- verify variable's are setup
     self:SetKeyPlayerServer()
 
     if not nospace then nospace = true end
 
     if nospace == true then
-        return self.currentPlayerServer
+        return ns.data.currentPlayerServer
     else
-        return self.currentPlayerServerWithSpace
+        return ns.data.currentPlayerServerWithSpace
     end
 end
 
@@ -269,7 +273,7 @@ end
     Function:   GetKeyPlayerServerSpec
     Purpose:    Get a formatted value with player, server and current spec names.
 -----------------------------------------------------------------------------]]
-function ABSync:GetKeyPlayerServerSpec(nohyphen)
+function ns:GetKeyPlayerServerSpec(nohyphen)
     -- check inputs
     if not nohyphen then nohyphen = false end
 
@@ -278,9 +282,9 @@ function ABSync:GetKeyPlayerServerSpec(nohyphen)
 
     -- finally return the special key
     if nohyphen then
-        return self.currentPlayerServerSpecNoHyphens
+        return ns.data.currentPlayerServerSpecNoHyphens
     else
-        return self.currentPlayerServerSpec
+        return ns.data.currentPlayerServerSpec
     end
 end
 
@@ -290,7 +294,7 @@ end
 
     Not used yet!
 -----------------------------------------------------------------------------]]
-function ABSync:GetText(key)
+function ns:GetText(key)
     local L = self.L
     return L[key] or key
 end
@@ -299,10 +303,10 @@ end
     Function:   GetLastActionBar
     Purpose:    Get the last action bar for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionBar()
+function ns:GetLastActionBar()
     local returnVal = nil
-    if ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.bar then
-        returnVal = ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.bar
+    if ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.bar then
+        returnVal = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.bar
     end
     if returnVal == nil or returnVal == "" then
         returnVal = "actionbar1"
@@ -314,34 +318,34 @@ end
     Function:   GetLastActionBarUtilities
     Purpose:    Get the last action bar for the Utilities tab for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionBarUtilities()
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities = {}
+function ns:GetLastActionBarUtilities()
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities.removeButtons then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities.removeButtons = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar = "actionbar1"
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities.removeButtons.bar then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities.removeButtons.bar = "actionbar1"
     end
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].utilities.removeButtons.bar or false
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities.removeButtons.bar or false
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetLastActionButton
     Purpose:    Get the last action button for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionButton()
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.btn or ""
+function ns:GetLastActionButton()
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.btn or ""
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetLastActionID
     Purpose:    Get the last action ID for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionID()
+function ns:GetLastActionID()
     -- first get a copy of the value
-    local returnme = ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.id
+    local returnme = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.id
 
     -- check for nil
     if returnme == nil or returnme == "" then
@@ -355,26 +359,26 @@ end
     Function:   GetLastActionName
     Purpose:    Get the last action name for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionName()
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.name
+function ns:GetLastActionName()
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.name
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetLastActionType
     Purpose:    Get the last action type for the current character. Defaults to "spell" if never set.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastActionType()
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup.type or "spell"
+function ns:GetLastActionType()
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup.type or "spell"
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetLastScan
     Purpose:    Get the last scan date/time for the action bars.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastScan()
+function ns:GetLastScan()
     -- make sure the current player spec key is set
-    if not self.currentPlayerServerSpec then return false end
-    
+    if not ns.data.currentPlayerServerSpec then return false end
+
     -- set language variable
     local L = self.L
 
@@ -382,9 +386,9 @@ function ABSync:GetLastScan()
     local isSet = self:SetupCharDB()
 
     if isSet == true then
-        return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan or L["Never"]
+        return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastScan or L["Never"]
     else
-        self:Print((ABSync.L["Error Getting Last Scan for %s!"]):format(tostring(self.currentPlayerServerSpec)))
+        self:Print((ns.L["Error Getting Last Scan for %s!"]):format(tostring(ns.data.currentPlayerServerSpec)))
         return false
     end
 end
@@ -393,20 +397,17 @@ end
     Function:   GetLastSynced
     Purpose:    Get the last synced time for the action bars to update the Last Synced field in the options for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetLastSynced()
+function ns:GetLastSynced()
     -- make sure the current player spec key is set
-    if not self.currentPlayerServerSpec then return false end
-    
-    -- set language variable
-    local L = self.L
+    if not ns.data.currentPlayerServerSpec then return false end
 
     -- make sure data structure exists
     local isSet = self:SetupCharDB()
 
     if isSet == true then
-        return ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced or L["Never"]
+        return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSynced or ns.L["Never"]
     else
-        self:Print((ABSync.L["Error Getting Last Synced for %s!"]):format(tostring(self.currentPlayerServerSpec)))
+        self:Print((ns.L["Error Getting Last Synced for %s!"]):format(tostring(ns.currentPlayerServerSpec)))
         return false
     end
 end
@@ -415,37 +416,37 @@ end
     Function:   GetObjectName
     Purpose:    Create frame object name with addon prefix.
 -----------------------------------------------------------------------------]]
-function ABSync:GetObjectName(postfix)
+function ns:GetObjectName(postfix)
     if not postfix then postfix = "UnknownObjectName" end
-    return ("%s%s"):format(ABSync.prefix, postfix)
+    return ("%s%s"):format(ns.data.prefix, postfix)
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetRemoveActionFrame
     Purpose:    Create the remove action bar frame in the Utilities tab.
 -----------------------------------------------------------------------------]]
-function ABSync:GetPlacementErrorClearButton()
+function ns:GetPlacementErrorClearButton()
     -- make sure the current player key is set
-    if not self.currentPlayerServer then return false end
+    if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
     local isSet = self:SetupProfileDB()
 
     if isSet == true then
         -- set default
-        if not ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton then
-            ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton = false
+        if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton then
+            ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton = false
         end
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(self.currentPlayerServer), tostring(ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton)))
+        --     self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(ns.data.currentPlayerServer), tostring(ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton)))
         -- end
         --@end-debug@
 
         -- return the current value
-        return ActionBarSyncDB.profile[self.currentPlayerServer].placementErrorClearButton
+        return ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton
     else
-        self:Print((ABSync.L["Error Getting Placement Error Clear Button for %s!"]):format(tostring(self.currentPlayerServer)))
+        self:Print((ns.L["Error Getting Placement Error Clear Button for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -455,19 +456,19 @@ end
     Purpose:    Generate a random 6-digit number.
     Returns:    A random number between 100000 and 999999
 -----------------------------------------------------------------------------]]
-function ABSync:GetRandom6DigitNumber()
+function ns:GetRandom6DigitNumber()
     -- set language variable
     local L = self.L
-    
+
     -- generate random 6-digit number (100000 to 999999)
     local randomNumber = math.random(100000, 999999)
-    
+
     --@debug@
     -- if self:GetDevMode() == true then
     --     self:Print(("Generated random 6-digit number: %d"):format(randomNumber))
     -- end
     --@end-debug@
-    
+
     return randomNumber
 end
 
@@ -475,55 +476,55 @@ end
     Function:   GetRestoreChoiceActionBar
     Purpose:    Get the last selected action bar for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetRestoreChoiceActionBar()
+function ns:GetRestoreChoiceActionBar()
     -- basic char initialization
     self:InstantiateDBChar()
 
     -- make sure restore structure exists
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice = {}
     end
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar or ABSync.L["None"]
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar or ns.L["None"]
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetRestoreChoiceDateTime
     Purpose:    Get the last selected backup date/time for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetRestoreChoiceDateTime()
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+function ns:GetRestoreChoiceDateTime()
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice = {}
     end
-    return ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm or ABSync.L["None"]
+    return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm or ns.L["None"]
 end
 
 --[[---------------------------------------------------------------------------
     Function:   GetSyncOnLogon
     Purpose:    Get the sync on logon status for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:GetSyncOnLogon()
+function ns:GetSyncOnLogon()
     -- make sure the current player key is set
-    if not self.currentPlayerServer then return false end
+    if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
     local isSet = self:SetupProfileDB()
 
     if isSet == true then
         -- set default if not set
-        if not ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon then
-            ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon = false
+        if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon then
+            ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon = false
         end
 
         -- return the value
-        return ActionBarSyncDB.profile[self.currentPlayerServer].syncOnLogon
+        return ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon
     else
-        self:Print((ABSync.L["Error Getting Sync on Logon for %s!"]):format(tostring(self.currentPlayerServer)))
+        self:Print((ns.L["Error Getting Sync on Logon for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -532,18 +533,18 @@ end
     Function:   GetTab
     Purpose:    Get the current selected tab in the options.
 -----------------------------------------------------------------------------]]
-function ABSync:GetTab()
+function ns:GetTab()
     -- make sure data structure exists
     local isSet = self:SetupProfileDB()
 
     if isSet == true then
-        local tabValue = ActionBarSyncDB.profile[self.currentPlayerServer].mytab or "introduction"
+        local tabValue = ActionBarSyncDB.profile[ns.data.currentPlayerServer].mytab or "introduction"
         --@debug@
-        -- print("(GetTab) ID: " .. tostring(tabValue) .. " for " .. tostring(self.currentPlayerServer))
+        -- print("(GetTab) ID: " .. tostring(tabValue) .. " for " .. tostring(ns.data.currentPlayerServer))
         --@end-debug@
         return tabValue
     else
-        self:Print((ABSync.L["Error Getting Tab for %s!"]):format(tostring(self.currentPlayerServer)))
+        self:Print((ns.L["Error Getting Tab for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return "introduction"
     end
 end
@@ -552,14 +553,14 @@ end
     Function:   IsSyncSet
     Purpose:    Check if a specific bar is set to sync for a specific player.
 -----------------------------------------------------------------------------]]
-function ABSync:IsSyncSet(barID, playerID)
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
+function ns:IsSyncSet(barID, playerID)
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec] then
         return false
-    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
+    elseif not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync then
         return false
-    elseif not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
+    elseif not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] then
         return false
     else
-        return ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] == playerID
+        return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] == playerID
     end
 end

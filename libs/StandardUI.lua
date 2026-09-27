@@ -1,10 +1,18 @@
+--[[ ------------------------------------------------------------------------
+	Title: 			StandardUI.lua
+	Author: 		mrbryo
+	Description: 	All functions for handling mount data in support of GetMountInfo in ActionData.lua.
+-----------------------------------------------------------------------------]]
+
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   CreateBarIdentificationFrame
     Purpose:    Create a movable and resizable frame that displays the action bar identification image.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
+function ns:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     -- Check if frame already exists to prevent duplicates
-    if self.ui.frame.barIdentification and self.ui.frame.barIdentification:IsShown() then
+    if ns.data.ui.frame.barIdentification and ns.data.ui.frame.barIdentification:IsShown() then
         return
     end
 
@@ -16,11 +24,11 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     -- Create a temporary texture to get the image dimensions
     local tempTexture = UIParent:CreateTexture()
     tempTexture:SetTexture("Interface\\AddOns\\ActionBarSync\\assets\\action-bar-sync-bar-identification.png")
-    
+
     -- Get the actual image dimensions
     local imageWidth = 1732 / 2
     local imageHeight = 994 / 2
-    
+
     -- Clean up temporary texture
     tempTexture:Hide()
     tempTexture = nil
@@ -45,12 +53,12 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     frame:SetFrameStrata("DIALOG")
     frame:SetFrameLevel(1)
-    
+
     -- Set minimum and maximum size constraints
     local minWidth, minHeight = 300, 200
     local maxWidth, maxHeight = 2000, 1500
     frame:SetResizeBounds(minWidth, minHeight, maxWidth, maxHeight)
-    
+
     -- Create resize button in bottom-right corner
     local resizeButton = CreateFrame("Button", nil, frame)
     resizeButton:SetSize(16, 16)
@@ -66,31 +74,31 @@ function ABSync:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
     resizeButton:SetScript("OnMouseUp", function(self, button)
         frame:StopMovingOrSizing()
     end)
-    
+
     -- set frame title following addon's color scheme
-    frame.TitleText:SetText(("%s%s|r"):format(self.constants.colors.label, ABSync.L["Action Bar Identification Guide"]))
-    
+    frame.TitleText:SetText(("%s%s|r"):format(ns.data.constants.colors.label, ns.L["Action Bar Identification Guide"]))
+
     -- create texture to display the image using actual dimensions
     local texture = frame:CreateTexture(nil, "ARTWORK")
     texture:SetPoint("TOPLEFT", frame.InsetBorderTop, "BOTTOMLEFT", 10, -10)
     texture:SetPoint("BOTTOMRIGHT", frame.InsetBorderBottom, "TOPRIGHT", -10, 10)
-    
+
     -- Set the texture to your image file
     texture:SetTexture("Interface\\AddOns\\ActionBarSync\\assets\\action-bar-sync-bar-identification.png")
     texture:SetTexCoord(0, 1, 0, 1) -- Use full texture coordinates
-    
+
     -- Store frame reference in UI table following addon pattern
-    if not self.ui.frame then
-        self.ui.frame = {}
+    if not ns.data.ui.frame then
+        ns.data.ui.frame = {}
     end
-    self.ui.frame.barIdentification = frame
-    
+    ns.data.ui.frame.barIdentification = frame
+
     -- Show the frame
     frame:Show()
-    
+
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print((ABSync.L["Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"]):format(
+        self:Print((ns.L["Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"]):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
     --@end-debug@
@@ -100,7 +108,7 @@ end
     Function:   ShowBarIdentificationGuide
     Purpose:    Public function to show the bar identification guide frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ShowBarIdentificationGuide()
+function ns:ShowBarIdentificationGuide()
     self:CreateBarIdentificationFrame()
 end
 
@@ -110,7 +118,7 @@ end
     Arguments:  parent - The parent frame to attach this frame to
     Returns:    The created ScrollFrame and its child Frame for content.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateContentFrame(parent)
+function ns:CreateContentFrame(parent)
     -- check to see if frame exists already
     if not ActionBarSyncMainFrameTabContent then
         -- add footer; must be created first and anchored in order to properly anchor the contentFrame above it
@@ -123,26 +131,24 @@ function ABSync:CreateContentFrame(parent)
         local contentFrame = CreateFrame("Frame", "ActionBarSyncMainFrameTabContent", parent)
         contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
         contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
-        
+
         -- create close button
-        local closeButton = self:CreateStandardButton(footer, nil, ABSync.L["Close"], 80, function()
+        local closeButton = self:CreateStandardButton(footer, nil, ns.L["Close"], 80, function()
             parent:Hide()
         end)
         local buttonOffset = (footer:GetHeight() - closeButton:GetHeight()) / 2
         closeButton:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, buttonOffset)
-    
+
         -- add button to show action bar guide
-        local guideButton = self:CreateStandardButton(footer, nil, ABSync.L["Show Action Bar Guide"], 150, function()
+        local guideButton = self:CreateStandardButton(footer, nil, ns.L["Show Action Bar Guide"], 150, function()
             self:CreateBarIdentificationFrame(parent)
         end)
         guideButton:SetPoint("LEFT", footer, "LEFT", 10, 0)
 
-        
-
         -- create a frame to hold the content
-        local contentFrame = CreateFrame("Frame", nil, parent)
-        contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
-        contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
+        -- local contentFrame = CreateFrame("Frame", nil, parent)
+        -- contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -15)
+        -- contentFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", 0, 0)
     end
 end
 
@@ -152,21 +158,21 @@ end
     Arguments:  tabKey - When creating the content frame use this to name the frame to lookup the proper 'varname'.
     Returns:    The created Frame for the tab content.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessTabContentFrame(tabKey, parent)
+function ns:ProcessTabContentFrame(tabKey, parent)
     --@debug@
     -- print(("(ProcessTabContentFrame) Called with tabKey: %s"):format(tostring(tabKey)))
     --@end-debug@
     -- get global variable friendly tab name
-    local tabID = self.uitabs["varnames"][tabKey] or ABSync.L["Unknown"]
+    local tabID = ns.data.uitabs["varnames"][tabKey] or ns.L["Unknown"]
 
     -- check if nil
-    if tabID == ABSync.L["Unknown"] then
-        self:Print((ABSync.L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."]):format(tostring(tabKey)))
+    if tabID == ns.L["Unknown"] then
+        self:Print((ns.L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."]):format(tostring(tabKey)))
         return nil, false
     end
 
     -- generate global frame name
-    local frameName = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. tabID)
+    local frameName = self:GetObjectName(ns.data.constants.objectNames.tabContentFrame .. tabID)
 
     -- report back if it was newly created or not
     local existed = false
@@ -194,7 +200,7 @@ end
                 onClick  - Callback function when the button is clicked
     Returns:    The created Button frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateStandardButton(parent, buttonName, text, width, onClick)
+function ns:CreateStandardButton(parent, buttonName, text, width, onClick)
     local button = CreateFrame("Button", buttonName, parent, "GameMenuButtonTemplate")
     button:SetSize(width or 120, 22)
     button:SetText(text)
@@ -211,11 +217,11 @@ end
                 readOnly - Boolean to set if the edit box is read-only
     Returns:    The created EditBox frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
+function ns:CreateEditBox(parent, width, height, readOnly, onEnter)
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetSize(width or 200, height or 20)
     editBox:SetAutoFocus(false)
-    
+
     if readOnly then
         editBox:SetEnabled(false)
         editBox:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
@@ -226,7 +232,7 @@ function ABSync:CreateEditBox(parent, width, height, readOnly, onEnter)
             onEnter(self) 
         end)
     end
-    
+
     return editBox
 end
 
@@ -239,25 +245,25 @@ end
                 color     - Color table {r, g, b} for the text (optional)
     Returns:    None
 -----------------------------------------------------------------------------]]
-function ABSync:SetLabelWithTimer(label, text, duration, color)
+function ns:SetLabelWithTimer(label, text, duration, color)
     if not label then return end
-    
+
     duration = duration or 3.0  -- Default 3 seconds
-    
+
     -- Cancel any existing timer
     if label.clearTimer then
         label.clearTimer:Cancel()
         label.clearTimer = nil
     end
-    
+
     -- Set the text immediately
     label:SetText(text)
-    
+
     -- Set color if provided
     if color then
         label:SetTextColor(color.r or 1, color.g or 1, color.b or 1)
     end
-    
+
     -- Create timer to clear the text
     label.clearTimer = C_Timer.NewTimer(duration, function()
         label:SetText("")
@@ -274,7 +280,7 @@ end
                 onChanged    - Callback function when the checkbox state changes
     Returns:    The created CheckButton frame.
 ----------------------------------------------------------------------------]]
-function ABSync:CreateCheckbox(parent, text, initialValue, frameName, OnClick)
+function ns:CreateCheckbox(parent, text, initialValue, frameName, OnClick)
     -- create checkbox
     local checkbox = CreateFrame("CheckButton", frameName, parent, "ChatConfigCheckButtonTemplate")
 
@@ -291,7 +297,7 @@ function ABSync:CreateCheckbox(parent, text, initialValue, frameName, OnClick)
             OnClick(self, button, checked)
         end
     end)
-    
+
     -- finally return the checkbox object
     return checkbox
 end
@@ -305,10 +311,10 @@ end
                 onSelectionChanged - Callback function when the selection changes
     Returns:    The created Dropdown frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDropdown(parent, itemOrder, items, initialValue, frameName, onChange)
+function ns:CreateDropdown(parent, itemOrder, items, initialValue, frameName, onChange)
     -- create dropdown and set it up
     local dropdown = CreateFrame("DropdownButton", frameName, parent, "WowStyle1DropdownTemplate")
-    
+
     -- store dropdown state
     dropdown.selectedValue = initialValue or ""
     if items == nil then
@@ -319,7 +325,7 @@ function ABSync:CreateDropdown(parent, itemOrder, items, initialValue, frameName
         dropdown.items = items
     end
     dropdown.itemOrder = itemOrder
-    
+
     -- external function; change selected value
     local function SetSelectedValue(key)
         --@debug@
@@ -389,7 +395,7 @@ function ABSync:CreateDropdown(parent, itemOrder, items, initialValue, frameName
     if initialValue and dropdown.items[initialValue] then
         SetSelectedValue(initialValue)
     end
-    
+
     -- return the created dropdown
     return dropdown
 end
