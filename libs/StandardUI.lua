@@ -98,7 +98,7 @@ function ns:CreateBarIdentificationFrame(positionFrame, offsetX, offsetY)
 
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print((ns.L["Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"]):format(
+        ns:Print((ns.L["Bar identification frame created - Image: %dx%d, Frame: %dx%d (Resizable)"]):format(
             imageWidth or 0, imageHeight or 0, frameWidth, frameHeight))
     end
     --@end-debug@
@@ -167,7 +167,7 @@ function ns:ProcessTabContentFrame(tabKey, parent)
 
     -- check if nil
     if tabID == ns.L["Unknown"] then
-        self:Print((ns.L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."]):format(tostring(tabKey)))
+        ns:Print((ns.L["Error: tabKey (%s) provided to ProcessTabContentFrame is invalid or not found."]):format(tostring(tabKey)))
         return nil, false
     end
 

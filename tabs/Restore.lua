@@ -45,7 +45,7 @@ function ns:LoadBackupActionBars(parent, backupKey)
                     dataAdded = true
                     --@debug@
                     -- if self:GetDevMode() == true then
-                        -- self:Print(("Found Action Bar in Backup: %s, ActionBar ID: %s"):format(actionBarName, actionBarID))
+                        -- ns:Print(("Found Action Bar in Backup: %s, ActionBar ID: %s"):format(actionBarName, actionBarID))
                     -- end
                     --@end-debug@
                 end
@@ -101,7 +101,7 @@ function ns:UncheckAllBackups(parent, exclude)
     for key, checkboxName in ipairs(ns.data.ui.checkbox.backupList or {}) do
         --@debug@
         -- if self:GetDevMode() == true then
-            -- self:Print(("(UncheckAllBackups) Processing Checkbox: %s"):format(checkboxName))
+            -- ns:Print(("(UncheckAllBackups) Processing Checkbox: %s"):format(checkboxName))
         -- end
         --@end-debug@
         -- get checkbox to process it
@@ -220,7 +220,7 @@ function ns:ProcessBackupListFrame()
     local offsetY = 5
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(ProcessBackupListFrame) Current Character/Server Spec: %s - Backup Rows: %d"):format(ns.data.currentPlayerServerSpec, #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) or 0)
+        -- ns:Print(("(ProcessBackupListFrame) Current Character/Server Spec: %s - Backup Rows: %d"):format(ns.data.currentPlayerServerSpec, #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) or 0)
     -- end
     --@end-debug@
     for _, backupRow in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) do
@@ -361,7 +361,7 @@ function ns:ProcessBackupListFrame()
     if trackInserts > 0 then
         --@debug@
         -- if self:GetDevMode() == true then
-            -- self:Print(("Track Inserts: %d, Hiding No Data Label"):format(trackInserts))
+            -- ns:Print(("Track Inserts: %d, Hiding No Data Label"):format(trackInserts))
         -- end
         --@end-debug@
         -- hide no data label
@@ -372,7 +372,7 @@ function ns:ProcessBackupListFrame()
     else
         --@debug@
         -- if self:GetDevMode() == true then
-            -- self:Print(("Track Inserts: %d, Showing No Data Label"):format(trackInserts))
+            -- ns:Print(("Track Inserts: %d, Showing No Data Label"):format(trackInserts))
         -- end
         --@end-debug@
         -- show no data label

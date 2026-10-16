@@ -20,7 +20,7 @@ function ns:LookupAction()
 
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ns.L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
+        ns:Print((ns.L["Looking up Action - Type: %s - ID: %s"]):format(actionType, buttonActionID))
     end
     --@end-debug@
 

@@ -39,7 +39,7 @@ end
 function ns:GetFlyoutDetails(buttonActionID)
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ns.L["Getting details for Flyout ID: %s"]):format(tostring(buttonActionID)))
+        ns:Print((ns.L["Getting details for Flyout ID: %s"]):format(tostring(buttonActionID)))
     end
     --@end-debug@
     -- fetch blizzard flyout details
@@ -60,7 +60,7 @@ function ns:GetFlyoutDetails(buttonActionID)
     end
 
     -- fetch blizzard flyout details by slot
-    -- self:Print(("Flyout ID: %s, Name: %s, Descr: %s, Error Text: %s"):format(tostring(buttonActionID), tostring(flyoutName), tostring(flyoutDescription), tostring(errorText)))
+    -- ns:Print(("Flyout ID: %s, Name: %s, Descr: %s, Error Text: %s"):format(tostring(buttonActionID), tostring(flyoutName), tostring(flyoutDescription), tostring(errorText)))
 
     -- find the spell book slot for the flyout
     local includeHidden, includeFlyouts, includeFutureSpells, includeOffSpec = true, true, true, true
@@ -85,7 +85,7 @@ function ns:GetFlyoutDetails(buttonActionID)
     spellBookItemSlotIndex = spellBookItemSlotIndex or -1
     spellBookItemSpellBank = spellBookItemSpellBank or -1
     -- --@debug@
-    -- self:Print(("Flyout: %s, Spell Book Slot Index: %s, Spell Book Slot Bank: %s"):format(tostring(buttonActionID), tostring(spellBookItemSlotIndex), tostring(spellBookItemSpellBank)))
+    -- ns:Print(("Flyout: %s, Spell Book Slot Index: %s, Spell Book Slot Bank: %s"):format(tostring(buttonActionID), tostring(spellBookItemSlotIndex), tostring(spellBookItemSpellBank)))
     --@end-debug@
 
     -- finally return the data collected
@@ -175,7 +175,7 @@ function ns:GetItemDetails(buttonActionID)
 
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("Item Name: %s - Toy Name: %s - Is Toy: %s"):format(itemName, toyData.name, tostring(isToy)))
+        -- ns:Print(("Item Name: %s - Toy Name: %s - Is Toy: %s"):format(itemName, toyData.name, tostring(isToy)))
     -- end
     --@end-debug@
     -- finally return the data collected
@@ -304,7 +304,7 @@ function ns:GetMountinfo(buttonActionID)
     end
 
     --@debug@
-    -- if self:GetDevMode() == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
+    -- if self:GetDevMode() == true then ns:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
     --@end-debug@
 
     -- finally return the spell name
@@ -415,7 +415,7 @@ function ns:GetSpellDetails(buttonActionID)
     local overrideWithBaseID = false
     if baseID > 0 and baseID ~= buttonActionID then
         --@debug@
-        -- if self:GetDevMode() == true then self:Print((ns.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
+        -- if self:GetDevMode() == true then ns:Print((ns.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
         --@end-debug@
         overrideWithBaseID = true
     end

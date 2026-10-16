@@ -23,7 +23,7 @@ function ns:ClearMountDB()
     ActionBarSyncMountDB[playerID] = {}
 
     -- notify user its done
-    self:Print(ns.L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."])
+    ns:Print(ns.L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ function ns:MountJournalFilterReset()
     C_MountJournal.SetAllTypeFilters(true)
 
     -- notify user
-    self:Print(ns.L["Mount Journal filters have been set to show all collected mounts."])
+    ns:Print(ns.L["Mount Journal filters have been set to show all collected mounts."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -153,5 +153,5 @@ function ns:RefreshMountDB()
     end
 
     -- notify user its done
-    self:Print(ns.L["Mount DB Refreshed! Reload the UI by using this command: /reload"])
+    ns:Print(ns.L["Mount DB Refreshed! Reload the UI by using this command: /reload"])
 end

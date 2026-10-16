@@ -20,7 +20,7 @@ function ns:SetAutoResetMountFilters(value)
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].autoResetMountFilters = value
     else
-        self:Print((ns.L["Error Setting Auto Reset Mount Filters to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Setting Auto Reset Mount Filters to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
     end
 end
 
@@ -173,7 +173,7 @@ end
 function ns:SetLastActionBarUtilities(value)
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(SetLastActionBarUtilities) Setting last action bar to: %s for %s"):format(tostring(value), tostring(ns.data.currentPlayerServerSpec)))
+        -- ns:Print(("(SetLastActionBarUtilities) Setting last action bar to: %s for %s"):format(tostring(value), tostring(ns.data.currentPlayerServerSpec)))
     -- end
     --@end-debug@
     if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].utilities then
@@ -282,11 +282,11 @@ function ns:SetPlacementErrorClearButton(value)
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton = value
         --@debug@
         if self:GetDevMode() == true then
-            self:Print(("Set Placement Error Clear Button for %s to %s"):format(tostring(ns.data.currentPlayerServer), tostring(value)))
+            ns:Print(("Set Placement Error Clear Button for %s to %s"):format(tostring(ns.data.currentPlayerServer), tostring(value)))
         end
         --@end-debug@
     else
-        self:Print((ns.L["Error Setting Placement Error Clear Button to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Setting Placement Error Clear Button to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
     end
 end
 
@@ -338,7 +338,7 @@ function ns:SetSyncOnLogon(value)
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon = value
     else
-        self:Print((ns.L["Error Setting Sync On Logon to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Setting Sync On Logon to: %s for %s!"]):format(tostring(value), tostring(ns.data.currentPlayerServer)))
     end
 end
 
@@ -348,7 +348,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:SetTab(key)
     --@debug@
-    -- self:Print("(SetTab) Setting tab to: " .. tostring(key) .. " for " .. tostring(ns.data.currentPlayerServer))
+    -- ns:Print("(SetTab) Setting tab to: " .. tostring(key) .. " for " .. tostring(ns.data.currentPlayerServer))
     --@end-debug@
     -- make sure the current player key is set
     if not ns.data.currentPlayerServer then return end
@@ -359,7 +359,7 @@ function ns:SetTab(key)
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].mytab = key
     else
-        self:Print((ns.L["Error Setting Last tab: %s for %s!"]):format(tostring(key), tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Setting Last tab: %s for %s!"]):format(tostring(key), tostring(ns.data.currentPlayerServer)))
     end
 end
 

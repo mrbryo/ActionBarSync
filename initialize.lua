@@ -317,7 +317,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:RegisterEvent(event, handler)
 	--@debug@
-	-- self:Print(("Registering Event: %s"):format(event))
+	-- ns:Print(("Registering Event: %s"):format(event))
 	--@end-debug@
 	ns.data.events[event] = handler or function() end
 	self.eventFrame:RegisterEvent(event)

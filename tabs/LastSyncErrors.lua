@@ -148,7 +148,7 @@ function ns:ProcessErrorData()
     end
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(("%s: %s"):format(ns.L["Errors Exist"], tostring(errorsExist)))
+        ns:Print(("%s: %s"):format(ns.L["Errors Exist"], tostring(errorsExist)))
     end
     --@end-debug@
 
@@ -193,7 +193,7 @@ function ns:ProcessErrorData()
                 errorRecords = errorRcd.errors
                 --@debug@
                 -- if self:GetDevMode() == true then
-                    -- self:Print(("Found %d error records for last sync error dated %s"):format(#errorRecords, tostring(errorRcd.key)))
+                    -- ns:Print(("Found %d error records for last sync error dated %s"):format(#errorRecords, tostring(errorRcd.key)))
                 -- end
                 --@end-debug@
                 break
@@ -204,14 +204,14 @@ function ns:ProcessErrorData()
         for _, barID in ipairs(ns.data.actionBarOrder) do
             --@debug@
             -- if self:GetDevMode() == true then
-                -- self:Print(("Processing errors for Action Bar: %s"):format(tostring(barID)))
+                -- ns:Print(("Processing errors for Action Bar: %s"):format(tostring(barID)))
             -- end
             --@end-debug@
             -- process in button order
             for _, barPosn in ipairs(ns.data.constants.actionButtons) do
                 --@debug@
                 -- if self:GetDevMode() == true then
-                    -- self:Print(("Processing errors for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                    -- ns:Print(("Processing errors for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
                 -- end
                 --@end-debug@
                 -- force barPosn to a number
@@ -223,7 +223,7 @@ function ns:ProcessErrorData()
                     if errorRow.barPosn == barPosn and errorRow.barID == barID then
                         --@debug@
                         -- if self:GetDevMode() == true then
-                            -- self:Print(("Adding error for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                            -- ns:Print(("Adding error for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
                         -- end
                         --@end-debug@
                         -- add the row

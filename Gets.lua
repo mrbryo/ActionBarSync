@@ -39,7 +39,7 @@ function ns:GetArgs(text)
 
     --@debug@
     if self:GetDevMode() == true then 
-        self:Print((ns.L["Parsed %d arguments from: '%s'"]):format(#args, text))
+        ns:Print((ns.L["Parsed %d arguments from: '%s'"]):format(#args, text))
     end
     --@end-debug@
 
@@ -61,7 +61,7 @@ function ns:GetAutoResetMountFilters()
     if isSet == true then
         return ActionBarSyncDB.profile[ns.data.currentPlayerServer].autoResetMountFilters
     else
-        self:Print((ns.L["Error Getting Auto Reset Mount Filters for %s!"]):format(tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Getting Auto Reset Mount Filters for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -388,7 +388,7 @@ function ns:GetLastScan()
     if isSet == true then
         return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastScan or L["Never"]
     else
-        self:Print((ns.L["Error Getting Last Scan for %s!"]):format(tostring(ns.data.currentPlayerServerSpec)))
+        ns:Print((ns.L["Error Getting Last Scan for %s!"]):format(tostring(ns.data.currentPlayerServerSpec)))
         return false
     end
 end
@@ -407,7 +407,7 @@ function ns:GetLastSynced()
     if isSet == true then
         return ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSynced or ns.L["Never"]
     else
-        self:Print((ns.L["Error Getting Last Synced for %s!"]):format(tostring(ns.currentPlayerServerSpec)))
+        ns:Print((ns.L["Error Getting Last Synced for %s!"]):format(tostring(ns.currentPlayerServerSpec)))
         return false
     end
 end
@@ -439,14 +439,14 @@ function ns:GetPlacementErrorClearButton()
         end
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(ns.data.currentPlayerServer), tostring(ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton)))
+        --     ns:Print(("Get Placement Error Clear Button for %s is %s"):format(tostring(ns.data.currentPlayerServer), tostring(ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton)))
         -- end
         --@end-debug@
 
         -- return the current value
         return ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton
     else
-        self:Print((ns.L["Error Getting Placement Error Clear Button for %s!"]):format(tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Getting Placement Error Clear Button for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -465,7 +465,7 @@ function ns:GetRandom6DigitNumber()
 
     --@debug@
     -- if self:GetDevMode() == true then
-    --     self:Print(("Generated random 6-digit number: %d"):format(randomNumber))
+    --     ns:Print(("Generated random 6-digit number: %d"):format(randomNumber))
     -- end
     --@end-debug@
 
@@ -524,7 +524,7 @@ function ns:GetSyncOnLogon()
         -- return the value
         return ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon
     else
-        self:Print((ns.L["Error Getting Sync on Logon for %s!"]):format(tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Getting Sync on Logon for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return false
     end
 end
@@ -544,7 +544,7 @@ function ns:GetTab()
         --@end-debug@
         return tabValue
     else
-        self:Print((ns.L["Error Getting Tab for %s!"]):format(tostring(ns.data.currentPlayerServer)))
+        ns:Print((ns.L["Error Getting Tab for %s!"]):format(tostring(ns.data.currentPlayerServer)))
         return "introduction"
     end
 end

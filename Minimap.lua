@@ -13,7 +13,8 @@ local addonName, ns = ...
 -----------------------------------------------------------------------------]]
 local function ActionBarSyncAddon_OpenOptions()
     if ns.data.optionID and Settings then
-        Settings.OpenToCategory(ns.data.optionID)
+        ns:Print(("Option ID: %s"):format(ns.data.optionID))
+        Settings.OpenToCategory(ns.optionsCategory:GetID())
     else
         -- let user know there was an issue, then open the options panel normally
         ns:Print(ns.L["Issue with addon options panel, cannot open settings. If persists please open a ticket."])

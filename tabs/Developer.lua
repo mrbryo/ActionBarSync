@@ -194,7 +194,7 @@ function ns:ProcessDeveloperFrame(parent, tabKey)
 
     -- make sure devFrame was populated
     if not devFrame then
-        self:Print(ns.L["Error: devFrame is nil in ProcessDeveloperFrame."])
+        ns:Print(ns.L["Error: devFrame is nil in ProcessDeveloperFrame."])
         return nil
     end
 

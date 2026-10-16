@@ -250,7 +250,7 @@ function ns:ClearActionBar()
         for _, buttonID in pairs(ns.data.constants.actionButtonTranslation[barID]) do
             --@debug@
             -- if self:GetDevMode() == true then
-                -- self:Print("Clear Button: " .. buttonID)
+                -- ns:Print("Clear Button: " .. buttonID)
             -- end
             --@end-debug@
             -- call function to remove a buttons action
@@ -276,7 +276,7 @@ function ns:BeginRestore(button)
 
     -- trigger message
     local actionBarName = ns.barNameLanguageTranslate[ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar] or ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar
-    self:Print((ns.L["Restore Triggered for Backup '%s' for Action Bar '%s'"]):format(self:FormatDateString(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm), actionBarName))
+    ns:Print((ns.L["Restore Triggered for Backup '%s' for Action Bar '%s'"]):format(self:FormatDateString(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm), actionBarName))
 
     -- trigger the update with the backup date time and a true value for isRestore
     self:UpdateActionBars(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm, true)
@@ -296,7 +296,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:BeginSync(autoTriggered)
     --@debug@
-    -- self:Print("BeginSync Called")
+    -- ns:Print("BeginSync Called")
     --@end-debug@
     -- track testing
     local barsToSync = false
@@ -362,7 +362,7 @@ function ns:BeginSync(autoTriggered)
 
                     -- update last synced...though this should be done in the sync function after the sync is successful
                     ns:SetLastSynced(backupdttm)
-                    
+
                     -- update the UI last synced label
                     ns:UpdateLastSyncLabel()
                     -- sync the bars
@@ -566,7 +566,7 @@ end
 function ns:InstantiateDB(barID)
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(ns.L["DB Initialization"])
+        ns:Print(ns.L["DB Initialization"])
     end
     --@end-debug@
     -- make sure player key is set
@@ -602,7 +602,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:GetActionData(buttonActionID, actionType)
     --@debug@
-    -- self:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(buttonActionID), tostring(actionType)))
+    -- ns:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(buttonActionID), tostring(actionType)))
     --@end-debug@
     -- instantiate a return table
     local returnData = {}
@@ -758,7 +758,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:MarkBarToSync(key, value)
     --@debug@
-    if self:GetDevMode() == true then self:Print(("Key: %s, Value: %s"):format(tostring(key), tostring(value))) end
+    if self:GetDevMode() == true then ns:Print(("Key: %s, Value: %s"):format(tostring(key), tostring(value))) end
     --@end-debug@
 
     -- initialize variables
@@ -799,7 +799,7 @@ function ns:MarkBarToSync(key, value)
     ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] = value
 
     --@debug@ let the user know the value is changed only when developing though
-    if self:GetDevMode() == true then self:Print((ns.L["(%s) Set Bar '%s' to sync? %s - Done!"]):format("MarkBarToSync", barID, (value and "Yes" or "No"))) end
+    if self:GetDevMode() == true then ns:Print((ns.L["(%s) Set Bar '%s' to sync? %s - Done!"]):format("MarkBarToSync", barID, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -822,7 +822,7 @@ function ns:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton
     local buttonID = ns.data.constants.actionButtonTranslation[actionBar][actionButton]
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
+        -- ns:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
     -- end
     --@end-debug@
 
@@ -834,7 +834,7 @@ function ns:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton
 
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(%s) Action ID: %s, Action Type: %s, Action Bar: %s, Action Button: %s, Action Button ID: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
+        -- ns:Print(("(%s) Action ID: %s, Action Type: %s, Action Bar: %s, Action Button: %s, Action Button ID: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
     -- end
     --@end-debug@
 
@@ -1049,7 +1049,7 @@ function ns:SafeWoWAPICall(func, ...)
     else
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ns.L["API Error: %s"]):format(tostring(result)))
+            ns:Print((ns.L["API Error: %s"]):format(tostring(result)))
         end
         --@end-debug@
         
@@ -1063,7 +1063,7 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateSharedData
-    Purpose:    Update the global shared data structure with the current character's bar data for any bars they are sharing.]]
+    Purpose:    Update the global shared data structure with the current character's bar data for any bars they are sharing.
 -----------------------------------------------------------------------------]]
 function ns:UpdateSharedData()
     -- loop over the barsToSync table from global
@@ -1077,6 +1077,50 @@ function ns:UpdateSharedData()
             end
         end
     end
+end
+
+--[[---------------------------------------------------------------------------
+    Function:   CleanUpSharedBars
+    Purpose:    When an action bar is unshared we need to remove it from all characters who used it and then provide a popup of those removed.
+    Arguments:  barID - unshared bar ID
+-----------------------------------------------------------------------------]]
+function ns:CleanUpSharedBars(barID)
+    --@debug@
+    if self:GetDevMode() == true then
+        ns:Print(("Starting Shared Bars Clean Up"))
+    end
+    --@end-debug@
+
+    -- loop over all the characters
+    for charServerSpec, _ in pairs(ActionBarSyncDB.char) do
+        --@debug@
+        if self:GetDevMode() == true then
+            ns:Print(("Processing Character: %s"):format(charServerSpec))
+        end
+        --@end-debug@
+
+        -- verify character exists in char table
+        if ActionBarSyncDB.char[charServerSpec] ~= nil then
+
+            -- make sure barsToSync exists
+            if ActionBarSyncDB.char[charServerSpec].barsToSync ~= nil then
+
+                -- if the character exists along with the barsToSync table then loop over its values
+                for assignedBarID, assignedChar in pairs(ActionBarSyncDB.char[charServerSpec].barsToSync) do
+                    if assignedChar == ns.data.currentPlayerServerSpec and assignedBarID == barID then
+                        ActionBarSyncDB.char[charServerSpec].barsToSync[barID] = false
+                        ns:Print(("'%s' removed from '%s'."):format(assignedBarID, charServerSpec))
+                    end
+                end
+            end
+        end
+    end
+
+    --@debug@
+    if self:GetDevMode() == true then
+        ns:Print(("Completed Shared Bars Clean Up"))
+    end
+    --@end-debug@
 end
 
 --[[---------------------------------------------------------------------------
@@ -1122,13 +1166,16 @@ function ns:ShareBar(barID, value, checkbox)
     else
         -- remove all the button data
         ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] = false
+
+        -- remove unshared bars from other characters
+        ns:CleanUpSharedBars(barID)
     end
 
     -- update the check boxes in the share area
     ns:ProcessSyncRegion("ShareBar")
 
     --@debug@
-    -- if self:GetDevMode() == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
+    -- if self:GetDevMode() == true then ns:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -1173,7 +1220,7 @@ function ns:TriggerBackup(note, barsToProcess)
         if syncOn ~= false then
             --@debug@
             if self:GetDevMode() == true then
-                self:Print((ns.L["Backing Up Action Bar '%s'..."]):format(barID))
+                ns:Print((ns.L["Backing Up Action Bar '%s'..."]):format(barID))
             end
             --@end-debug@
 
@@ -1202,7 +1249,7 @@ function ns:TriggerBackup(note, barsToProcess)
     end
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ns.L["Current Backup Count: %d"]):format(backupCount))
+        ns:Print((ns.L["Current Backup Count: %d"]):format(backupCount))
     end
     --@end-debug@
 
@@ -1219,7 +1266,7 @@ function ns:TriggerBackup(note, barsToProcess)
                     oldestBackupDttm = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup[1].dttm
                 end
             end
-            self:Print((ns.L["Removing oldest backup entry dated: %s"]):format(ns:FormatDateString(oldestBackupDttm)))
+            ns:Print((ns.L["Removing oldest backup entry dated: %s"]):format(ns:FormatDateString(oldestBackupDttm)))
         end
         --@end-debug@
         table.remove(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup, 1)
@@ -1287,7 +1334,7 @@ function ns:GetActionBarDifferences(backupdttm, isRestore)
     if isRestore == false then
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ns.L["Player Server Spec: %s"]):format(tostring(ns.data.currentPlayerServerSpec)))
+            ns:Print((ns.L["Player Server Spec: %s"]):format(tostring(ns.data.currentPlayerServerSpec)))
         end
         --@end-debug@
         -- compare the global barsToSync data to the user's current action bar data
@@ -1295,14 +1342,14 @@ function ns:GetActionBarDifferences(backupdttm, isRestore)
         for barID, sharedby in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync) do
             --@debug@
             if self:GetDevMode() == true then
-                self:Print((ns.L["Bar ID: %s, Shared By: %s"]):format(barID, tostring(sharedby)))
+                ns:Print((ns.L["Bar ID: %s, Shared By: %s"]):format(barID, tostring(sharedby)))
             end
             --@end-debug@
             if sharedby ~= false then
                 --@debug@
-                if self:GetDevMode() == true then
-                    self:Print((ns.L["Bar ID: %s, Shared By: %s, Button ID: %s"]):format(barID, sharedby, tostring(buttonID)))
-                end
+                -- if self:GetDevMode() == true then
+                --     ns:Print((ns.L["Bar ID: %s, Shared By: %s"]):format(barID, sharedby))
+                -- end
                 --@end-debug@
                 -- loop over the shared data
                 for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID][sharedby]) do
@@ -1310,7 +1357,7 @@ function ns:GetActionBarDifferences(backupdttm, isRestore)
                     for _, testit in ipairs(checkValues) do
 
                         --@debug@
-                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
+                        -- ns:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
                         -- local val1 = testit
                         -- local val2 = buttonData.blizData.actionInfo[testit] or "nil"
                         -- local val3 = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] or "nil"
@@ -1321,7 +1368,7 @@ function ns:GetActionBarDifferences(backupdttm, isRestore)
 
                         -- translate buttonID to the blizzard button it
                         -- local blizzardActionButtonID = ns.data.constants.actionButtonTranslation[barID][buttonID]
-                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
+                        -- ns:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
                         -- Test It: sourceIDString, Player: Chenlei-Malfurion-Elemental, Bar ID: actionbar4, Button ID: 33
                         -- Test It: sourceIDString, Player: Ranjun-Malfurion-Frost, Bar ID: actionbar2, Button ID: 61
                         --                                                          Bar ID: actionbar1, Button ID: 1
@@ -1353,7 +1400,7 @@ function ns:GetActionBarDifferences(backupdttm, isRestore)
                         -- loop over checkValues
                         for _, testit in ipairs(checkValues) do
                             --@debug@
-                            -- self:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
+                            -- ns:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
                             --@end-debug@
                             -- compare values
                             if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
@@ -1394,7 +1441,7 @@ function ns:UpdateActionBars(backupdttm, isRestore)
 
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ns.L["(%s) Starting update process. Is Restore? %s"]):format("UpdateActionBars", isRestore and "Yes" or "No"))
+        ns:Print((ns.L["(%s) Starting update process. Is Restore? %s"]):format("UpdateActionBars", isRestore and "Yes" or "No"))
     end
     --@end-debug@
 
@@ -1469,7 +1516,7 @@ function ns:UpdateActionBars(backupdttm, isRestore)
                 if ns:GetPlacementErrorClearButton() == true then
                     --@debug@
                     -- if self:GetDevMode() == true then
-                        -- self:Print(("Removing action from buttonID: %s due to placement error."):format(tostring(err.buttonID)))
+                        -- ns:Print(("Removing action from buttonID: %s due to placement error."):format(tostring(err.buttonID)))
                     -- end
                     --@end-debug@
                     self:RemoveButtonAction(err.buttonID)
@@ -1497,7 +1544,7 @@ function ns:UpdateActionBars(backupdttm, isRestore)
 
         -- store results
         --@debug@
-        if self:GetDevMode() == true then self:Print((ns.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
+        if self:GetDevMode() == true then ns:Print((ns.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
         --@end-debug@
 
         -- make sure syncErrors exists
@@ -1596,19 +1643,19 @@ function ns:GetActionBarData()
             -- make up a name for each bar using the button names by removing the button number
             local blizzardBarName = string.gsub(btnName, ns.L["Button%d+$"], "")
             --@debug@
-            -- self:Print(("Processing Button Name: %s, Bar Name: %s"):format(btnName, blizzardBarName))
+            -- ns:Print(("Processing Button Name: %s, Bar Name: %s"):format(btnName, blizzardBarName))
             --@end-debug@
 
             -- translate and replace barName into the blizzard visible name in settings for the bars
             local barID = ns.data.blizzardTranslate[blizzardBarName]
             local barName = ns.barNameLanguageTranslate[barID] or ns.L["Unknown"]
             --@debug@
-            -- self:Print(("Bar ID: %s, Bar Name: %s, Blizzard Bar Name: %s"):format(barID, barName, blizzardBarName))
+            -- ns:Print(("Bar ID: %s, Bar Name: %s, Blizzard Bar Name: %s"):format(barID, barName, blizzardBarName))
             --@end-debug@
 
             -- skip bar if unknown
             if barName == ns.L["Unknown"] then
-                -- self:Print((ns.L["Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."]):format(barName))
+                -- ns:Print((ns.L["Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."]):format(barName))
                 -- TODO: Need to log this as a scan error.
 
             -- continue if barname is known
@@ -1666,7 +1713,7 @@ function ns:GetActionBarData()
 
     -- let user know its done
     --@debug@
-    if self:GetDevMode() == true then self:Print(ns.L["Fetch Current Action Bar Button Data - Done"]) end
+    if self:GetDevMode() == true then ns:Print(ns.L["Fetch Current Action Bar Button Data - Done"]) end
     --@end-debug@
 end
 
@@ -1682,7 +1729,7 @@ function ns:EnableDevelopment()
     self:SetDeveloperTabVisibleState(true)
 
     -- give user status
-    self:Print(ns.L["Development Mode: Enabled"])
+    ns:Print(ns.L["Development Mode: Enabled"])
 end
 
 --[[---------------------------------------------------------------------------
@@ -1702,7 +1749,7 @@ function ns:DisableDevelopment()
     self:SetDeveloperTabVisibleState(false)
 
     -- give user status
-    self:Print(ns.L["Development Mode: Disabled"])
+    ns:Print(ns.L["Development Mode: Disabled"])
 end
 
 --[[---------------------------------------------------------------------------
@@ -1719,7 +1766,7 @@ function ns:SlashCommand(text)
     -- get args
     for _, arg in ipairs(self:GetArgs(text)) do
         if arg:lower() == "sync" then
-            self:BeginSync()
+            ns:BeginSync()
         --@debug@
         elseif arg:lower() == "enablemodedeveloper" then
             if not self:GetDevMode() or self:GetDevMode() == false then
@@ -1734,25 +1781,25 @@ function ns:SlashCommand(text)
         elseif arg:lower() == "fonts" then
             ns:CreateFontStringExamplesFrame():Show()
         elseif arg:lower() == "dodiffs" then
-            self:Print(ns.L["Doing Diffs..."])
+            ns:Print(ns.L["Doing Diffs..."])
             local isRestore = false
             local dttm = self:GetCurrentDateTime()
             ns:GetActionBarDifferences(dttm, isRestore)
         --@end-debug@
         else
-            self:Print((ns.L["Unknown Command: %s"]):format(arg))
+            ns:Print((ns.L["Unknown Command: %s"]):format(arg))
         --@debug@
         -- elseif arg:lower() == "spec" then
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
-        --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
+        --     ns:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
         --     local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
-        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or ns.L["Unknown"]))
+        --     ns:Print(("Specialization ID: %d, Name: %s"):format(specId, name or ns.L["Unknown"]))
         -- elseif arg:lower() == "test" then
             -- local mountIDs = C_MountJournal.GetMountIDs()
             -- for midx, mountID in ipairs(mountIDs) do
             --     -- local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
-            --     -- self:Print(("(Test) Mount - Name: %s - ID: %d - Source ID: %d"):format(name, mountID, sourceMountID))
-            --     self:Print(("<Test> Mount - ID: %d (%d)"):format(mountID, midx))
+            --     -- ns:Print(("(Test) Mount - Name: %s - ID: %d - Source ID: %d"):format(name, mountID, sourceMountID))
+            --     ns:Print(("<Test> Mount - ID: %d (%d)"):format(mountID, midx))
             -- end
         --@end-debug@
         end
@@ -1765,7 +1812,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:EventPlayerLogout()
     --@debug@
-    if self:GetDevMode() == true then self:Print(ns.L["Player Logging Out..."]) end
+    if self:GetDevMode() == true then ns:Print(ns.L["Player Logging Out..."]) end
     --@end-debug@
 
     -- clear currentBarData and actionBars when not in developer mode
@@ -1784,7 +1831,7 @@ function ns:OnSpecializationChanged(event, ...)
     if ns.data.hasPlayerEnteredWorld == false then
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
+        --     ns:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
         -- end
         --@end-debug@
         return
@@ -1803,13 +1850,13 @@ function ns:OnSpecializationChanged(event, ...)
     --@debug@
     -- event notification
     if self:GetDevMode() == true then 
-        self:Print(ns.L["Specialization Changed"])
+        ns:Print(ns.L["Specialization Changed"])
     end
 
     -- capture ellipse properties into a table for processing
     --[[local eventArgs = {...}
     if self:GetDevMode() == true then 
-        self:Print(("Specialization Changed - Event: %s, Args Count: %d"):format(event, #eventArgs))
+        ns:Print(("Specialization Changed - Event: %s, Args Count: %d"):format(event, #eventArgs))
         
         -- loop through the ellipse properties
         for argIndex, argValue in ipairs(eventArgs) do
@@ -1829,7 +1876,7 @@ function ns:OnSpecializationChanged(event, ...)
                 displayValue = tostring(argValue)
             end
             
-            self:Print(("  Arg %d (%s): %s"):format(argIndex, argType, displayValue))
+            ns:Print(("  Arg %d (%s): %s"):format(argIndex, argType, displayValue))
         end
     end]]
     --@end-debug@
@@ -1867,7 +1914,7 @@ function ns:OnDisable()
     end
 
     if self:GetDevMode() == true then
-        self:Print(ns.L["Disabled"])
+        ns:Print(ns.L["Disabled"])
     end
 
     -- same clean up should occur when disabled
@@ -1881,7 +1928,7 @@ end
 function ns:RegisterAddonEvents()
     --@debug@
     -- if self:GetDevMode() == true then
-    --     self:Print(ns.L["Registering Events..."]) 
+    --     ns:Print(ns.L["Registering Events..."]) 
     -- end
     --@end-debug@
 
@@ -2053,7 +2100,7 @@ function ns:ShowUI(openDelaySeconds)
             self:SetDeveloperTabVisibleState(true)
         end
         --@debug@
-        -- self:Print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
+        -- ns:Print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
         --@end-debug@
         self:ShowTabContent(tabKey)
         local buttonID = ns.data.uitabs["buttonref"][tabKey]
@@ -2084,16 +2131,16 @@ function ns:ShowTabContent(tabKey)
     -- get the global name of the tab
     local tabContentFrame = self:GetObjectName(ns.data.constants.objectNames.tabContentFrame .. varName)
     --@debug@
-    -- self:Print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
+    -- ns:Print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
     --@end-debug@
 
     -- hide the tab
     if _G[tabContentFrame] then
         _G[tabContentFrame]:Hide()
     end
-    
+
     --@debug@
-    -- self:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
+    -- ns:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
     --@end-debug@
 
     -- set the tab
@@ -2101,7 +2148,7 @@ function ns:ShowTabContent(tabKey)
 
     -- currentframe
     local currentFrame = nil
-    
+
     -- switch to the selected tab
     if tabKey == "about" then
         -- tabs\About.lua
@@ -2148,7 +2195,7 @@ function ns:StoreFramePosition(frame)
     local frameName = frame:GetName()
     if not frameName then
         if self:GetDevMode() == true then
-            self:Print(ns.L["Error: Frame has no name, cannot store position."])
+            ns:Print(ns.L["Error: Frame has no name, cannot store position."])
         end
         return
     end
@@ -2158,7 +2205,7 @@ function ns:StoreFramePosition(frame)
 
     --@debug@
     -- if self:GetDevMode() == true then
-    --     self:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
+    --     ns:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
     -- end
     --@end-debug@
 
@@ -2178,40 +2225,40 @@ function ns:RestoreFramePosition(frame, frameWidth, frameHeight)
 
     -- get frame name
     local frameName = frame:GetName()
-    
+
     -- get stored position data
     local storedPosition = self:GetFramePosition(frameName)
     if not storedPosition then
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ns.L["No stored position data found for frame: %s"]):format(frameName))
+            ns:Print((ns.L["No stored position data found for frame: %s"]):format(frameName))
         end
         --@end-debug@
         return false
     end
-    
+
     -- default to center position
     local point = "CENTER"
     local relativePoint = "CENTER"
     local xOffset = 0
     local yOffset = 0
-    
+
     -- if we have stored position data, validate it's within bounds
     if storedPosition and storedPosition.point and storedPosition.xOffset and storedPosition.yOffset then
         local testX = storedPosition.xOffset
         local testY = storedPosition.yOffset
-        
+
         -- get UIParent dimensions for bounds checking
         local screenWidth = UIParent:GetWidth()
         local screenHeight = UIParent:GetHeight()
-        
+
         -- calculate frame boundaries
         local halfWidth = frameWidth / 2
         local halfHeight = frameHeight / 2
-        
+
         -- check if frame would be completely within UIParent bounds
         local withinBounds = true
-        
+
         -- for CENTER positioning, check if frame stays within screen
         if storedPosition.point == "CENTER" then
             if (testX - halfWidth < -screenWidth/2) or (testX + halfWidth > screenWidth/2) or
@@ -2231,34 +2278,34 @@ function ns:RestoreFramePosition(frame, frameWidth, frameHeight)
                 withinBounds = false
             end
         end
-        
+
         -- use stored position if within bounds
         if withinBounds == true then
             point = storedPosition.point
             relativePoint = storedPosition.relativePoint
             xOffset = testX
             yOffset = testY
-            
+
             --@debug@
             -- if self:GetDevMode() == true then
-            --     self:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
+            --     ns:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
             -- end
             --@end-debug@
         else
             --@debug@
             -- if self:GetDevMode() == true then
-            --     self:Print("Stored frame position is outside bounds, centering frame.")
+            --     ns:Print("Stored frame position is outside bounds, centering frame.")
             -- end
             --@end-debug@
         end
     else
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print("No stored frame position found, centering frame.")
+        --     ns:Print("No stored frame position found, centering frame.")
         -- end
         --@end-debug@
     end
-    
+
     -- Set the frame position
     frame:SetPoint(point, frame:GetParent(), relativePoint, xOffset, yOffset)
     return true
@@ -2268,7 +2315,7 @@ end
     Function:   CreateMainFrame
     Purpose:    Create the main frame for the addon UI.
 -----------------------------------------------------------------------------]]
-function ns:CreateMainFrame()   
+function ns:CreateMainFrame()
     -- get screen size
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
@@ -2284,7 +2331,7 @@ function ns:CreateMainFrame()
     if frameHeight < ns.data.constants.ui.mainFrame.minHeight then
         frameHeight = ns.data.constants.ui.mainFrame.minHeight
     end
-    
+
     -- use PortraitFrameTemplate which is more reliable in modern WoW
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
     frame:SetSize(frameWidth, frameHeight)
@@ -2305,7 +2352,7 @@ function ns:CreateMainFrame()
     frame:SetFrameStrata("HIGH")
     frame:SetTitle("Action Bar Sync")
     frame:SetPortraitToAsset("Interface\\Icons\\inv_misc_coinbag_special")
-    
+
     -- enable escape key functionality following WoW addon patterns
     frame:SetScript("OnKeyDown", function(self, key)
         if key == "ESCAPE" then
@@ -2324,10 +2371,10 @@ function ns:CreateMainFrame()
             ns:ProcessSyncRegion("CreateMainFrame:OnShow")
         end
     end)
-    
+
     -- register frame for escape key handling using WoW's standard system
     tinsert(UISpecialFrames, "ActionBarSyncMainFrame")
-    
+
     -- finally return the frame
     return frame
 end
@@ -2344,7 +2391,7 @@ function ns:ProcessTabSystem(parent)
     if not ActionBarSyncMainFrameTabs then
         -- create a frame to hold the tabs
         tabFrame = CreateFrame("Frame", "ActionBarSyncMainFrameTabs", parent)
-        
+
         -- position tabs at the bottom of the frame like Collections Journal
         tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
         tabFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, -5)
@@ -2358,19 +2405,19 @@ function ns:ProcessTabSystem(parent)
 
     -- keep track of tab count
     local tabCount = 0
-    
+
     -- create tab buttons using PanelTabButtonTemplate
     for tabIndex, tabKey in ipairs(ns.data.uitabs.order) do
         -- get global variable friendly tab name
         local tabID = ns.data.uitabs["varnames"][tabKey]
         --@debug@
-        -- self:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ns.data.uitabs.tabs[tabKey])))
+        -- ns:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ns.data.uitabs.tabs[tabKey])))
         --@end-debug@
 
         -- create the tab button ID
         local tabButtonID = self:GetObjectName("TabButton" .. tabID)
         --@debug@
-        -- self:Print(("Creating Tab Button: %s"):format(tabButtonID))
+        -- ns:Print(("Creating Tab Button: %s"):format(tabButtonID))
         --@end-debug@
 
         -- create variable for button
@@ -2384,7 +2431,7 @@ function ns:ProcessTabSystem(parent)
             local tabname = ns.data.uitabs.tabs[tabKey]
             button:SetText(tabname)
             ns.data.uitabs["buttonref"][tabKey] = tabIndex
-            
+
             -- use PanelTemplates functions for proper tab behavior
             PanelTemplates_TabResize(button, 0)
 
@@ -2395,7 +2442,7 @@ function ns:ProcessTabSystem(parent)
                 --@end-debug@
                 -- use PanelTemplates to handle tab selection properly
                 PanelTemplates_SetTab(tabFrame, self:GetID())
-                
+
                 -- create the content for the tab
                 ns:ShowTabContent(tabKey)
             end)
@@ -2408,7 +2455,7 @@ function ns:ProcessTabSystem(parent)
         if tabKey == "developer" and ns:GetDevMode() == false then
             button:Hide()
         end
-         
+
         -- position tabs horizontally with proper spacing for Collections style
         if tabIndex == 1 then
             button:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 11, 2)
@@ -2422,7 +2469,7 @@ function ns:ProcessTabSystem(parent)
         -- count the tabs
         tabCount = tabCount + 1
     end
-    
+
     -- Set up the tab frame with PanelTemplates
     PanelTemplates_SetNumTabs(tabFrame, #tabButtons)
     PanelTemplates_SetTab(tabFrame, 1)
@@ -2443,12 +2490,12 @@ function ns:CreateOptionsPanel()
     -- create the main options panel frame
     local panel = CreateFrame("Frame", "ActionBarSyncOptionsPanel", InterfaceOptionsFramePanelContainer)
     panel.name = ns.L["Action Bar Sync"] or "Action Bar Sync"
-    
+
     -- create title
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
     title:SetText(ns.L["Action Bar Sync"] or "Action Bar Sync")
-    
+
     -- create description
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -16)
@@ -2456,7 +2503,7 @@ function ns:CreateOptionsPanel()
     description:SetJustifyH("LEFT")
     description:SetWordWrap(true)
     description:SetText(ns.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ns.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"] .. "\n\n - /actionbarsync\n - /abs")
-    
+
     -- create button to open the addon
     local openButton = CreateFrame("Button", "ActionBarSyncOpenButton", panel, "UIPanelButtonTemplate")
     openButton:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -24)
@@ -2469,7 +2516,7 @@ function ns:CreateOptionsPanel()
             HideUIPanel(SettingsPanel)
         end
     end)
-    
+
     -- create checkbox for minimap button visibility
     local minimapCheckbox = ns:CreateCheckbox(
         panel,
@@ -2497,11 +2544,11 @@ function ns:CreateOptionsPanel()
     local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
 
     -- must set the category ID
-    category.ID = ns.data.optionID
+    -- category.ID = ns.data.optionID
     Settings.RegisterAddOnCategory(category)
 
     -- store category reference for opening later
-    panel.optionsCategory = category
+    ns.optionsCategory = category
 
     -- store panel reference globally for minimap button access
     ns.optionsPanel = panel

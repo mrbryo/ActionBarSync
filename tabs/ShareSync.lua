@@ -72,7 +72,7 @@ function ns:GetCheckboxGlobalName(barID, playerID)
     if not fixedBarName then
         fixedBarName = "UnknownBarName" .. self:GetRandom6DigitNumber()
         if self:GetDevMode() == true then
-            self:Print(ns.L["(GetCheckboxGlobalName) Failed to Translate Bar Name! Please report as an issue. Using: "] .. fixedBarName)
+            ns:Print(ns.L["(GetCheckboxGlobalName) Failed to Translate Bar Name! Please report as an issue. Using: "] .. fixedBarName)
         end
     end
 
@@ -86,7 +86,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:ProcessSyncRegion(callingFunction)
     --@debug@
-    -- self:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
+    -- ns:Print(("(%s) called from: %s"):format("ProcessSyncRegion", callingFunction or "Unknown"))
     --@end-debug@
     -- current player ID
     local currentPlayerID = self:GetKeyPlayerServerSpec()
@@ -229,7 +229,7 @@ function ns:ProcessSyncRegion(callingFunction)
     else
         --@debug@
         if self:GetDevMode() == true then
-            self:Print(ns.L["(%s) ns.data.ui.frame.syncContent does not exist, cannot process sync region."]:format("ProcessSyncRegion"))
+            ns:Print(ns.L["(%s) ns.data.ui.frame.syncContent does not exist, cannot process sync region."]:format("ProcessSyncRegion"))
         end
         --@end-debug@
     end
@@ -291,7 +291,7 @@ function ns:ProcessShareCheckboxes(callingFunction)
     --@debug@
     -- notify of function call
     if self:GetDevMode() == true then
-        self:Print(("(%s) %s: %s"):format(funcName, ns.L["called from"], callingFunction or "Unknown"))
+        ns:Print(("(%s) %s: %s"):format(funcName, ns.L["called from"], callingFunction or "Unknown"))
     end
     --@end-debug@
 
@@ -479,11 +479,11 @@ function ns:CreateShareSyncTopFrameContent(parent)
     ns.data.ui.label.lastSync = regionContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     ns.data.ui.label.lastSync:SetPoint("TOPLEFT", lastSyncTitle, "TOPRIGHT", padding, 0)
     ns.data.ui.label.lastSync:SetJustifyH("LEFT")
-    self:UpdateLastSyncLabel()
+    ns:UpdateLastSyncLabel()
 
     -- create button for manual sync
     local manualSyncButton = self:CreateStandardButton(regionContent, nil, ns.L["Sync Now"], 100, function()
-        self:BeginSync()
+        ns:BeginSync()
     end)
     manualSyncButton:SetPoint("LEFT", ns.data.ui.label.lastSync, "RIGHT", padding, 0)
     manualSyncButton:SetPoint("TOPLEFT", scanButton, "BOTTOMLEFT", 0, -buttonOffset)
