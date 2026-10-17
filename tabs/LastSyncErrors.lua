@@ -5,11 +5,13 @@
 	Description: 	Building the Last Sync Errors tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   AddErrorCell
     Purpose:    Add a cell of error information to the error display.
 -----------------------------------------------------------------------------]]
-function ABSync:AddErrorCell(parent, data, width, offsetX, isHeader)
+function ns:AddErrorCell(parent, data, width, offsetX, isHeader)
     -- default isHeader to false
     isHeader = isHeader or false
 
@@ -43,7 +45,7 @@ end
     Function:   AddErrorRow
     Purpose:    Add a row of error information to the error display.
 -----------------------------------------------------------------------------]]
-function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
+function ns:AddErrorRow(parent, data, columns, offsetY, isHeader)
     -- default isHeader to false
     isHeader = isHeader or false
     -- print("Adding Error Row, isHeader: " .. tostring(isHeader))
@@ -84,12 +86,12 @@ function ABSync:AddErrorRow(parent, data, columns, offsetY, isHeader)
             -- translate data if necessary
             colVal = data[colDef.key]
             if colDef.key == "type" then
-                colVal = ABSync.actionTypeLookup.data[colVal]
+                colVal = ns.data.actionTypeLookup.data[colVal]
             end
         
             -- check for nil
             if colVal == nil then
-                colVal = ABSync.L["Unknown"]
+                colVal = ns.L["Unknown"]
             end
 
             -- check for negative number
@@ -121,9 +123,9 @@ end
     Function:   ProcessErrorData
     Purpose:    Process the error data and populate the scroll frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessErrorData()
+function ns:ProcessErrorData()
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- get scroll content frame
     local scrollContentGlobalName = self:GetObjectName("ErrorScrollContent")
@@ -139,14 +141,14 @@ function ABSync:ProcessErrorData()
     if not ActionBarSyncDB.char then
         errorsExist = false
     else
-        local lastDateTime = ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm or L["Never"]
+        local lastDateTime = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm or L["Never"]
         if lastDateTime ~= nil and lastDateTime ~= self.L["Never"] then
             errorsExist = true
         end
     end
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(("%s: %s"):format(ABSync.L["Errors Exist"], tostring(errorsExist)))
+        ns:Print(("%s: %s"):format(ns.L["Errors Exist"], tostring(errorsExist)))
     end
     --@end-debug@
 
@@ -185,13 +187,13 @@ function ABSync:ProcessErrorData()
     local errorRecords = nil
     if errorsExist == true and scrollContent then
         -- loop over the error records
-        for _, errorRcd in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
+        for _, errorRcd in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors) do
             -- continue to next row if key doesn't match
-            if errorRcd.key == ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
+            if errorRcd.key == ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm then
                 errorRecords = errorRcd.errors
                 --@debug@
                 -- if self:GetDevMode() == true then
-                    -- self:Print(("Found %d error records for last sync error dated %s"):format(#errorRecords, tostring(errorRcd.key)))
+                    -- ns:Print(("Found %d error records for last sync error dated %s"):format(#errorRecords, tostring(errorRcd.key)))
                 -- end
                 --@end-debug@
                 break
@@ -199,17 +201,17 @@ function ABSync:ProcessErrorData()
         end
 
         -- process in action bar order
-        for _, barID in ipairs(ABSync.actionBarOrder) do
+        for _, barID in ipairs(ns.data.actionBarOrder) do
             --@debug@
             -- if self:GetDevMode() == true then
-                -- self:Print(("Processing errors for Action Bar: %s"):format(tostring(barID)))
+                -- ns:Print(("Processing errors for Action Bar: %s"):format(tostring(barID)))
             -- end
             --@end-debug@
             -- process in button order
-            for _, barPosn in ipairs(ABSync.constants.actionButtons) do
+            for _, barPosn in ipairs(ns.data.constants.actionButtons) do
                 --@debug@
                 -- if self:GetDevMode() == true then
-                    -- self:Print(("Processing errors for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                    -- ns:Print(("Processing errors for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
                 -- end
                 --@end-debug@
                 -- force barPosn to a number
@@ -221,11 +223,11 @@ function ABSync:ProcessErrorData()
                     if errorRow.barPosn == barPosn and errorRow.barID == barID then
                         --@debug@
                         -- if self:GetDevMode() == true then
-                            -- self:Print(("Adding error for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
+                            -- ns:Print(("Adding error for Action Bar '%s' and Button Position '%s'."):format(tostring(barID), tostring(barPosn)))
                         -- end
                         --@end-debug@
                         -- add the row
-                        local rowHeight = self:AddErrorRow(scrollContent, errorRow, ABSync.columns.errorColumns, offsetY)
+                        local rowHeight = self:AddErrorRow(scrollContent, errorRow, ns.data.columns.errorColumns, offsetY)
 
                         -- add the row height and padding to the offset
                         offsetY = offsetY + rowHeight + padding
@@ -246,9 +248,9 @@ end
     Function:   ProcessLastSyncErrorFrame
     Purpose:    Create the Last Sync Error frame for the addon.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
+function ns:ProcessLastSyncErrorFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local lastErrorGroup, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -279,7 +281,7 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", lastErrorGroup, "TOPRIGHT", -padding, -padding)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Last Sync Errors"])
+    title:SetText(ns.L["Last Sync Errors"])
 
     -- create main content frame
     local contentFrame = CreateFrame("Frame", nil, lastErrorGroup, "InsetFrameTemplate")
@@ -298,7 +300,7 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     header:SetHeight(30)
     local offsetX = padding
     local maxHeight = 0
-    local hdrRowHeight = self:AddErrorRow(header, nil, ABSync.columns.errorColumns, offsetY, true)
+    local hdrRowHeight = self:AddErrorRow(header, nil, ns.data.columns.errorColumns, offsetY, true)
     maxHeight = math.max(maxHeight, hdrRowHeight)
 
     -- update header height
@@ -324,12 +326,12 @@ function ABSync:ProcessLastSyncErrorFrame(parent, tabKey)
     -- if self:GetDevMode() == true then
     --     local testdttmpretty = date("%Y-%m-%d %H:%M:%S")
     --     local testdttmkey = self:GetCurrentDateTime()
-    --     ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
+    --     ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm = testdttmkey
     --     local testerrors = {}
     --     for i = 1, 10 do
     --         table.insert(testerrors, {barName = "Test Bar", barPos = i, buttonID = i, actionType = "spell", name = "Test Spell", id = 12345, msg = "Test Error Message"})
     --     end
-    --     table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
+    --     table.insert(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors, {
     --         key = testdttmkey,
     --         errors = testerrors
     --     })

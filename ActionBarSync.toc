@@ -1,4 +1,4 @@
-## Interface: 120005
+## Interface: 120105
 ## Title: Action Bar Sync
 ## Notes: Pick which action bars to keep in sync from other characters.
 ## Author: mrbryo
@@ -10,6 +10,15 @@
 ## X-MrBryo-Repository: https://github.com/mrbryo/ActionBarSync
 ## IconTexture: Interface\Icons\inv_misc_coinbag_special
 ## Category-enUS: Action Bars
+## AllowLoadGameType: mainline
+
+# Minimap Button
+# -- Called when the user clicks the compartment entry.
+## AddonCompartmentFunc: ActionBarSyncAddon_OnClick
+# -- Called when the mouse enters the entry (show tooltip).
+## AddonCompartmentFuncOnEnter: ActionBarSyncAddon_OnEnter
+# -- Called when the mouse leaves the entry (hide tooltip).
+## AddonCompartmentFuncOnLeave: ActionBarSyncAddon_OnLeave
 
 ## Initialize Addon
 Initialize.lua
@@ -46,3 +55,6 @@ libs\FontStringExamples.lua
 libs\StandardUI.lua
 libs\MountExtra.lua
 libs\ActionData.lua
+
+## Minimap
+Minimap.lua

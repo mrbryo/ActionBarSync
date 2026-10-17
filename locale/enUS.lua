@@ -3,14 +3,14 @@
     Language: English (US)
 -----------------------------------------------------------------------------]]
 
--- make sure locales variable exists
-if not ABSync.locales then
-    ABSync.locales = {}
-end
+local addonName, ns = ...
 
--- add the locale
-ABSync.locales["enUS"] = {}
-local L = ABSync.locales["enUS"]
+local L = setmetatable({}, {
+    __index = function(self, key)
+        return key  -- fallback: return the key itself
+    end,
+})
+ns.L = L
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="enUS", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@
@@ -91,6 +91,8 @@ L["Close"] = "Close"
 L["Default Name"] = "Default Name"
 -- Dev tab; title at top of tab. Tab is only visible if a developer uses special command line value.
 L["Developer"] = "Developer"
+-- Dev Mode
+L["Dev Mode"] = "Dev Mode"
 
 -- E
 -- Share/sync tab; label for checkbox to auto sync on login.

@@ -5,41 +5,40 @@
 	Description: 	Main program for ActionBarSync addon.
 -----------------------------------------------------------------------------]]
 
--- instantiate variable to hold functionality
-ABSync = _G.ABSync
+local addonName, ns = ...
 
 --[[---------------------------------------------------------------------------
     Function:   InitializeLocalization
     Purpose:    Load the localization table for the current locale.
 -----------------------------------------------------------------------------]]
-function ABSync:InitializeLocalization()
-    -- get current local
-    local locale = GetLocale() or "enUS"
+-- function ns:InitializeLocalization()
+--     -- get current local
+--     local locale = GetLocale() or "enUS"
 
-    -- get language data
-    self.L = self.locales[locale]
+--     -- get language data
+--     ns.L = self.locales[locale]
 
-    -- clear locales to free memory
-    self.locales = nil
-end
+--     -- clear locales to free memory
+--     ns.locales = nil
+-- end
 
 --[[---------------------------------------------------------------------------
 	Register the addon loaded event to begin further initialization.
 -----------------------------------------------------------------------------]]
-ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
+ns:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 	if addonName ~= "ActionBarSync" then
 		return
 	end
 
 	--@debug@
-	-- ABSync:Print(("%s loaded for Addon: %s"):format(event, addonName))
+	-- ns:Print(("%s loaded for Addon: %s"):format(event, addonName))
 	--@end-debug@
 
     -- initialize language
-    ABSync:InitializeLocalization()
+    -- ns:InitializeLocalization()
 
     -- add variables which require translation
-    ABSync.blizzardTranslate = {
+    ns.data.blizzardTranslate = {
 		["MultiBarBottomLeft"] = "actionbar2",
 		["MultiBarBottomRight"] = "actionbar3",
 		["MultiBarRight"] = "actionbar4",
@@ -50,7 +49,7 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
 		["Action"] = "actionbar1"
     }
     -- translate the action bar keys into a formatted word for global variable naming
-    ABSync.barNameTranslate = {
+    ns.barNameTranslate = {
         ["actionbar1"] = "ActionBar1",
         ["actionbar2"] = "ActionBar2",
         ["actionbar3"] = "ActionBar3",
@@ -61,163 +60,163 @@ ABSync:RegisterEvent("ADDON_LOADED", function(self, event, addonName, ...)
         ["actionbar8"] = "ActionBar8",
     }
     -- translate action bar keys into user friendly language for UI display
-    ABSync.barNameLanguageTranslate = {
-        ["actionbar1"] = ABSync.L["Action Bar 1"],
-        ["actionbar2"] = ABSync.L["Action Bar 2"],
-        ["actionbar3"] = ABSync.L["Action Bar 3"],
-        ["actionbar4"] = ABSync.L["Action Bar 4"],
-        ["actionbar5"] = ABSync.L["Action Bar 5"],
-        ["actionbar6"] = ABSync.L["Action Bar 6"],
-        ["actionbar7"] = ABSync.L["Action Bar 7"],
-        ["actionbar8"] = ABSync.L["Action Bar 8"],
+    ns.barNameLanguageTranslate = {
+        ["actionbar1"] = ns.L["Action Bar 1"],
+        ["actionbar2"] = ns.L["Action Bar 2"],
+        ["actionbar3"] = ns.L["Action Bar 3"],
+        ["actionbar4"] = ns.L["Action Bar 4"],
+        ["actionbar5"] = ns.L["Action Bar 5"],
+        ["actionbar6"] = ns.L["Action Bar 6"],
+        ["actionbar7"] = ns.L["Action Bar 7"],
+        ["actionbar8"] = ns.L["Action Bar 8"],
     }
-    ABSync.columns = {
+    ns.data.columns = {
     	lookupHistory = {
-			{ name = ABSync.L["Type"], key = "type", width = 0.20 },      -- 20
-			{ name = ABSync.L["ID"], key = "id", width = 0.20 },          -- 40
-			{ name = ABSync.L["Name"], key = "name", width = 0.50 },      -- 90
-			{ name = ABSync.L["Has"], key = "has", width = 0.5 },         -- 95
+			{ name = ns.L["Type"], key = "type", width = 0.20 },      -- 20
+			{ name = ns.L["ID"], key = "id", width = 0.20 },          -- 40
+			{ name = ns.L["Name"], key = "name", width = 0.50 },      -- 90
+			{ name = ns.L["Has"], key = "has", width = 0.5 },         -- 95
 		},
         errorColumns = {
-            { name = ABSync.L["Bar Name"], key = "barName", width = 10},          -- 10
-            { name = ABSync.L["Bar Pos"], key = "barPosn", width = 5},            -- 15
-            { name = ABSync.L["Button ID"], key = "buttonID", width = 7.5},       -- 22.5
-            { name = ABSync.L["Action Type"], key = "type", width = 10},          -- 32.5
-            { name = ABSync.L["Action Name"], key = "name", width = 20},          -- 52.5
-            { name = ABSync.L["Action ID"], key = "buttonActionID", width = 10},  -- 62.5
-            { name = ABSync.L["Shared By"], key = "sharedby", width = 15},        -- 77.5
-            { name = ABSync.L["Message"], key = "msg", width = 17}                -- 94.5
+            { name = ns.L["Bar Name"], key = "barName", width = 10},          -- 10
+            { name = ns.L["Bar Pos"], key = "barPosn", width = 5},            -- 15
+            { name = ns.L["Button ID"], key = "buttonID", width = 7.5},       -- 22.5
+            { name = ns.L["Action Type"], key = "type", width = 10},          -- 32.5
+            { name = ns.L["Action Name"], key = "name", width = 20},          -- 52.5
+            { name = ns.L["Action ID"], key = "buttonActionID", width = 10},  -- 62.5
+            { name = ns.L["Shared By"], key = "sharedby", width = 15},        -- 77.5
+            { name = ns.L["Message"], key = "msg", width = 17}                -- 94.5
         }
     }
     -- define action type lookup values
-    ABSync.actionTypeLookup = {
+    ns.data.actionTypeLookup = {
         order = { "spell", "item", "macro", "summonpet", "summonmount", "flyout" },
         data = {
-            ["spell"] = ABSync.L["Spell"],
-            ["item"] = ABSync.L["Item"],
-            ["macro"] = ABSync.L["Macro"],
-            ["summonpet"] = ABSync.L["Pet"],
-            ["summonmount"] = ABSync.L["Mount"],
-            ["flyout"] = ABSync.L["Flyout"],
+            ["spell"] = ns.L["Spell"],
+            ["item"] = ns.L["Item"],
+            ["macro"] = ns.L["Macro"],
+            ["summonpet"] = ns.L["Pet"],
+            ["summonmount"] = ns.L["Mount"],
+            ["flyout"] = ns.L["Flyout"],
         }
     }
     -- define tab names
-    ABSync.uitabs["tabs"] = {
-        ["about"] = ABSync.L["About"],
-        ["introduction"] = ABSync.L["Introduction"],
-        ["sharesync"] = ABSync.L["Share & Sync"],
-        ["last_sync_errors"] = ABSync.L["Last Sync Errors"],
-        ["lookup"] = ABSync.L["Lookup & Assign"],
-        ["backup"] = ABSync.L["Restore"],
-        ["utilities"] = ABSync.L["Utilities"],
-        ["developer"] = ABSync.L["Developer"],
+    ns.data.uitabs["tabs"] = {
+        ["about"] = ns.L["About"],
+        ["introduction"] = ns.L["Introduction"],
+        ["sharesync"] = ns.L["Share & Sync"],
+        ["last_sync_errors"] = ns.L["Last Sync Errors"],
+        ["lookup"] = ns.L["Lookup & Assign"],
+        ["backup"] = ns.L["Restore"],
+        ["utilities"] = ns.L["Utilities"],
+        ["developer"] = ns.L["Developer"],
     }
     -- uitabs variable names for proper naming of global variables
-    ABSync.uitabs["varnames"] = {
-        ["about"] = ABSync.L["About"],
-        ["introduction"] = ABSync.L["Introduction"],
-        ["sharesync"] = ABSync.L["ShareSync"],
-        ["last_sync_errors"] = ABSync.L["LastSyncErrors"],
-        ["lookup"] = ABSync.L["Lookup"],
-        ["backup"] = ABSync.L["Backup"],
-        ["utilities"] = ABSync.L["Utilities"],
-        ["developer"] = ABSync.L["Developer"],
+    ns.data.uitabs["varnames"] = {
+        ["about"] = ns.L["About"],
+        ["introduction"] = ns.L["Introduction"],
+        ["sharesync"] = ns.L["ShareSync"],
+        ["last_sync_errors"] = ns.L["LastSyncErrors"],
+        ["lookup"] = ns.L["Lookup"],
+        ["backup"] = ns.L["Backup"],
+        ["utilities"] = ns.L["Utilities"],
+        ["developer"] = ns.L["Developer"],
     }
-    ABSync.uitabs.count = {
+    ns.data.uitabs.count = {
         tabs = 8
     }
 
     -- verify data is loaded and not nil
-    ABSync:Timer("tabnamevalidate", 5, function()
+    ns:Timer("tabnamevalidate", 5, function()
         local count = 0
-        if not ABSync.uitabs["varnames"] then
-            ABSync:Print(ABSync.L["Error: uitabs varnames is nil. Report this to the author."])
+        if not ns.data.uitabs["varnames"] then
+            ns:Print(ns.L["Error: uitabs varnames is nil. Report this to the author."])
         else
-            for key, value in pairs(ABSync.uitabs["varnames"]) do
+            for key, value in pairs(ns.data.uitabs["varnames"]) do
                 count = count + 1
                 if value == nil then
-                    ABSync:Print(ABSync.L["Error: uitabs[varnames] value is nil for key %s. Report this to the author."]:format(tostring(key)))
+                    ns:Print(ns.L["Error: uitabs[varnames] value is nil for key %s. Report this to the author."]:format(tostring(key)))
                 end
             end
         end
 
-        if count ~= ABSync.uitabs.count.tabs then
-            ABSync:Print(ABSync.L["Error: uitabs varnames count mismatch. Report this to the author."])
+        if count ~= ns.data.uitabs.count.tabs then
+            ns:Print(ns.L["Error: uitabs varnames count mismatch. Report this to the author."])
         end
     end)
 
     -- Check the DB
     if not ActionBarSyncDB then
-        ABSync:Print(ABSync.L["Database Not Found? Strange...please reload the UI. If error returns, restart the game."])
+        ns:Print(ns.L["Database Not Found? Strange...please reload the UI. If error returns, restart the game."])
     end
 
     -- Register Events using native system
-    ABSync:RegisterAddonEvents()
-    
+    ns:RegisterAddonEvents()
+
     -- Create minimap button using LibDBIcon
-    ABSync:CreateMinimapButton()
+    ns:CreateMinimapButton()
 
     -- Create and register the options panel
-    ABSync:CreateOptionsPanel()
+    ns:CreateOptionsPanel()
 
 	-- unregister event
-	ABSync:UnregisterEvent("ADDON_LOADED")
+	ns:UnregisterEvent("ADDON_LOADED")
 end)
 
 --[[---------------------------------------------------------------------------
     Function:   BeginActionBarClear
     Purpose:    Trigger a backup if user hits OK on the confirmation dialog, then clear the selected action bar.
 -----------------------------------------------------------------------------]]
-function ABSync:BeginActionBarClear()
+function ns:BeginActionBarClear()
     -- disable button
-    local globalButtonName = ABSync:GetObjectName("UtilitiesClearButton")
+    local globalButtonName = ns:GetObjectName("UtilitiesClearButton")
     _G[globalButtonName]:Disable()
 
     -- get bar to clear
-    local barID = ABSync:GetLastActionBarUtilities()
+    local barID = ns:GetLastActionBarUtilities()
     
     -- add dialog to let user know sync was cancelled
-    StaticPopupDialogs[ABSync.popups.clearbarSyncCancelled] = {
-        text = ABSync.L["Action Bar Clear has been cancelled."],
-        button1 = ABSync.L["OK"],
+    StaticPopupDialogs[ns.data.popups.clearbarSyncCancelled] = {
+        text = ns.L["Action Bar Clear has been cancelled."],
+        button1 = ns.L["OK"],
         timeout = 15,
         hideOnEscape = true,
         preferredIndex = 3,
     }
 
     -- get confirmation and backup name
-    StaticPopupDialogs[ABSync.popups.clearbarBackupConfirmation] = {
-        text = ABSync.L["Enter a name for this backup:"],
-        button1 = ABSync.L["OK"],
-        button2 = ABSync.L["Cancel"],
+    StaticPopupDialogs[ns.data.popups.clearbarBackupConfirmation] = {
+        text = ns.L["Enter a name for this backup:"],
+        button1 = ns.L["OK"],
+        button2 = ns.L["Cancel"],
         hasEditBox = true,
         maxLetters = 64,
         OnAccept = function(self)
             --@debug@
-            -- ABSync:Print("Backup Accepted...")
+            -- ns:Print("Backup Accepted...")
             --@end-debug@
             -- capture the name
             local backupName = self.EditBox:GetText()
             
             -- create variable table to hold a single action bar for backup
             local limitBars = {}
-            limitBars[ABSync:GetLastActionBarUtilities()] = true
+            limitBars[ns:GetLastActionBarUtilities()] = true
 
             -- start the actual backup passing in needed data
-            local backupdttm = ABSync:TriggerBackup(backupName, limitBars)
+            local backupdttm = ns:TriggerBackup(backupName, limitBars)
 
             -- sync the bars
-            ABSync:ClearActionBar()
+            ns:ClearActionBar()
         end, 
         OnCancel = function(self)
-            StaticPopup_Show(ABSync.popups.clearbarSyncCancelled)
+            StaticPopup_Show(ns.data.popups.clearbarSyncCancelled)
 
             -- enable button
-            local globalButtonName = ABSync:GetObjectName("UtilitiesClearButton")
+            local globalButtonName = ns:GetObjectName("UtilitiesClearButton")
             _G[globalButtonName]:Enable()
         end,
         OnShow = function(self)
-            self.EditBox:SetText((ABSync.L["Clear %s"]):format(ABSync.barNameLanguageTranslate[barID]))
+            self.EditBox:SetText((ns.L["Clear %s"]):format(ns.barNameLanguageTranslate[barID]))
             self.EditBox:SetFocus()
         end,
         timeout = 0,
@@ -225,14 +224,14 @@ function ABSync:BeginActionBarClear()
         hideOnEscape = true,
         preferredIndex = 3,
     }
-    StaticPopup_Show(ABSync.popups.clearbarBackupConfirmation)
+    StaticPopup_Show(ns.data.popups.clearbarBackupConfirmation)
 end
 
 --[[---------------------------------------------------------------------------
     Function:   ClearActionBar
     Purpose:    Clear the selected action bar by removing all action buttons.
 -----------------------------------------------------------------------------]]
-function ABSync:ClearActionBar()
+function ns:ClearActionBar()
     -- get bar to clear
     local barID = self:GetLastActionBarUtilities()
 
@@ -248,10 +247,10 @@ function ABSync:ClearActionBar()
         StaticPopup_Show(self.popups.clearBarInvalidBarID)
     else
         -- loop over action bar button number
-        for _, buttonID in pairs(ABSync.constants.actionButtonTranslation[barID]) do
+        for _, buttonID in pairs(ns.data.constants.actionButtonTranslation[barID]) do
             --@debug@
             -- if self:GetDevMode() == true then
-                -- self:Print("Clear Button: " .. buttonID)
+                -- ns:Print("Clear Button: " .. buttonID)
             -- end
             --@end-debug@
             -- call function to remove a buttons action
@@ -268,7 +267,7 @@ end
     Function:   BeginRestore
     Purpose:    Start the restore process for a single backup and action bar combination.
 -----------------------------------------------------------------------------]]
-function ABSync:BeginRestore(button)
+function ns:BeginRestore(button)
     -- disable button
     button:Disable()
 
@@ -276,11 +275,11 @@ function ABSync:BeginRestore(button)
     self:GetActionBarData()
 
     -- trigger message
-    local actionBarName = ABSync.barNameLanguageTranslate[ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar] or ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar
-    self:Print((ABSync.L["Restore Triggered for Backup '%s' for Action Bar '%s'"]):format(self:FormatDateString(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm), actionBarName))
+    local actionBarName = ns.barNameLanguageTranslate[ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar] or ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar
+    ns:Print((ns.L["Restore Triggered for Backup '%s' for Action Bar '%s'"]):format(self:FormatDateString(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm), actionBarName))
 
     -- trigger the update with the backup date time and a true value for isRestore
-    self:UpdateActionBars(ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm, true)
+    self:UpdateActionBars(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm, true)
 
     -- enable button
     button:Enable()
@@ -295,9 +294,9 @@ end
         3. If bars are selected, ask the user for a note. If they click OK proceed. Or stop if they click cancel.
         4. If the backup note dialog is shown it will trigger the next step, backup process, if the user clicks ok button. Nothing happens if they click cancel.
 -----------------------------------------------------------------------------]]
-function ABSync:BeginSync(autoTriggered)
+function ns:BeginSync(autoTriggered)
     --@debug@
-    -- self:Print("BeginSync Called")
+    -- ns:Print("BeginSync Called")
     --@end-debug@
     -- track testing
     local barsToSync = false
@@ -306,9 +305,9 @@ function ABSync:BeginSync(autoTriggered)
     if autoTriggered == nil then
         autoTriggered = false
     end
-    
+
     -- count entries
-    for barName, syncOn in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
+    for barName, syncOn in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync) do
         if syncOn ~= false then
             barsToSync = true
             break
@@ -320,24 +319,24 @@ function ABSync:BeginSync(autoTriggered)
         -- skip dialog if auto triggered
         if autoTriggered == false then
             -- add dialog to let user know they must select bars to sync first
-            StaticPopupDialogs[ABSync.popups.nosyncbars] = {
-                text = ABSync.L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."],
-                button1 = ABSync.L["OK"],
+            StaticPopupDialogs[ns.data.popups.nosyncbars] = {
+                text = ns.L["You must select at least one action bar to sync. Go back to 'Sync Settings' and pick some."],
+                button1 = ns.L["OK"],
                 timeout = 15,
                 whileDead = true,
                 hideOnEscape = true,
                 preferredIndex = 3,
             }
 
-            StaticPopup_Show(ABSync.popups.nosyncbars)
+            StaticPopup_Show(ns.data.popups.nosyncbars)
         end
 
     -- if data found, proceed with backup; ask user for backup note
     else
         -- add dialog to let user know sync was cancelled
-        StaticPopupDialogs[ABSync.popups.synccancelled] = {
-            text = ABSync.L["Action Bar Sync has been cancelled."],
-            button1 = ABSync.L["OK"],
+        StaticPopupDialogs[ns.data.popups.synccancelled] = {
+            text = ns.L["Action Bar Sync has been cancelled."],
+            button1 = ns.L["OK"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
@@ -345,35 +344,35 @@ function ABSync:BeginSync(autoTriggered)
 
         -- add dialog to ask for backup name
         if autoTriggered == false then
-            StaticPopupDialogs[ABSync.popups.backupname] = {
-                text = ABSync.L["Enter a name for this backup:"],
-                button1 = ABSync.L["OK"],
-                button2 = ABSync.L["Cancel"],
+            StaticPopupDialogs[ns.data.popups.backupname] = {
+                text = ns.L["Enter a name for this backup:"],
+                button1 = ns.L["OK"],
+                button2 = ns.L["Cancel"],
                 hasEditBox = true,
                 maxLetters = 64,
                 OnAccept = function(self)
                     --@debug@
-                    -- ABSync:Print("Backup Accepted...")
+                    -- ns:Print("Backup Accepted...")
                     --@end-debug@
                     -- capture the name
                     local backupName = self.EditBox:GetText()
 
                     -- start the actual backup passing in needed data
-                    local backupdttm = ABSync:TriggerBackup(backupName)
+                    local backupdttm = ns:TriggerBackup(backupName)
 
                     -- update last synced...though this should be done in the sync function after the sync is successful
-                    ABSync:SetLastSynced(backupdttm)
-                    
+                    ns:SetLastSynced(backupdttm)
+
                     -- update the UI last synced label
-                    ABSync:UpdateLastSyncLabel()
+                    ns:UpdateLastSyncLabel()
                     -- sync the bars
-                    ABSync:UpdateActionBars(backupdttm)
+                    ns:UpdateActionBars(backupdttm)
                 end, 
                 OnCancel = function(self)
-                    StaticPopup_Show(ABSync.popups.synccancelled)
+                    StaticPopup_Show(ns.data.popups.synccancelled)
                 end,
                 OnShow = function(self)
-                    self.EditBox:SetText(ABSync.L["Default Name"])
+                    self.EditBox:SetText(ns.L["Default Name"])
                     self.EditBox:SetFocus()
                 end,
                 timeout = 0,
@@ -381,19 +380,19 @@ function ABSync:BeginSync(autoTriggered)
                 hideOnEscape = true,
                 preferredIndex = 3,
             }
-            StaticPopup_Show(ABSync.popups.backupname)
+            StaticPopup_Show(ns.data.popups.backupname)
         else
             -- start the actual backup passing in needed data
             local syncdttm = self:GetCurrentDateTime()
 
             -- update last synced...though this should be done in the sync function after the sync is successful
-            ABSync:SetLastSynced(syncdttm)
+            ns:SetLastSynced(syncdttm)
 
             -- update the UI last synced label
-            ABSync:UpdateLastSyncLabel()
+            ns:UpdateLastSyncLabel()
 
             -- sync the bars
-            ABSync:UpdateActionBars(syncdttm)
+            ns:UpdateActionBars(syncdttm)
         end
     end
 end
@@ -402,53 +401,53 @@ end
     Function:   InstantiateDBChar
     Purpose:    Ensure the character specific DB structure exists and has all necessary values.
 -----------------------------------------------------------------------------]]
-function ABSync:InstantiateDBChar(barID)
+function ns:InstantiateDBChar(barID)
     -- create the character structure
     if not ActionBarSyncDB.char then
         ActionBarSyncDB.char = {}
     end
 
     -- currentBarData holds the last scan of data fetched from the action bars for the current character; hence stored in char
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec] then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec] = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec] then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec] = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData = {}
     end 
 
     -- character specific sync error data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors = {}
     end
 
     -- character specific date/time of last scan, defaults to never, pass true for the never value
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastScan = self.L["Never"]
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastScan then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastScan = self.L["Never"]
     end
 
     -- character specific last synced date/time, defaults to never, pass true for the never value
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSynced = self.L["Never"]
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSynced then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSynced = self.L["Never"]
     end
 
     -- backup of action bar data so a user can restore
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].backup then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup = {}
     end
 
     -- character last sync error date/time, represents the date/time of the errors captured
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = self.L["Never"]
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm = self.L["Never"]
     end
 
     -- character last share scan error data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastShareScanData then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].scanErrors = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastShareScanData then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].scanErrors = {}
     end
 
     -- character specific action lookup data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].actionLookup = {
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].actionLookup = {
             name = "",
             id = "",
             type = "",
@@ -458,49 +457,49 @@ function ABSync:InstantiateDBChar(barID)
     end
 
     -- character specific last action placement data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastActionPlacement = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastActionPlacement then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastActionPlacement = {}
     end
 
     -- character specific lookup history
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory = {}
     end
 
     -- set default for max history lookup records
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords = 20
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistoryMaxRecords then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistoryMaxRecords = 20
     end
 
     -- character last diff data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastDiffData then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastDiffData = {}
     end
 
     -- character restore data
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice = {}
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.backupDttm = self.L["None"]
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.backupDttm = self.L["None"]
     end
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].restore.choice.actionBar = self.L["None"]
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].restore.choice.actionBar = self.L["None"]
     end
 
     -- instantiate barsToSync under the character spec profile
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync = {}
     end
 
     -- instantiate only if barID is passed
     if barID ~= nil then
         -- if the barID is missing in the character spec profile barToSync data, add it with default value of false
-        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
-            ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] = false
+        if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] then
+            ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] = false
         end
     end
 end
@@ -509,7 +508,7 @@ end
     Function:   InstantiateDBGlobal
     Purpose:    Ensure the global DB structure exists and has all necessary values.
 -----------------------------------------------------------------------------]]
-function ABSync:InstantiateDBGlobal(barID)
+function ns:InstantiateDBGlobal(barID)
     -- create the global structure
     self:SetupGlobalDB()
 
@@ -545,8 +544,8 @@ function ABSync:InstantiateDBGlobal(barID)
         end
 
         -- instantiate bar owner if it doesn't exist
-        if not ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] then
-            ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = false
+        if not ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] then
+            ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] = false
         end
     end
 end
@@ -555,19 +554,18 @@ end
     Function:   InstantiateDBProfile
     Purpose:    Ensure the profile DB structure exists and has all necessary values.
 -----------------------------------------------------------------------------]]
-function ABSync:InstantiateDBProfile()
-    -- auto reset mount journal filters flag; initially set to false
-    self:SetAutoResetMountFilters(false)
+function ns:InstantiateDBProfile()
+
 end
 
 --[[---------------------------------------------------------------------------
     Function:   InstantiateDB
     Purpose:    Ensure the DB has all the necessary values. Can run anytime to check and fix all data with default values.
 -----------------------------------------------------------------------------]]
-function ABSync:InstantiateDB(barID)
+function ns:InstantiateDB(barID)
     --@debug@
     if self:GetDevMode() == true then
-        self:Print(ABSync.L["DB Initialization"])
+        ns:Print(ns.L["DB Initialization"])
     end
     --@end-debug@
     -- make sure player key is set
@@ -584,15 +582,15 @@ end
     Function:   InsertLookupHistory
     Purpose:    Insert a new entry into the lookup history and only keeping the max records set by the user.
 -----------------------------------------------------------------------------]]
-function ABSync:InsertLookupHistory(info)
+function ns:InsertLookupHistory(info)
     -- insert the record
-    table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory, 1, info)
+    table.insert(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory, 1, info)
 
     -- if +1 of max records exist and the table has more then reduce the table size
-    local nextRecord = ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords + 1
-    if #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory > ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistoryMaxRecords then
-        for i = nextRecord, #ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory do
-            table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].lookupHistory, i)
+    local nextRecord = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistoryMaxRecords + 1
+    if #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory > ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistoryMaxRecords then
+        for i = nextRecord, #ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory do
+            table.remove(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lookupHistory, i)
         end
     end
 end
@@ -601,9 +599,9 @@ end
     Function:   GetActionData
     Purpose:    Get the action data for a specific action ID and type.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionData(buttonActionID, actionType)
+function ns:GetActionData(buttonActionID, actionType)
     --@debug@
-    -- self:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(buttonActionID), tostring(actionType)))
+    -- ns:Print(("(GetActionData) ActionID: %s, ActionType: %s"):format(tostring(buttonActionID), tostring(actionType)))
     --@end-debug@
     -- instantiate a return table
     local returnData = {}
@@ -657,12 +655,12 @@ end
     Function:   FormatDateString
     Purpose:    Convert a date string from YYYYMMDDHHMISS or YYYY-MM-DD HH:MI:SS format to YYYY, Mon DD HH:MI:SS format.
 -----------------------------------------------------------------------------]]
-function ABSync:FormatDateString(dateString)    
+function ns:FormatDateString(dateString)    
     -- validate input
-    if dateString == ABSync.L["Never"] then
-        return ABSync.L["Never"]
+    if dateString == ns.L["Never"] then
+        return ns.L["Never"]
     elseif not dateString or type(dateString) ~= "string" then
-        return ABSync.L["Invalid Date"]
+        return ns.L["Invalid Date"]
     end
     
     local year, month, day, hour, minute, second
@@ -688,7 +686,7 @@ function ABSync:FormatDateString(dateString)
         second = string.sub(dateString, 13, 14)
         
     else
-        return ABSync.L["Invalid Date"]
+        return ns.L["Invalid Date"]
     end
     
     -- month names
@@ -699,7 +697,7 @@ function ABSync:FormatDateString(dateString)
     
     -- validate month
     if month < 1 or month > 12 then
-        return ABSync.L["Invalid Date"]
+        return ns.L["Invalid Date"]
     end
     
     -- format and return the readable date string
@@ -710,7 +708,7 @@ end
     Function:   RemoveFrameChildren
     Purpose:    Remove all children from a frame.
 -----------------------------------------------------------------------------]]
-function ABSync:RemoveFrameChildren(parent)
+function ns:RemoveFrameChildren(parent)
     -- if no scroll region, nothing to do
     if not parent then return end
 
@@ -733,17 +731,17 @@ end
     Function:   ConfirmBar
     Purpose:    Verify the bar exists in the current scan data by checking for one button as child data to the bar.
 -----------------------------------------------------------------------------]]
-function ABSync:ConfirmBar(barID)
+function ns:ConfirmBar(barID)
     -- initialize variables
     local barFound = false
 
     -- verify bar exists, return false since we can't iterate over when it doesn't exist
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID] then
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID] then
         return false
     end
 
     -- loop over current scan data and see if one button exists
-    for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]) do
+    for _ in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID]) do
         barFound = true
         -- only need to loop once
         break
@@ -757,9 +755,9 @@ end
     Function:   MarkBarToSync
     Purpose:    Update the db for current profile when the user changes the values in the options on which bars to sync.
 -----------------------------------------------------------------------------]]
-function ABSync:MarkBarToSync(key, value)
+function ns:MarkBarToSync(key, value)
     --@debug@
-    if self:GetDevMode() == true then self:Print(("Key: %s, Value: %s"):format(tostring(key), tostring(value))) end
+    if self:GetDevMode() == true then ns:Print(("Key: %s, Value: %s"):format(tostring(key), tostring(value))) end
     --@end-debug@
 
     -- initialize variables
@@ -768,15 +766,15 @@ function ABSync:MarkBarToSync(key, value)
     -- check for input key, if it doesn't exist then let user know and return false
     if not ActionBarSyncDB.global.actionBars[key] then
         -- initialize missing key dialog
-        StaticPopupDialogs[ABSync.popups.missingKey] = {
-            text = (ABSync.L["Action Bar Key '%s' is not valid. Please open an issue and include the key and which action bar you checked. Get links on the About tab in options."]):format(key),
-            button1 = ABSync.L["OK"],
+        StaticPopupDialogs[ns.data.popups.missingKey] = {
+            text = (ns.L["Action Bar Key '%s' is not valid. Please open an issue and include the key and which action bar you checked. Get links on the About tab in options."]):format(key),
+            button1 = ns.L["OK"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
         }
 
-        StaticPopup_Show(ABSync.popups.missingKey)
+        StaticPopup_Show(ns.data.popups.missingKey)
         return false
     end
 
@@ -787,20 +785,20 @@ function ABSync:MarkBarToSync(key, value)
     local barFound = false
 
     -- check for profile.barsToSync
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync = {}
     end
 
     -- check for the barName in profile.barsToSync
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] = false
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] = false
     end
 
     -- set the bar to sync on input value to the profile: true or false based on the value passed into this function
-    ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync[barID] = value
+    ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync[barID] = value
 
     --@debug@ let the user know the value is changed only when developing though
-    if self:GetDevMode() == true then self:Print((ABSync.L["(%s) Set Bar '%s' to sync? %s - Done!"]):format("MarkBarToSync", barID, (value and "Yes" or "No"))) end
+    if self:GetDevMode() == true then ns:Print((ns.L["(%s) Set Bar '%s' to sync? %s - Done!"]):format("MarkBarToSync", barID, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -815,27 +813,27 @@ end
         sharedAction    - optional parameter that is used when placing an action from a sync instead of the
                           current character's action details
 -----------------------------------------------------------------------------]]
-function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton, sharedAction)
+function ns:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionButton, sharedAction)
     -- translate action bar number into action bar name
     -- actionBar = ActionBarSyncDB.global.actionBars[actionBar]
 
     -- translate action bar and button into button assignments; for example Action Bar 4 & Button 9 is Action Button 33.
-    local buttonID = ABSync.constants.actionButtonTranslation[actionBar][actionButton]
+    local buttonID = ns.data.constants.actionButtonTranslation[actionBar][actionButton]
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
+        -- ns:Print(("(%s) Input Parameters - Btn Action ID: %s, ActionType: %s, ActionBar: %s, ActionButton: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton)))
     -- end
     --@end-debug@
 
     -- get action details
     local actionDetails = {}
-    if actionType ~= ABSync.L["Unknown"] and actionType ~= nil then
+    if actionType ~= ns.L["Unknown"] and actionType ~= nil then
         actionDetails = self:GetActionData(buttonActionID, actionType, buttonID)
     end
 
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("(%s) Action ID: %s, Action Type: %s, Action Bar: %s, Action Button: %s, Action Button ID: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
+        -- ns:Print(("(%s) Action ID: %s, Action Type: %s, Action Bar: %s, Action Button: %s, Action Button ID: %s"):format("PlaceActionOnBar", tostring(buttonActionID), tostring(actionType), tostring(actionBar), tostring(actionButton), tostring(buttonID)))
     -- end
     --@end-debug@
 
@@ -852,25 +850,25 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
             buttonID = buttonID,
         },
         cursor = {
-            type = ABSync.L["Unknown"],
+            type = ns.L["Unknown"],
             id = -1,
         },
         actionDetails = actionDetails,
         -- actionDetailsOverride only indicates if an actionType overrode actionDetails with sharedAction data, actionDetails is still populated with current character data
         actionDetailsOverride = false,
-        msg = ABSync.L["Not Picked Up - Unknown"],
+        msg = ns.L["Not Picked Up - Unknown"],
         pickedUp = false,
     }
 
     -- check for valid buttonActionID
     if sharedAction then
         if not sharedAction.parameters.buttonActionID then
-            response.msg = ABSync.L["Not Picked Up - Invalid Shared Action ID!"]
+            response.msg = ns.L["Not Picked Up - Invalid Shared Action ID!"]
             return response
         end
     else
         if actionDetails.parameters.buttonActionID <= 0 then
-            response.msg = ABSync.L["Not Picked Up - Invalid Action ID!"]
+            response.msg = ns.L["Not Picked Up - Invalid Action ID!"]
             return response
         end
     end
@@ -881,8 +879,8 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
 
     if actionType == "spell" then
         -- if has is no, set message as not picked up and spell unknown
-        if actionDetails.has == ABSync.L["No"] then
-            response.msg = ABSync.L["Not Picked Up - Spell not known!"]
+        if actionDetails.has == ns.L["No"] then
+            response.msg = ns.L["Not Picked Up - Spell not known!"]
 
         -- otherwise has is yes, pick it up
         else
@@ -904,21 +902,21 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     elseif actionType == "item" then
         -- if user has a toy, pick it up as a toy
         if actionDetails.isToy == true then
-            if actionDetails.has == ABSync.L["Yes"] then
+            if actionDetails.has == ns.L["Yes"] then
                 C_ToyBox.PickupToyBoxItem(sharedAction.parameters.buttonActionID)
                 response.pickedUp = true
-                response.msg = ABSync.L["Picked Up"]
+                response.msg = ns.L["Picked Up"]
             else
-                response.msg = ABSync.L["Not Picked Up - Item is a toy but not usable by character!"]
+                response.msg = ns.L["Not Picked Up - Item is a toy but not usable by character!"]
             end
 
         -- if not a toy, other checks needed
         elseif actionDetails.userItemCount > 0 then
             C_Item.PickupItem(sharedAction.parameters.buttonActionID)
             response.pickedUp = true
-            response.msg = ABSync.L["Picked Up"]
+            response.msg = ns.L["Picked Up"]
         else
-            response.msg = ABSync.L["Not Picked Up - Item is not a toy and not in inventory!"]
+            response.msg = ns.L["Not Picked Up - Item is not a toy and not in inventory!"]
         end
 
     --[[ macro - macros have to be processed differently since they can be character specific or general (account wide) ]]
@@ -928,32 +926,32 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
         local macroType = sharedAction.macroType or actionDetails.macroType
 
         -- if shared action and the macro type is character specific, don't pick it up since it won't be the same macro
-        if sharedAction and macroType == ABSync.macroType.character then
-            response.msg = ABSync.L["Not Picked Up - Macro from sync is character specific!"]
+        if sharedAction and macroType == ns.data.macroType.character then
+            response.msg = ns.L["Not Picked Up - Macro from sync is character specific!"]
 
         -- if shared action and the macro type is general (account wide), pick it up
-        elseif sharedAction and macroType == ABSync.macroType.general then
+        elseif sharedAction and macroType == ns.data.macroType.general then
             PickupMacro(sharedAction.blizData.name)
             response.pickedUp = true
-            response.msg = ABSync.L["Picked Up - General Macro"]
+            response.msg = ns.L["Picked Up - General Macro"]
 
         -- not shared action so pick up based on current action details for this character
-        elseif actionDetails.has == ABSync.L["Yes"] then
+        elseif actionDetails.has == ns.L["Yes"] then
             PickupMacro(actionDetails.blizData.name)
             response.pickedUp = true
-            response.msg = ABSync.L["Picked Up - Not Shared Macro"]
+            response.msg = ns.L["Picked Up - Not Shared Macro"]
         end
 
     --[[ summonpet - do not override with sharedAction, we need current details for the same pet to act on ]]
 
     elseif actionType == "summonpet" then
-        if actionDetails.has == ABSync.L["No"] then
-            response.msg = ABSync.L["Not Picked Up - Pet not known!"]
+        if actionDetails.has == ns.L["No"] then
+            response.msg = ns.L["Not Picked Up - Pet not known!"]
         else
             -- pickup the pet
             C_PetJournal.PickupPet(sharedAction.parameters.buttonActionID)
             response.pickedUp = true
-            response.msg = ABSync.L["Picked Up"]
+            response.msg = ns.L["Picked Up"]
         end
 
     --[[ summonmount ]]
@@ -961,49 +959,49 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     elseif actionType == "summonmount" then
         if actionDetails.mountJournalIndex >= 0 then
             --@debug@
-            if self:GetDevMode() == true then print(ABSync.L["Mount Journal Index: "], actionDetails.mountJournalIndex) end
+            if self:GetDevMode() == true then print(ns.L["Mount Journal Index: "], actionDetails.mountJournalIndex) end
             --@end-debug@
             C_MountJournal.Pickup(actionDetails.mountJournalIndex)
             response.pickedUp = true
-            response.msg = ABSync.L["Picked Up"]
+            response.msg = ns.L["Picked Up"]
         else
-            response.msg = ABSync.L["Not Picked Up - Mount not found! May need to reset mount filters and sync again."]
+            response.msg = ns.L["Not Picked Up - Mount not found! May need to reset mount filters and sync again."]
         end
 
     --[[ flyout ]]
 
     elseif actionType == "flyout" then
-        if actionDetails.blizData.flyoutInfo.isKnown == ABSync.L["Yes"] then
-            response.msg = ABSync.L["Not Picked Up - Flyout not known!"]
+        if actionDetails.blizData.flyoutInfo.isKnown == ns.L["Yes"] then
+            response.msg = ns.L["Not Picked Up - Flyout not known!"]
             if actionDetails.blizData.spellBookSlot.index and actionDetails.blizData.spellBookSlot.index > 0 then
                 PickupSpellBookItem(actionDetails.blizData.spellBookSlot.index, actionDetails.blizData.spellBookSlot.bank)
                 response.pickedUp = true
-                response.msg = ABSync.L["Picked Up"]
-                response.method = ABSync.L["From Spell Book"]
+                response.msg = ns.L["Picked Up"]
+                response.method = ns.L["From Spell Book"]
             else
                 if actionDetails.blizData.name then
                     C_Spell.PickupSpell(actionDetails.blizData.name)
                     response.pickedUp = true
-                    response.msg = ABSync.L["Picked Up"]
-                    response.method = ABSync.L["As a Spell (Flyout Name)"]
+                    response.msg = ns.L["Picked Up"]
+                    response.method = ns.L["As a Spell (Flyout Name)"]
                 elseif actionDetails.flyoutID then
                     C_Spell.PickupSpell(actionDetails.flyoutID)
                     response.pickedUp = true
-                    response.msg = ABSync.L["Picked Up"]
-                    response.method = ABSync.L["As a Spell (Flyout ID)"]
+                    response.msg = ns.L["Picked Up"]
+                    response.method = ns.L["As a Spell (Flyout ID)"]
                 else
-                    response.msg = ABSync.L["Not Picked Up - Flyout Name and ID was Nil!"]
+                    response.msg = ns.L["Not Picked Up - Flyout Name and ID was Nil!"]
                 end
             end
         else
-            response.msg = ABSync.L["Not Picked Up - Flyout not known!"]
+            response.msg = ns.L["Not Picked Up - Flyout not known!"]
         end
 
     --[[ unknown action type ]]
 
     else
         -- response to unknown action type; should never get here since the default is set to 'Unknown'
-        response.msg = ABSync.L["Not Picked Up - Unknown Action Type!"]
+        response.msg = ns.L["Not Picked Up - Unknown Action Type!"]
         -- basically duplicate but lets make sure its false
         response.pickedUp = false
     end
@@ -1012,7 +1010,7 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
     if response.pickedUp == true then
         -- get cursor details
         local cursorType, cursorID = GetCursorInfo()
-        response.cursor.type = cursorType or ABSync.L["Unknown"]
+        response.cursor.type = cursorType or ns.L["Unknown"]
         response.cursor.id = cursorID or -1
 
         if cursorType then
@@ -1020,7 +1018,7 @@ function ABSync:PlaceActionOnBar(buttonActionID, actionType, actionBar, actionBu
             ClearCursor()
         else
             response.pickedUp = false
-            response.msg = ABSync.L["Not Placed - Cursor Empty!"]
+            response.msg = ns.L["Not Placed - Cursor Empty!"]
         end
     end
 
@@ -1035,7 +1033,7 @@ end
                 ... - Arguments to pass to the function
     Returns:    Table with success status, result, and error message
 -----------------------------------------------------------------------------]]
-function ABSync:SafeWoWAPICall(func, ...)
+function ns:SafeWoWAPICall(func, ...)
     -- set language variable
     local L = self.L
     
@@ -1050,7 +1048,7 @@ function ABSync:SafeWoWAPICall(func, ...)
     else
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ABSync.L["API Error: %s"]):format(tostring(result)))
+            ns:Print((ns.L["API Error: %s"]):format(tostring(result)))
         end
         --@end-debug@
         
@@ -1064,27 +1062,71 @@ end
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateSharedData
-    Purpose:    Update the global shared data structure with the current character's bar data for any bars they are sharing.]]
+    Purpose:    Update the global shared data structure with the current character's bar data for any bars they are sharing.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateSharedData()
+function ns:UpdateSharedData()
     -- loop over the barsToSync table from global
     for barID, owners in pairs(ActionBarSyncDB.global.barsToSync) do
         -- loop over the owners of the bar
         for owner, buttonData in pairs(owners) do
             -- if the owner is the current player and spec and the table isn't empty, copy from the currentBarData to the global barsToSync structure
-            if owner == self.currentPlayerServerSpec and buttonData ~= false then
+            if owner == ns.data.currentPlayerServerSpec and buttonData ~= false then
                 -- copy the data
-                ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
+                ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID]
             end
         end
     end
 end
 
 --[[---------------------------------------------------------------------------
+    Function:   CleanUpSharedBars
+    Purpose:    When an action bar is unshared we need to remove it from all characters who used it and then provide a popup of those removed.
+    Arguments:  barID - unshared bar ID
+-----------------------------------------------------------------------------]]
+function ns:CleanUpSharedBars(barID)
+    --@debug@
+    if self:GetDevMode() == true then
+        ns:Print(("Starting Shared Bars Clean Up"))
+    end
+    --@end-debug@
+
+    -- loop over all the characters
+    for charServerSpec, _ in pairs(ActionBarSyncDB.char) do
+        --@debug@
+        if self:GetDevMode() == true then
+            ns:Print(("Processing Character: %s"):format(charServerSpec))
+        end
+        --@end-debug@
+
+        -- verify character exists in char table
+        if ActionBarSyncDB.char[charServerSpec] ~= nil then
+
+            -- make sure barsToSync exists
+            if ActionBarSyncDB.char[charServerSpec].barsToSync ~= nil then
+
+                -- if the character exists along with the barsToSync table then loop over its values
+                for assignedBarID, assignedChar in pairs(ActionBarSyncDB.char[charServerSpec].barsToSync) do
+                    if assignedChar == ns.data.currentPlayerServerSpec and assignedBarID == barID then
+                        ActionBarSyncDB.char[charServerSpec].barsToSync[barID] = false
+                        ns:Print(("'%s' removed from '%s'."):format(assignedBarID, charServerSpec))
+                    end
+                end
+            end
+        end
+    end
+
+    --@debug@
+    if self:GetDevMode() == true then
+        ns:Print(("Completed Shared Bars Clean Up"))
+    end
+    --@end-debug@
+end
+
+--[[---------------------------------------------------------------------------
     Function:   ShareBar
     Purpose:    Set the bar to share for the current global db settings.
 -----------------------------------------------------------------------------]]
-function ABSync:ShareBar(barID, value, checkbox)
+function ns:ShareBar(barID, value, checkbox)
     -- instantiate db to ensure barID structures exist
     self:InstantiateDBGlobal(barID)
 
@@ -1093,19 +1135,19 @@ function ABSync:ShareBar(barID, value, checkbox)
 
     -- if currentBarData is emtpy then let user know they must trigger a sync first
     if barFound == false then
-        StaticPopupDialogs[ABSync.popups.noscan] = {
-            text = (ABSync.L["Current bar configuration for '%s' is not found. Scan and try sharing again. Proceed with a scan?"]):format(barID),
-            button1 = ABSync.L["OK"],
-            button2 = ABSync.L["Cancel"],
+        StaticPopupDialogs[ns.data.popups.noscan] = {
+            text = (ns.L["Current bar configuration for '%s' is not found. Scan and try sharing again. Proceed with a scan?"]):format(barID),
+            button1 = ns.L["OK"],
+            button2 = ns.L["Cancel"],
             timeout = 0,
             hideOnEscape = true,
             preferredIndex = 2,
             OnAccept = function(self)
-                StaticPopup_Hide(ABSync.popups.noscan)
-                ABSync:GetActionBarData()
+                StaticPopup_Hide(ns.data.popups.noscan)
+                ns:GetActionBarData()
             end,
         }
-        StaticPopup_Show(ABSync.popups.noscan)
+        StaticPopup_Show(ns.data.popups.noscan)
 
         -- uncheck the checkbox
         if checkbox then
@@ -1119,17 +1161,20 @@ function ABSync:ShareBar(barID, value, checkbox)
     -- if the value is true, add the bar data to the buttonsToSync table under the barsToSync[barID] table
     if value == true then
         -- add the bar data
-        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]
+        ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID]
     else
         -- remove all the button data
-        ActionBarSyncDB.global.barsToSync[barID][self.currentPlayerServerSpec] = false
+        ActionBarSyncDB.global.barsToSync[barID][ns.data.currentPlayerServerSpec] = false
+
+        -- remove unshared bars from other characters
+        ns:CleanUpSharedBars(barID)
     end
 
     -- update the check boxes in the share area
-    ABSync:ProcessSyncRegion("ShareBar")
+    ns:ProcessSyncRegion("ShareBar")
 
     --@debug@
-    -- if self:GetDevMode() == true then self:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
+    -- if self:GetDevMode() == true then ns:Print(("(%s) Set Bar '%s' to sync? %s - Done!"):format("ShareBar", barName, (value and "Yes" or "No"))) end
     --@end-debug@
 end
 
@@ -1137,7 +1182,7 @@ end
     Function:   TriggerBackup
     Purpose:    Compare two action bar button data tables.
 -----------------------------------------------------------------------------]]
-function ABSync:TriggerBackup(note, barsToProcess)
+function ns:TriggerBackup(note, barsToProcess)
     --@debug@
     -- print("TriggerBackup Called")
     --@end-debug@
@@ -1147,14 +1192,14 @@ function ABSync:TriggerBackup(note, barsToProcess)
     -- local lastSyncedUpdated = self:SetLastSynced(backupdttm)
     
     -- update the UI last synced label
-    -- ABSync:UpdateLastSyncLabel()
+    -- ns:UpdateLastSyncLabel()
 
     -- track any errors in the data
     local errors = {}
 
     -- make sure data path exists
-    if not ActionBarSyncDB.char[self.currentPlayerServerSpec].backup then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].backup = {}
+    if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup then
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup = {}
     end
 
     -- force bar refresh
@@ -1165,7 +1210,7 @@ function ABSync:TriggerBackup(note, barsToProcess)
 
     -- if barsToProcess is nil, set to the barsToSync for the character
     if not barsToProcess then
-        barsToProcess = ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync
+        barsToProcess = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync
     end
 
     -- for completeness sake, make sure records are found to be synced...this is actually done in the calling parent but if I decide to call this function elsewhere better check!
@@ -1174,7 +1219,7 @@ function ABSync:TriggerBackup(note, barsToProcess)
         if syncOn ~= false then
             --@debug@
             if self:GetDevMode() == true then
-                self:Print((ABSync.L["Backing Up Action Bar '%s'..."]):format(barID))
+                ns:Print((ns.L["Backing Up Action Bar '%s'..."]):format(barID))
             end
             --@end-debug@
 
@@ -1185,7 +1230,7 @@ function ABSync:TriggerBackup(note, barsToProcess)
             backupData[barID] = {}
 
             -- get the current bar data for the current barID; not the profile bar data to sync
-            for buttonID, buttonData in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID]) do
+            for buttonID, buttonData in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID]) do
                 backupData[barID][buttonID] = buttonData
             end
         end
@@ -1193,48 +1238,48 @@ function ABSync:TriggerBackup(note, barsToProcess)
 
     -- add error if no sync data found
     if syncDataFound == false then
-        table.insert(errors, ABSync.L["No sync data found for backup."])
+        table.insert(errors, ns.L["No sync data found for backup."])
     end
 
     -- count number of backups
     local backupCount = 0
-    for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
+    for _ in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) do
         backupCount = backupCount + 1
     end
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ABSync.L["Current Backup Count: %d"]):format(backupCount))
+        ns:Print((ns.L["Current Backup Count: %d"]):format(backupCount))
     end
     --@end-debug@
 
     -- if more than 9 then remove the oldest 1
     -- next retrieves the key of the first entry in the backup table and then sets it to nil which removes it
     while backupCount > 9 do
-        -- local oldestBackup = next(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup)
-        -- ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[oldestBackup] = nil
+        -- local oldestBackup = next(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup)
+        -- ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup[oldestBackup] = nil
         --@debug@
         if self:GetDevMode() == true then
-            local oldestBackupDttm = ABSync.L["Unknown"]
-            if ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1] then
-                if ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1].dttm then
-                    oldestBackupDttm = ActionBarSyncDB.char[self.currentPlayerServerSpec].backup[1].dttm
+            local oldestBackupDttm = ns.L["Unknown"]
+            if ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup[1] then
+                if ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup[1].dttm then
+                    oldestBackupDttm = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup[1].dttm
                 end
             end
-            self:Print((ABSync.L["Removing oldest backup entry dated: %s"]):format(ABSync:FormatDateString(oldestBackupDttm)))
+            ns:Print((ns.L["Removing oldest backup entry dated: %s"]):format(ns:FormatDateString(oldestBackupDttm)))
         end
         --@end-debug@
-        table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup, 1)
+        table.remove(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup, 1)
         backupCount = backupCount - 1
     end
 
     -- add backup to db
     local backupEntry = {
         dttm = backupdttm,
-        note = note or ABSync.L["No note provided!"],
+        note = note or ns.L["No note provided!"],
         error = errors,
         data = backupData,
     }
-    table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup, backupEntry)
+    table.insert(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup, backupEntry)
 
     -- finally return a value
     return backupdttm
@@ -1244,7 +1289,7 @@ end
     Function:   RemoveButtonAction
     Purpose:    Remove an action from a button.
 -----------------------------------------------------------------------------]]
-function ABSync:RemoveButtonAction(buttonID)
+function ns:RemoveButtonAction(buttonID)
     PickupAction(tonumber(buttonID))
     ClearCursor()
 end
@@ -1254,7 +1299,7 @@ end
     Purpose:    Split a player-server-spec string into player and server components. Used for macro comparison.
     TODO:       Will likely need some adjustment for other languages.
 -----------------------------------------------------------------------------]]
-function ABSync:GetSharedByWithOutSpec(str)
+function ns:GetSharedByWithOutSpec(str)
     -- Find the position of the last hyphen
     local lastHyphen = str:match(".*()%-")
     if lastHyphen then
@@ -1273,7 +1318,7 @@ end
                 If isRestore is true then compare the backup data to the current data.
                 If isRestore is false then compare the shared data to the current data.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionBarDifferences(backupdttm, isRestore)
+function ns:GetActionBarDifferences(backupdttm, isRestore)
     -- check parameters
     if not isRestore or isRestore == nil then isRestore = false end
 
@@ -1288,22 +1333,22 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
     if isRestore == false then
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ABSync.L["Player Server Spec: %s"]):format(tostring(self.currentPlayerServerSpec)))
+            ns:Print((ns.L["Player Server Spec: %s"]):format(tostring(ns.data.currentPlayerServerSpec)))
         end
         --@end-debug@
         -- compare the global barsToSync data to the user's current action bar data
         -- loop over only the bars the character wants to sync
-        for barID, sharedby in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].barsToSync) do
+        for barID, sharedby in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].barsToSync) do
             --@debug@
             if self:GetDevMode() == true then
-                self:Print((ABSync.L["Bar ID: %s, Shared By: %s"]):format(barID, tostring(sharedby)))
+                ns:Print((ns.L["Bar ID: %s, Shared By: %s"]):format(barID, tostring(sharedby)))
             end
             --@end-debug@
             if sharedby ~= false then
                 --@debug@
-                if self:GetDevMode() == true then
-                    self:Print((ABSync.L["Bar ID: %s, Shared By: %s, Button ID: %s"]):format(barID, sharedby, tostring(buttonID)))
-                end
+                -- if self:GetDevMode() == true then
+                --     ns:Print((ns.L["Bar ID: %s, Shared By: %s"]):format(barID, sharedby))
+                -- end
                 --@end-debug@
                 -- loop over the shared data
                 for buttonID, buttonData in pairs(ActionBarSyncDB.global.barsToSync[barID][sharedby]) do
@@ -1311,28 +1356,28 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                     for _, testit in ipairs(checkValues) do
 
                         --@debug@
-                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, self.currentPlayerServerSpec, barID, buttonID))
+                        -- ns:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
                         -- local val1 = testit
                         -- local val2 = buttonData.blizData.actionInfo[testit] or "nil"
-                        -- local val3 = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] or "nil"
-                        -- local val4 = self.currentPlayerServerSpec or "nil"
+                        -- local val3 = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] or "nil"
+                        -- local val4 = ns.data.currentPlayerServerSpec or "nil"
                         -- local val5 = barID or "nil"
                         -- local val6 = buttonID or "nil"
                         --@end-debug@
 
                         -- translate buttonID to the blizzard button it
-                        -- local blizzardActionButtonID = ABSync.constants.actionButtonTranslation[barID][buttonID]
-                        -- self:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, self.currentPlayerServerSpec, barID, buttonID))
+                        -- local blizzardActionButtonID = ns.data.constants.actionButtonTranslation[barID][buttonID]
+                        -- ns:Print(("Test It: %s, Player: %s, Bar ID: %s, Button ID: %s"):format(testit, ns.data.currentPlayerServerSpec, barID, buttonID))
                         -- Test It: sourceIDString, Player: Chenlei-Malfurion-Elemental, Bar ID: actionbar4, Button ID: 33
                         -- Test It: sourceIDString, Player: Ranjun-Malfurion-Frost, Bar ID: actionbar2, Button ID: 61
                         --                                                          Bar ID: actionbar1, Button ID: 1
 
                         -- compare values
-                        if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
+                        if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
                             differencesFound = true
                             table.insert(differences, {
                                 shared = ActionBarSyncDB.global.barsToSync[barID][sharedby][buttonID],
-                                current = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID],
+                                current = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID],
                                 barID = barID,
                                 sharedBy = sharedby,
                             })
@@ -1344,7 +1389,7 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
         end
     else
         -- loop over the backup data looking for the specific entry
-        for _, backupRow in ipairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].backup) do
+        for _, backupRow in ipairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].backup) do
             -- verify the row has the matching date/time
             if backupRow.dttm == backupdttm then
                 -- loop over the action bars
@@ -1354,14 +1399,14 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
                         -- loop over checkValues
                         for _, testit in ipairs(checkValues) do
                             --@debug@
-                            -- self:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
+                            -- ns:Print(("Test It: %s, Button Data: %s, Current Data: %s"):format(testit, tostring(buttonData[testit]), tostring(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barName][buttonID][testit])))
                             --@end-debug@
                             -- compare values
-                            if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
+                            if buttonData.blizData.actionInfo[testit] ~= ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID].blizData.actionInfo[testit] then
                                 differencesFound = true
                                 table.insert(differences, {
                                     shared = buttonData,
-                                    current = ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonID],
+                                    current = ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonID],
                                     barID = barID,
                                     sharedBy = self.L["Restore"],
                                 })
@@ -1376,9 +1421,9 @@ function ABSync:GetActionBarDifferences(backupdttm, isRestore)
 
     -- capture last diff data
     if isRestore == true then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffDataRestore = differences
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastDiffDataRestore = differences
     else
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastDiffData = differences
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastDiffData = differences
     end
 
     return differences, differencesFound
@@ -1389,13 +1434,13 @@ end
     Purpose:    Compare the sync action bar data to the current action bar data and override current action bar buttons.
     Todo:       Streamline this fuction to use LookUp action to remove duplicated code.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateActionBars(backupdttm, isRestore)
+function ns:UpdateActionBars(backupdttm, isRestore)
     -- check parameters
     if not isRestore or isRestore == nil then isRestore = false end
 
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ABSync.L["(%s) Starting update process. Is Restore? %s"]):format("UpdateActionBars", isRestore and "Yes" or "No"))
+        ns:Print((ns.L["(%s) Starting update process. Is Restore? %s"]):format("UpdateActionBars", isRestore and "Yes" or "No"))
     end
     --@end-debug@
 
@@ -1403,21 +1448,21 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
     local differences, differencesFound = self:GetActionBarDifferences(backupdttm, isRestore)
 
     -- reset mount filter if user has the option checked
-    if ABSync:GetAutoResetMountFilters() == true then
-        ABSync:MountJournalFilterReset()
+    if ns:GetAutoResetMountFilters() == true then
+        ns:MountJournalFilterReset()
     end
 
     -- do we have differences?
     if differencesFound == false then
         -- show popup telling user no differences found
-        StaticPopupDialogs[ABSync.popups.nodiffsfound] = {
+        StaticPopupDialogs[ns.data.popups.nodiffsfound] = {
             text = self.L["For the action bars flagged for syncing, no differences were found."],
             button1 = self.L["OK"],
             timeout = 15,
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show(ABSync.popups.nodiffsfound)
+        StaticPopup_Show(ns.data.popups.nodiffsfound)
     else
         -- track any errors
         local errors = {}
@@ -1447,14 +1492,14 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
             if placementResponse.pickedUp == false then
                 -- update error record with data; if not false then there is an error to report
                 err = {
-                    barName = ABSync.barNameLanguageTranslate[diffData.barID],
+                    barName = ns.barNameLanguageTranslate[diffData.barID],
                     barID = diffData.barID,
                     barPosn = diffData.shared.barPosn,
                     buttonID = placementResponse.placement.buttonID,
                     type = diffData.shared.blizData.actionInfo.actionType,
                     name = diffData.shared.blizData.name,
                     buttonActionID = diffData.shared.parameters.buttonActionID,
-                    link = diffData.shared.blizData.link or ABSync.L["Unknown"],
+                    link = diffData.shared.blizData.link or ns.L["Unknown"],
                     sharedby = diffData.sharedBy,
                     msg = placementResponse.msg
                 }
@@ -1467,10 +1512,10 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
                 end
 
                 -- remove button if there was an error and user has the checkbox checked to remove on placement failure
-                if ABSync:GetPlacementErrorClearButton() == true then
+                if ns:GetPlacementErrorClearButton() == true then
                     --@debug@
                     -- if self:GetDevMode() == true then
-                        -- self:Print(("Removing action from buttonID: %s due to placement error."):format(tostring(err.buttonID)))
+                        -- ns:Print(("Removing action from buttonID: %s due to placement error."):format(tostring(err.buttonID)))
                     -- end
                     --@end-debug@
                     self:RemoveButtonAction(err.buttonID)
@@ -1484,7 +1529,7 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
 
         -- count number of sync error records
         local syncErrorCount = 0
-        for _ in pairs(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors) do
+        for _ in pairs(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors) do
             syncErrorCount = syncErrorCount + 1
         end
 
@@ -1492,49 +1537,49 @@ function ABSync:UpdateActionBars(backupdttm, isRestore)
         -- since we use table.insert it always adds records to the end of the table and the oldest is at the top so keep deleting until we get to 9 records
         -- because we will insert one after this step
         while syncErrorCount > 9 do
-            table.remove(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, 1)
+            table.remove(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors, 1)
             syncErrorCount = syncErrorCount - 1
         end
 
         -- store results
         --@debug@
-        if self:GetDevMode() == true then self:Print((ABSync.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
+        if self:GetDevMode() == true then ns:Print((ns.L["Action Bar Sync encountered errors during a sync; key: '%s':"]):format(backupdttm)) end
         --@end-debug@
 
         -- make sure syncErrors exists
-        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors then
-            ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors = {}
+        if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors then
+            ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors = {}
         end
         
         -- write to db
-        table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].syncErrors, {
+        table.insert(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].syncErrors, {
             key = backupdttm,
             errors = errors,
             successes = successes,
         })
 
         -- make sure lastSyncErrorDttm exists
-        if not ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm then
-            ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = ""
+        if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm then
+            ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm = ""
         end
 
         -- update lastSyncErrorDttm
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].lastSyncErrorDttm = backupdttm
 
         -- update the UI
-        ABSync:ProcessErrorData()
+        ns:ProcessErrorData()
         
         -- show popup if mount issue is true
         if mountIssue == true then
-            StaticPopupDialogs[ABSync.popups.mountissue] = {
-                text = (ABSync.L["%d out of %d mount issues occurred. The functionality from Blizzard to assign mounts to an action bar requires those mounts to be visible in the Mount Journal. The issues this addon has encountered could be caused by the current Mount Journal filters. Either reset the filters to default or click the button 'Reset Mount Journal Filters' (only makes collected and usable mounts visible) and try the sync again."]):format(mountIssueCount, mountCount),
-                button1 = ABSync.L["OK"],
+            StaticPopupDialogs[ns.data.popups.mountissue] = {
+                text = (ns.L["%d out of %d mount issues occurred. The functionality from Blizzard to assign mounts to an action bar requires those mounts to be visible in the Mount Journal. The issues this addon has encountered could be caused by the current Mount Journal filters. Either reset the filters to default or click the button 'Reset Mount Journal Filters' (only makes collected and usable mounts visible) and try the sync again."]):format(mountIssueCount, mountCount),
+                button1 = ns.L["OK"],
                 timeout = 0,
                 whileDead = true,
                 hideOnEscape = true,
                 preferredIndex = 3,
             }
-            StaticPopup_Show(ABSync.popups.mountissue)
+            StaticPopup_Show(ns.data.popups.mountissue)
         end
     end
 end
@@ -1543,7 +1588,7 @@ end
     Function:   GetActionDataWithButtonName
     Purpose:    Retrieve action button data based on the action ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionDataWithButtonName(buttonActionID, btnName)
+function ns:GetActionDataWithButtonName(buttonActionID, btnName)
     -- blizzard api; get action type, the buttons action ID (ex.: spellID, itemID, macroID, etc), and subType (ex.: spellbook, bag, etc)
     local actionType, buttonActionID, subType = GetActionInfo(buttonActionID)
     --@debug@
@@ -1559,13 +1604,13 @@ function ABSync:GetActionDataWithButtonName(buttonActionID, btnName)
     actionDetails.barPosn = tonumber(string.match(btnName, "(%d+)$")) or -1
     -- GetActionInfo
     actionDetails.blizData.actionInfo = {
-        actionType = actionType or ABSync.L["Unknown"],
-        subType = subType or ABSync.L["Unknown"],
-        sourceIDString = tostring(buttonActionID) or ABSync.L["Unknown"],
+        actionType = actionType or ns.L["Unknown"],
+        subType = subType or ns.L["Unknown"],
+        sourceIDString = tostring(buttonActionID) or ns.L["Unknown"],
         sourceIDNumber = tonumber(buttonActionID) or -1,
     }
     actionDetails.parameters.buttonActionID = buttonActionID or -1
-    actionDetails.parameters.btnName = btnName or ABSync.L["Unknown"]
+    actionDetails.parameters.btnName = btnName or ns.L["Unknown"]
 
     -- finally return the data
     return actionDetails
@@ -1575,12 +1620,12 @@ end
     Function:   GetActionBarData
     Purpose:    Fetch current action bar button data.
 -----------------------------------------------------------------------------]]
-function ABSync:GetActionBarData()
+function ns:GetActionBarData()
     -- reset actionBars
     ActionBarSyncDB.global.actionBars = {}
     
     -- reset currentBarData
-    ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
+    ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData = {}
 
     -- track scan errors
     -- TODO: variable is not used...
@@ -1595,21 +1640,21 @@ function ABSync:GetActionBarData()
         -- need to know if this changes based on language!
         if string.find(btnName, "^ActionButton%d+$") or string.find(btnName, "^MultiBarBottomLeftButton%d+$") or string.find(btnName, "^MultiBarBottomRightButton%d+$") or string.find(btnName, "^MultiBarLeftButton%d+$") or string.find(btnName, "^MultiBarRightButton%d+$") or string.find(btnName, "^MultiBar%d+Button%d+$") then
             -- make up a name for each bar using the button names by removing the button number
-            local blizzardBarName = string.gsub(btnName, ABSync.L["Button%d+$"], "")
+            local blizzardBarName = string.gsub(btnName, ns.L["Button%d+$"], "")
             --@debug@
-            -- self:Print(("Processing Button Name: %s, Bar Name: %s"):format(btnName, blizzardBarName))
+            -- ns:Print(("Processing Button Name: %s, Bar Name: %s"):format(btnName, blizzardBarName))
             --@end-debug@
 
             -- translate and replace barName into the blizzard visible name in settings for the bars
-            local barID = ABSync.blizzardTranslate[blizzardBarName]
-            local barName = ABSync.barNameLanguageTranslate[barID] or ABSync.L["Unknown"]
+            local barID = ns.data.blizzardTranslate[blizzardBarName]
+            local barName = ns.barNameLanguageTranslate[barID] or ns.L["Unknown"]
             --@debug@
-            -- self:Print(("Bar ID: %s, Bar Name: %s, Blizzard Bar Name: %s"):format(barID, barName, blizzardBarName))
+            -- ns:Print(("Bar ID: %s, Bar Name: %s, Blizzard Bar Name: %s"):format(barID, barName, blizzardBarName))
             --@end-debug@
 
             -- skip bar if unknown
-            if barName == ABSync.L["Unknown"] then
-                -- self:Print((ABSync.L["Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."]):format(barName))
+            if barName == ns.L["Unknown"] then
+                -- ns:Print((ns.L["Action Bar Button '%s' is not recognized as a valid action bar button. Skipping..."]):format(barName))
                 -- TODO: Need to log this as a scan error.
 
             -- continue if barname is known
@@ -1637,13 +1682,13 @@ function ABSync:GetActionBarData()
                 end
 
                 -- check the barID exists in currentBarData
-                if not ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID] then
-                    ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID] = {}
+                if not ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID] then
+                    ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID] = {}
                 end
 
                 -- insert the info table into the current action bar data
-                -- table.insert(ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID], buttonActionID, buttonData)
-                ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData[barID][buttonActionPosn] = buttonData
+                -- table.insert(ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID], buttonActionID, buttonData)
+                ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData[barID][buttonActionPosn] = buttonData
             end
         end
     end
@@ -1660,14 +1705,14 @@ function ABSync:GetActionBarData()
     errs.lastScan = self:GetLastScan()
 
     -- update the last scan label in the UI
-    ABSync:UpdateLastScanLabel()
+    ns:UpdateLastScanLabel()
 
     -- update shared bar data
-    ABSync:UpdateSharedData()
+    ns:UpdateSharedData()
 
     -- let user know its done
     --@debug@
-    if self:GetDevMode() == true then self:Print(ABSync.L["Fetch Current Action Bar Button Data - Done"]) end
+    if self:GetDevMode() == true then ns:Print(ns.L["Fetch Current Action Bar Button Data - Done"]) end
     --@end-debug@
 end
 
@@ -1675,7 +1720,7 @@ end
     Function:   EnableDevelopment
     Purpose:    Enable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
-function ABSync:EnableDevelopment()
+function ns:EnableDevelopment()
     -- enable development mode
     self:SetDevMode(true)
 
@@ -1683,14 +1728,14 @@ function ABSync:EnableDevelopment()
     self:SetDeveloperTabVisibleState(true)
 
     -- give user status
-    self:Print(ABSync.L["Development Mode: Enabled"])
+    ns:Print(ns.L["Development Mode: Enabled"])
 end
 
 --[[---------------------------------------------------------------------------
     Function:   DisableDevelopment
     Purpose:    Disable development mode for testing and debugging.
 -----------------------------------------------------------------------------]]
-function ABSync:DisableDevelopment()
+function ns:DisableDevelopment()
     if self:GetTab() == "developer" then
         -- switch to default tab if the user is on the developer tab
         self:SetTab("introduction")
@@ -1703,14 +1748,14 @@ function ABSync:DisableDevelopment()
     self:SetDeveloperTabVisibleState(false)
 
     -- give user status
-    self:Print(ABSync.L["Development Mode: Disabled"])
+    ns:Print(ns.L["Development Mode: Disabled"])
 end
 
 --[[---------------------------------------------------------------------------
     Function:   SlashCommand
     Purpose:    Respond to all slash commands.
 -----------------------------------------------------------------------------]]
-function ABSync:SlashCommand(text)
+function ns:SlashCommand(text)
     -- if no text is provided, show the options dialog
     if text == nil or text == "" then
         self:ShowUI()
@@ -1720,7 +1765,7 @@ function ABSync:SlashCommand(text)
     -- get args
     for _, arg in ipairs(self:GetArgs(text)) do
         if arg:lower() == "sync" then
-            self:BeginSync()
+            ns:BeginSync()
         --@debug@
         elseif arg:lower() == "enablemodedeveloper" then
             if not self:GetDevMode() or self:GetDevMode() == false then
@@ -1733,27 +1778,27 @@ function ABSync:SlashCommand(text)
                 self:RefreshMountDB()
             end
         elseif arg:lower() == "fonts" then
-            ABSync:CreateFontStringExamplesFrame():Show()
+            ns:CreateFontStringExamplesFrame():Show()
         elseif arg:lower() == "dodiffs" then
-            self:Print(ABSync.L["Doing Diffs..."])
+            ns:Print(ns.L["Doing Diffs..."])
             local isRestore = false
             local dttm = self:GetCurrentDateTime()
-            ABSync:GetActionBarDifferences(dttm, isRestore)
+            ns:GetActionBarDifferences(dttm, isRestore)
         --@end-debug@
         else
-            self:Print((ABSync.L["Unknown Command: %s"]):format(arg))
+            ns:Print((ns.L["Unknown Command: %s"]):format(arg))
         --@debug@
         -- elseif arg:lower() == "spec" then
         --     local specializationIndex = C_SpecializationInfo.GetSpecialization()
-        --     self:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
+        --     ns:Print(("Current Specialization Index: %s"):format(tostring(specializationIndex)))
         --     local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
-        --     self:Print(("Specialization ID: %d, Name: %s"):format(specId, name or ABSync.L["Unknown"]))
+        --     ns:Print(("Specialization ID: %d, Name: %s"):format(specId, name or ns.L["Unknown"]))
         -- elseif arg:lower() == "test" then
             -- local mountIDs = C_MountJournal.GetMountIDs()
             -- for midx, mountID in ipairs(mountIDs) do
             --     -- local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountID)
-            --     -- self:Print(("(Test) Mount - Name: %s - ID: %d - Source ID: %d"):format(name, mountID, sourceMountID))
-            --     self:Print(("<Test> Mount - ID: %d (%d)"):format(mountID, midx))
+            --     -- ns:Print(("(Test) Mount - Name: %s - ID: %d - Source ID: %d"):format(name, mountID, sourceMountID))
+            --     ns:Print(("<Test> Mount - ID: %d (%d)"):format(mountID, midx))
             -- end
         --@end-debug@
         end
@@ -1764,15 +1809,15 @@ end
     Function:   EventPlayerLogout
     Purpose:    Handle functionality which is best or must wait for the PLAYER_LOGOUT event.
 -----------------------------------------------------------------------------]]
-function ABSync:EventPlayerLogout()
+function ns:EventPlayerLogout()
     --@debug@
-    if self:GetDevMode() == true then self:Print(ABSync.L["Player Logging Out..."]) end
+    if self:GetDevMode() == true then ns:Print(ns.L["Player Logging Out..."]) end
     --@end-debug@
 
     -- clear currentBarData and actionBars when not in developer mode
     if self:GetDevMode() == false then
-        ActionBarSyncDB.char[self.currentPlayerServerSpec].currentBarData = {}
-        ABSync:ClearMountDB()
+        ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].currentBarData = {}
+        ns:ClearMountDB()
     end
 end
 
@@ -1780,37 +1825,37 @@ end
     Function:   OnSpecializationChanged
     Purpose:    Handle specialization change events to update action bar sync data and the player key which includes spec.
 -----------------------------------------------------------------------------]]
-function ABSync:OnSpecializationChanged(event, ...)
+function ns:OnSpecializationChanged(event, ...)
     -- do not run function unless player has entered world event has triggered
-    if self.hasPlayerEnteredWorld == false then
+    if ns.data.hasPlayerEnteredWorld == false then
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
+        --     ns:Print("OnSpecializationChanged skipped since PLAYER_ENTERING_WORLD has not triggered yet.")
         -- end
         --@end-debug@
         return
     end
 
     -- only allow this event content to trigger once
-    if not ABSync.specializationChangeProcessed or ABSync.specializationChangeProcessed == false then
+    if not ns.specializationChangeProcessed or ns.specializationChangeProcessed == false then
         -- set value to true which will run all the code below
-        ABSync.specializationChangeProcessed = true
+        ns.specializationChangeProcessed = true
     else
         -- set value to false and then return to skip the rest of the code
-        ABSync.specializationChangeProcessed = false
+        ns.specializationChangeProcessed = false
         return
     end
     
     --@debug@
     -- event notification
     if self:GetDevMode() == true then 
-        self:Print(ABSync.L["Specialization Changed"])
+        ns:Print(ns.L["Specialization Changed"])
     end
 
     -- capture ellipse properties into a table for processing
     --[[local eventArgs = {...}
     if self:GetDevMode() == true then 
-        self:Print(("Specialization Changed - Event: %s, Args Count: %d"):format(event, #eventArgs))
+        ns:Print(("Specialization Changed - Event: %s, Args Count: %d"):format(event, #eventArgs))
         
         -- loop through the ellipse properties
         for argIndex, argValue in ipairs(eventArgs) do
@@ -1821,16 +1866,16 @@ function ABSync:OnSpecializationChanged(event, ...)
             if argType == "string" then
                 displayValue = ("'%s'"):format(argValue)
             elseif argType == "boolean" then
-                displayValue = argValue and ABSync.L["Yes"] or ABSync.L["No"]
+                displayValue = argValue and ns.L["Yes"] or ns.L["No"]
             elseif argType == "nil" then
-                displayValue = ABSync.L["Unknown"]
+                displayValue = ns.L["Unknown"]
             elseif argType == "table" then
                 displayValue = "Table"
             else
                 displayValue = tostring(argValue)
             end
             
-            self:Print(("  Arg %d (%s): %s"):format(argIndex, argType, displayValue))
+            ns:Print(("  Arg %d (%s): %s"):format(argIndex, argType, displayValue))
         end
     end]]
     --@end-debug@
@@ -1838,17 +1883,17 @@ function ABSync:OnSpecializationChanged(event, ...)
     -- update content
     if ActionBarSyncMainFrame and ActionBarSyncMainFrame:IsVisible() then
         -- update player keys
-        ABSync:SetKeyPlayerServerSpec()
-        ABSync:SetKeyPlayerServer()
+        ns:SetKeyPlayerServerSpec()
+        ns:SetKeyPlayerServer()
 
         -- act based on which tab is currently visible
-        if ABSync:GetTab() == "sharesync" then
-            ABSync:UpdateLastScanLabel()
-            ABSync:UpdateLastSyncLabel()
-            ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
-            ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
-        elseif ABSync:GetTab() == "backup" then
-            ABSync:ProcessBackupListFrame()
+        if ns:GetTab() == "sharesync" then
+            ns:UpdateLastScanLabel()
+            ns:UpdateLastSyncLabel()
+            ns:ProcessShareCheckboxes("CreateMainFrame:OnShow")
+            ns:ProcessSyncRegion("CreateMainFrame:OnShow")
+        elseif ns:GetTab() == "backup" then
+            ns:ProcessBackupListFrame()
         end
     end
 end
@@ -1857,7 +1902,7 @@ end
     Function:   OnDisable
     Purpose:    Trigger code when addon is disabled.
 -----------------------------------------------------------------------------]]
-function ABSync:OnDisable()
+function ns:OnDisable()
     -- set language variable
     local L = self.L
     
@@ -1868,21 +1913,21 @@ function ABSync:OnDisable()
     end
 
     if self:GetDevMode() == true then
-        self:Print(ABSync.L["Disabled"])
+        ns:Print(ns.L["Disabled"])
     end
 
     -- same clean up should occur when disabled
-    ABSync:EventPlayerLogout()
+    ns:EventPlayerLogout()
 end
 
 --[[---------------------------------------------------------------------------
     Function:   RegisterAddonEvents
     Purpose:    Register all events for the addon using native WoW event system.
 -----------------------------------------------------------------------------]]
-function ABSync:RegisterAddonEvents()
+function ns:RegisterAddonEvents()
     --@debug@
     -- if self:GetDevMode() == true then
-    --     self:Print(ABSync.L["Registering Events..."]) 
+    --     ns:Print(ns.L["Registering Events..."]) 
     -- end
     --@end-debug@
 
@@ -1891,15 +1936,15 @@ function ABSync:RegisterAddonEvents()
         -- get event parameters
         local isInitialLogin, isReload = ...
         --@debug@
-        -- ABSync:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ABSync.L["Yes"] or ABSync.L["No"], tostring(isReload) and ABSync.L["Yes"] or ABSync.L["No"]))
+        -- ns:Print(("Event - %s, isInitialLogin: %s, isReload: %s"):format(event, tostring(isInitialLogin) and ns.L["Yes"] or ns.L["No"], tostring(isReload) and ns.L["Yes"] or ns.L["No"]))
         --@end-debug@
 
         -- instantiate player keys
-        ABSync:SetKeyPlayerServerSpec()
-        ABSync:SetKeyPlayerServer()
+        ns:SetKeyPlayerServerSpec()
+        ns:SetKeyPlayerServer()
 
         -- run db initialize again but pass in barName to make sure all keys are setup for this barName
-        ABSync:InstantiateDB(nil)
+        ns:InstantiateDB(nil)
 
         -- only run these commands if this is the initial login
         if isInitialLogin == true then
@@ -1907,52 +1952,52 @@ function ABSync:RegisterAddonEvents()
             local timerName = "AutoSyncOnLogon"
 
             -- set a timer to trigger an auto sync
-            ABSync:Timer(timerName, 5, function(timerName)
-                
+            ns:Timer(timerName, 5, function(timerName)
+
                 -- get action bar data automatically if user has opted in through the settings checkbox
-                if ABSync:GetSyncOnLogon() == true or ABSync:GetLastScan() == ABSync.L["Never"] then
-                    ABSync:Print(ABSync.L["Starting automatic action bar data scan..."])
-                    ABSync:BeginSync(true)
+                if ns:GetSyncOnLogon() == true or ns:GetLastScan() == ns.L["Never"] then
+                    ns:Print(ns.L["Starting automatic action bar data scan..."])
+                    ns:BeginSync(true)
                 end
 
                 -- clear timer
-                ABSync:TimerClear(timerName)
+                ns:TimerClear(timerName)
             end)
         end
-        
+
         -- update global variable for tracking if event has triggered
-        ABSync.hasPlayerEnteredWorld = true
+        ns.hasPlayerEnteredWorld = true
     end)
 
     -- PLAYER_LOGOUT
     self:RegisterEvent("PLAYER_LOGOUT", function(self, event, ...)
         --@debug@
-        -- ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ns:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
-        ABSync:EventPlayerLogout()
+        ns:EventPlayerLogout()
     end)
 
     -- VARIABLES_LOADED
     self:RegisterEvent("VARIABLES_LOADED", function(self, event, ...)
         --@debug@
-        -- ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ns:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
     end)
 
     -- ACTIVE_TALENT_GROUP_CHANGED
     self:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED", function(self, event, ...)
         --@debug@
-        -- ABSync:Print(("Event Triggered - %s"):format(event))
+        -- ns:Print(("Event Triggered - %s"):format(event))
         --@end-debug@
-        ABSync:OnSpecializationChanged(event, ...)
+        ns:OnSpecializationChanged(event, ...)
     end)
 
     -- PLAYER_SPECIALIZATION_CHANGED
     -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function(self, event, ...)
     --     --@debug@
-    --     ABSync:Print(("Event Triggered - %s"):format(event))
+    --     ns:Print(("Event Triggered - %s"):format(event))
     --     --@end-debug@
-    --     ABSync:OnSpecializationChanged(event, ...)
+    --     ns:OnSpecializationChanged(event, ...)
     -- end)
 end
 
@@ -1962,20 +2007,20 @@ end
     Arguments:  checkbox - the checkbox object to calculate the offset for
     Returns:    calculated vertical offset
 -----------------------------------------------------------------------------]]
-function ABSync:GetCheckboxOffsetY(checkbox)
-    return ABSync.constants.ui.checkbox.size + ABSync.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
+function ns:GetCheckboxOffsetY(checkbox)
+    return ns.data.constants.ui.checkbox.size + ns.data.constants.ui.checkbox.padding + checkbox.Text:GetStringWidth()
 end
 
 --[[---------------------------------------------------------------------------
     Function:   UpdateLookupHistory
     Purpose:    Update the lookup history display.
 -----------------------------------------------------------------------------]]
-function ABSync:UpdateLookupHistory()
+function ns:UpdateLookupHistory()
     -- clear the scroll area
-    ABSync.ui.scroll.lookupHistory:ReleaseChildren()
+    ns.data.ui.scroll.lookupHistory:ReleaseChildren()
 
     -- add the updated records
-    self:InsertLookupHistoryRows(ABSync.ui.scroll.lookupHistory, ABSync.columns.lookupHistory)
+    self:InsertLookupHistoryRows(ns.data.ui.scroll.lookupHistory, ns.data.columns.lookupHistory)
 end
 
 --[[---------------------------------------------------------------------------
@@ -1984,7 +2029,7 @@ end
     Inputs:     frame       - parent frame containing the checkboxes
                 checkbox    - checkbox that was just clicked; don't uncheck it
 -----------------------------------------------------------------------------]]
-function ABSync:UncheckAllBackups(frame, checkbox)
+function ns:UncheckAllBackups(frame, checkbox)
     if frame:GetNumChildren() > 0 then
         for idx, child in ipairs({frame:GetChildren()}) do
             if child:IsObjectType("CheckButton") == true then
@@ -2001,7 +2046,7 @@ end
     Purpose:    Show/hide the developer tab based on input parameter.
     Arguments:  makeVisible - boolean; true to show, false to hide
 -----------------------------------------------------------------------------]]
-function ABSync:SetDeveloperTabVisibleState(makeVisible)
+function ns:SetDeveloperTabVisibleState(makeVisible)
     local devTabButton = self:GetObjectName("TabButtonDeveloper")
     if _G[devTabButton] then
         if makeVisible then
@@ -2016,7 +2061,7 @@ end
     Function:   ShowErrorLog
     Purpose:    Open custom UI to show last sync errors to user.
 -----------------------------------------------------------------------------]]
-function ABSync:ShowUI(openDelaySeconds)
+function ns:ShowUI(openDelaySeconds)
     -- make sure key name, server and spec are set
     self:SetKeyPlayerServerSpec()
 
@@ -2028,13 +2073,13 @@ function ABSync:ShowUI(openDelaySeconds)
     -- be sure frame doesn't exist
     if not ActionBarSyncMainFrame then
         -- create main frame
-        ABSync:CreateMainFrame()
+        ns:CreateMainFrame()
 
         -- create tab group
-        ABSync:ProcessTabSystem(ActionBarSyncMainFrame)
+        ns:ProcessTabSystem(ActionBarSyncMainFrame)
 
         -- create content area
-        ABSync:CreateContentFrame(ActionBarSyncMainFrame)
+        ns:CreateContentFrame(ActionBarSyncMainFrame)
 
         -- show initial tab
         local tabKey = self:GetTab()
@@ -2054,10 +2099,10 @@ function ABSync:ShowUI(openDelaySeconds)
             self:SetDeveloperTabVisibleState(true)
         end
         --@debug@
-        -- self:Print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
+        -- ns:Print(("(ShowUI) Showing Initial Tab after creating UI: %s"):format(tabKey))
         --@end-debug@
         self:ShowTabContent(tabKey)
-        local buttonID = ABSync.uitabs["buttonref"][tabKey]
+        local buttonID = ns.data.uitabs["buttonref"][tabKey]
         PanelTemplates_SetTab(ActionBarSyncMainFrameTabs, buttonID)
     end
 
@@ -2075,26 +2120,26 @@ end
     Function:   ShowTabContent
     Purpose:    Show the content for the selected tab.
 -----------------------------------------------------------------------------]]
-function ABSync:ShowTabContent(tabKey)
+function ns:ShowTabContent(tabKey)
     -- get current tab to hide
     local currentTab = self:GetTab()
 
     -- get global variable friendly tab name
-    local varName = self.uitabs["varnames"][currentTab]
+    local varName = ns.data.uitabs["varnames"][currentTab]
 
     -- get the global name of the tab
-    local tabContentFrame = self:GetObjectName(ABSync.constants.objectNames.tabContentFrame .. varName)
+    local tabContentFrame = self:GetObjectName(ns.data.constants.objectNames.tabContentFrame .. varName)
     --@debug@
-    -- self:Print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
+    -- ns:Print(("(ShowTabContent) tabKey: %s, varName: %s, tabContentFrame is nil: %s"):format(tostring(tabKey), tostring(varName), tostring(tabContentFrame == nil)))
     --@end-debug@
 
     -- hide the tab
     if _G[tabContentFrame] then
         _G[tabContentFrame]:Hide()
     end
-    
+
     --@debug@
-    -- self:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
+    -- ns:Print(("Showing Tab Content for tabKey: %s"):format(tostring(tabKey)))
     --@end-debug@
 
     -- set the tab
@@ -2102,7 +2147,7 @@ function ABSync:ShowTabContent(tabKey)
 
     -- currentframe
     local currentFrame = nil
-    
+
     -- switch to the selected tab
     if tabKey == "about" then
         -- tabs\About.lua
@@ -2141,7 +2186,7 @@ end
     Purpose:    Store the current frame position in the character database.
     Arguments:  frame - the frame whose position to store
 -----------------------------------------------------------------------------]]
-function ABSync:StoreFramePosition(frame)
+function ns:StoreFramePosition(frame)
     -- Get current position
     local point, relativeTo, relativePoint, xOfs, yOfs = frame:GetPoint()
 
@@ -2149,7 +2194,7 @@ function ABSync:StoreFramePosition(frame)
     local frameName = frame:GetName()
     if not frameName then
         if self:GetDevMode() == true then
-            self:Print(ABSync.L["Error: Frame has no name, cannot store position."])
+            ns:Print(ns.L["Error: Frame has no name, cannot store position."])
         end
         return
     end
@@ -2159,7 +2204,7 @@ function ABSync:StoreFramePosition(frame)
 
     --@debug@
     -- if self:GetDevMode() == true then
-    --     self:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
+    --     ns:Print(("Frame position stored: %s %s %.1f %.1f"):format(point, relativePoint, xOfs, yOfs))
     -- end
     --@end-debug@
 
@@ -2173,46 +2218,46 @@ end
                 frameWidth - width of the frame
                 frameHeight - height of the frame
 -----------------------------------------------------------------------------]]
-function ABSync:RestoreFramePosition(frame, frameWidth, frameHeight)
+function ns:RestoreFramePosition(frame, frameWidth, frameHeight)
     -- set language variable
     local L = self.L
 
     -- get frame name
     local frameName = frame:GetName()
-    
+
     -- get stored position data
     local storedPosition = self:GetFramePosition(frameName)
     if not storedPosition then
         --@debug@
         if self:GetDevMode() == true then
-            self:Print((ABSync.L["No stored position data found for frame: %s"]):format(frameName))
+            ns:Print((ns.L["No stored position data found for frame: %s"]):format(frameName))
         end
         --@end-debug@
         return false
     end
-    
+
     -- default to center position
     local point = "CENTER"
     local relativePoint = "CENTER"
     local xOffset = 0
     local yOffset = 0
-    
+
     -- if we have stored position data, validate it's within bounds
     if storedPosition and storedPosition.point and storedPosition.xOffset and storedPosition.yOffset then
         local testX = storedPosition.xOffset
         local testY = storedPosition.yOffset
-        
+
         -- get UIParent dimensions for bounds checking
         local screenWidth = UIParent:GetWidth()
         local screenHeight = UIParent:GetHeight()
-        
+
         -- calculate frame boundaries
         local halfWidth = frameWidth / 2
         local halfHeight = frameHeight / 2
-        
+
         -- check if frame would be completely within UIParent bounds
         local withinBounds = true
-        
+
         -- for CENTER positioning, check if frame stays within screen
         if storedPosition.point == "CENTER" then
             if (testX - halfWidth < -screenWidth/2) or (testX + halfWidth > screenWidth/2) or
@@ -2232,34 +2277,34 @@ function ABSync:RestoreFramePosition(frame, frameWidth, frameHeight)
                 withinBounds = false
             end
         end
-        
+
         -- use stored position if within bounds
         if withinBounds == true then
             point = storedPosition.point
             relativePoint = storedPosition.relativePoint
             xOffset = testX
             yOffset = testY
-            
+
             --@debug@
             -- if self:GetDevMode() == true then
-            --     self:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
+            --     ns:Print(("Frame positioned from stored data: %s %.1f %.1f."):format(point, xOffset, yOffset))
             -- end
             --@end-debug@
         else
             --@debug@
             -- if self:GetDevMode() == true then
-            --     self:Print("Stored frame position is outside bounds, centering frame.")
+            --     ns:Print("Stored frame position is outside bounds, centering frame.")
             -- end
             --@end-debug@
         end
     else
         --@debug@
         -- if self:GetDevMode() == true then
-        --     self:Print("No stored frame position found, centering frame.")
+        --     ns:Print("No stored frame position found, centering frame.")
         -- end
         --@end-debug@
     end
-    
+
     -- Set the frame position
     frame:SetPoint(point, frame:GetParent(), relativePoint, xOffset, yOffset)
     return true
@@ -2269,7 +2314,7 @@ end
     Function:   CreateMainFrame
     Purpose:    Create the main frame for the addon UI.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateMainFrame()   
+function ns:CreateMainFrame()
     -- get screen size
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
@@ -2279,13 +2324,13 @@ function ABSync:CreateMainFrame()
     local frameHeight = screenHeight * 0.4
 
     -- make sure its the minimum size
-    if frameWidth < ABSync.constants.ui.mainFrame.minWidth then
-        frameWidth = ABSync.constants.ui.mainFrame.minWidth
+    if frameWidth < ns.data.constants.ui.mainFrame.minWidth then
+        frameWidth = ns.data.constants.ui.mainFrame.minWidth
     end
-    if frameHeight < ABSync.constants.ui.mainFrame.minHeight then
-        frameHeight = ABSync.constants.ui.mainFrame.minHeight
+    if frameHeight < ns.data.constants.ui.mainFrame.minHeight then
+        frameHeight = ns.data.constants.ui.mainFrame.minHeight
     end
-    
+
     -- use PortraitFrameTemplate which is more reliable in modern WoW
     local frame = CreateFrame("Frame", "ActionBarSyncMainFrame", UIParent, "PortraitFrameTemplate")
     frame:SetSize(frameWidth, frameHeight)
@@ -2301,12 +2346,12 @@ function ABSync:CreateMainFrame()
     frame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         -- store window position
-        ABSync:StoreFramePosition(self)
+        ns:StoreFramePosition(self)
     end)
     frame:SetFrameStrata("HIGH")
     frame:SetTitle("Action Bar Sync")
     frame:SetPortraitToAsset("Interface\\Icons\\inv_misc_coinbag_special")
-    
+
     -- enable escape key functionality following WoW addon patterns
     frame:SetScript("OnKeyDown", function(self, key)
         if key == "ESCAPE" then
@@ -2318,17 +2363,17 @@ function ABSync:CreateMainFrame()
 
     -- setup OnShow event
     frame:SetScript("OnShow", function(self)
-        if ABSync:GetTab() == "sharesync" then
-            ABSync:UpdateLastScanLabel()
-            ABSync:UpdateLastSyncLabel()
-            ABSync:ProcessShareCheckboxes("CreateMainFrame:OnShow")
-            ABSync:ProcessSyncRegion("CreateMainFrame:OnShow")
+        if ns:GetTab() == "sharesync" then
+            ns:UpdateLastScanLabel()
+            ns:UpdateLastSyncLabel()
+            ns:ProcessShareCheckboxes("CreateMainFrame:OnShow")
+            ns:ProcessSyncRegion("CreateMainFrame:OnShow")
         end
     end)
-    
+
     -- register frame for escape key handling using WoW's standard system
     tinsert(UISpecialFrames, "ActionBarSyncMainFrame")
-    
+
     -- finally return the frame
     return frame
 end
@@ -2337,7 +2382,7 @@ end
     Function:   ProcessTabSystem
     Purpose:    Create a tab system at the bottom of the main frame.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessTabSystem(parent)
+function ns:ProcessTabSystem(parent)
     -- instantiate variable for the main tab frame
     local tabFrame = nil
 
@@ -2345,7 +2390,7 @@ function ABSync:ProcessTabSystem(parent)
     if not ActionBarSyncMainFrameTabs then
         -- create a frame to hold the tabs
         tabFrame = CreateFrame("Frame", "ActionBarSyncMainFrameTabs", parent)
-        
+
         -- position tabs at the bottom of the frame like Collections Journal
         tabFrame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -5)
         tabFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, -5)
@@ -2359,19 +2404,19 @@ function ABSync:ProcessTabSystem(parent)
 
     -- keep track of tab count
     local tabCount = 0
-    
+
     -- create tab buttons using PanelTabButtonTemplate
-    for tabIndex, tabKey in ipairs(ABSync.uitabs.order) do
+    for tabIndex, tabKey in ipairs(ns.data.uitabs.order) do
         -- get global variable friendly tab name
-        local tabID = self.uitabs["varnames"][tabKey]
+        local tabID = ns.data.uitabs["varnames"][tabKey]
         --@debug@
-        -- self:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ABSync.uitabs.tabs[tabKey])))
+        -- ns:Print(("Processing Tab ID: %s (Index: %d, Key: %s, Var Friendly: %s, Label: %s)"):format(tostring(tabKey), tabIndex, tostring(tabKey), tostring(tabID), tostring(ns.data.uitabs.tabs[tabKey])))
         --@end-debug@
 
         -- create the tab button ID
         local tabButtonID = self:GetObjectName("TabButton" .. tabID)
         --@debug@
-        -- self:Print(("Creating Tab Button: %s"):format(tabButtonID))
+        -- ns:Print(("Creating Tab Button: %s"):format(tabButtonID))
         --@end-debug@
 
         -- create variable for button
@@ -2382,23 +2427,23 @@ function ABSync:ProcessTabSystem(parent)
             -- use PanelTabButtonTemplate for authentic Collections UI styling
             button = CreateFrame("Button", tabButtonID, tabFrame, "PanelTabButtonTemplate")
             button:SetID(tabIndex)
-            local tabname = ABSync.uitabs.tabs[tabKey]
+            local tabname = ns.data.uitabs.tabs[tabKey]
             button:SetText(tabname)
-            self.uitabs["buttonref"][tabKey] = tabIndex
-            
+            ns.data.uitabs["buttonref"][tabKey] = tabIndex
+
             -- use PanelTemplates functions for proper tab behavior
             PanelTemplates_TabResize(button, 0)
 
             -- set the buttons OnClick event
             button:SetScript("OnClick", function(self)
                 --@debug@
-                -- ABSync:Print(("Tab Clicked: %s (ID: %d)"):format(tabname, self:GetID()))
+                -- ns:Print(("Tab Clicked: %s (ID: %d)"):format(tabname, self:GetID()))
                 --@end-debug@
                 -- use PanelTemplates to handle tab selection properly
                 PanelTemplates_SetTab(tabFrame, self:GetID())
-                
+
                 -- create the content for the tab
-                ABSync:ShowTabContent(tabKey)
+                ns:ShowTabContent(tabKey)
             end)
         else
             -- if it already exists just reference it
@@ -2406,10 +2451,10 @@ function ABSync:ProcessTabSystem(parent)
         end
 
         -- if this is the developer tab, hide it unless in dev mode
-        if tabKey == "developer" and ABSync:GetDevMode() == false then
+        if tabKey == "developer" and ns:GetDevMode() == false then
             button:Hide()
         end
-         
+
         -- position tabs horizontally with proper spacing for Collections style
         if tabIndex == 1 then
             button:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 11, 2)
@@ -2423,7 +2468,7 @@ function ABSync:ProcessTabSystem(parent)
         -- count the tabs
         tabCount = tabCount + 1
     end
-    
+
     -- Set up the tab frame with PanelTemplates
     PanelTemplates_SetNumTabs(tabFrame, #tabButtons)
     PanelTemplates_SetTab(tabFrame, 1)
@@ -2432,7 +2477,7 @@ function ABSync:ProcessTabSystem(parent)
     -- self:UpdateTabButtons()
 
     -- assign buttons to addon global
-    ABSync.uitabs["buttons"] = tabButtons
+    ns.data.uitabs["buttons"] = tabButtons
 end
 
 --[[---------------------------------------------------------------------------
@@ -2440,156 +2485,72 @@ end
     Purpose:    Create a single options pane for the Interface Options.
     Note:       This function should be called after the mini-map button is created in order to get proper visibility status.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateOptionsPanel()
+function ns:CreateOptionsPanel()
     -- create the main options panel frame
     local panel = CreateFrame("Frame", "ActionBarSyncOptionsPanel", InterfaceOptionsFramePanelContainer)
-    panel.name = ABSync.L["Action Bar Sync"] or "Action Bar Sync"
-    
+    panel.name = ns.L["Action Bar Sync"] or "Action Bar Sync"
+
     -- create title
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
-    title:SetText(ABSync.L["Action Bar Sync"] or "Action Bar Sync")
-    
+    title:SetText(ns.L["Action Bar Sync"] or "Action Bar Sync")
+
     -- create description
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -16)
     description:SetPoint ("RIGHT", panel, "RIGHT", -16, 0)
     description:SetJustifyH("LEFT")
     description:SetWordWrap(true)
-    description:SetText(ABSync.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ABSync.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"] .. "\n\n - /actionbarsync\n - /abs")
-    
+    description:SetText(ns.L["Action Bar Sync allows you to synchronize action bar configurations between your characters."] .. "\n\n" .. ns.L["You can open the Action Bar Sync interface using the following slash commands or, if visible, left clicking the mini-map button:"] .. "\n\n - /actionbarsync\n - /abs")
+
     -- create button to open the addon
     local openButton = CreateFrame("Button", "ActionBarSyncOpenButton", panel, "UIPanelButtonTemplate")
     openButton:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -24)
     openButton:SetSize(150, 22)
-    openButton:SetText(ABSync.L["Open Action Bar Sync"] or "Open Action Bar Sync")
+    openButton:SetText(ns.L["Open Action Bar Sync"] or "Open Action Bar Sync")
     openButton:SetScript("OnClick", function()
-        ABSync:ShowUI()
+        ns:ShowUI()
         -- Close the settings panel properly using WoW's UI system
         if SettingsPanel and SettingsPanel:IsShown() then
             HideUIPanel(SettingsPanel)
         end
     end)
-    
+
     -- create checkbox for minimap button visibility
-    local minimapCheckbox = ABSync:CreateCheckbox(
+    local minimapCheckbox = ns:CreateCheckbox(
         panel,
-        ABSync.L["Show Mini-map Button"],
-        ABSync:GetMinimapButtonVisible(),
+        ns.L["Show Mini-map Button"],
+        ns:GetMinimapButtonVisible(),
         "ActionBarSyncMinimapVisibilityCheckbox",
         function(self, button, checked)
-            ABSync:SetMinimapButtonVisible(checked)
-            ABSync:UpdateMinimapButtonVisibility()
+            ns:SetMinimapButtonVisible(checked)
+            ns:UpdateMinimapButtonVisibility()
         end
     )
     minimapCheckbox:SetPoint("TOPLEFT", openButton, "BOTTOMLEFT", 0, -16)
 
     -- add a note if any of the libraries are missing
-    if ABSync.minimap.libstubStatus == false or ABSync.minimap.libdbiconStatus == false or ABSync.minimap.libdbStatus == false then
+    if ns.data.minimap.libstubStatus == false or ns.data.minimap.libdbiconStatus == false or ns.data.minimap.libdbStatus == false then
         local libStubNote = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         libStubNote:SetPoint("TOPLEFT", minimapCheckbox, "BOTTOMLEFT", 0, -8)
         libStubNote:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
         libStubNote:SetJustifyH("LEFT")
         libStubNote:SetWordWrap(true)
-        libStubNote:SetText(ABSync.L["Note: LibDBIcon-1.0 is missing or one of its dependencies (LibStub and LibDataBroker), therefore, mini-map button cannot be created. Also, not sure why, but LibDBIcon-1.0 may not show up in the addon list even if it is installed."])
+        libStubNote:SetText(ns.L["Note: LibDBIcon-1.0 is missing or one of its dependencies (LibStub and LibDataBroker), therefore, mini-map button cannot be created. Also, not sure why, but LibDBIcon-1.0 may not show up in the addon list even if it is installed."])
     end
-    
+
     -- add to Interface Options (modern system only)
     local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
-    
+
     -- must set the category ID
-    category.ID = ABSync.optionID
+    -- category.ID = ns.data.optionID
     Settings.RegisterAddOnCategory(category)
 
     -- store category reference for opening later
-    panel.optionsCategory = category
-    
+    ns.optionsCategory = category
+
     -- store panel reference globally for minimap button access
-    ABSync.optionsPanel = panel
-end
-
---[[---------------------------------------------------------------------------
-    Function:   CreateMinimapButton
-    Purpose:    Create minimap button using LibDBIcon-1.0.
------------------------------------------------------------------------------]]
-function ABSync:CreateMinimapButton()
-    -- check if LibStub and LibDBIcon are available
-    if not LibStub then
-        ABSync.minimap.libstubStatus = false
-        return
-    end
-    
-    local LibDBIcon = LibStub:GetLibrary("LibDBIcon-1.0", true)
-    if not LibDBIcon then
-        ABSync.minimap.libdbiconStatus = false
-        return
-    end
-    
-    local LDB = LibStub:GetLibrary("LibDataBroker-1.1", true)
-    if not LDB then
-        ABSync.minimap.libdbStatus = false
-        return
-    end
-    
-    -- Create the data broker object
-    local minimapLDB = LDB:NewDataObject("ActionBarSync", {
-        type = "launcher",
-        text = "ActionBarSync",
-        icon = "Interface\\Icons\\inv_misc_coinbag_special",
-        OnClick = function(clickedframe, button)
-            if button == "LeftButton" then
-                ABSync:ShowUI()
-            elseif button == "RightButton" then
-                -- open to addon options pane if it was created successfully, if not just open the panel normally
-                -- ABSync.optionsPanel is the actual frame built for the addon options
-                -- ABSync.optionID is the static string value assigned to the addons options pane
-                if ABSync.optionsPanel and Settings then
-                    Settings.OpenToCategory(ABSync.optionID)
-                else
-                    -- let user know there was an issue, then open the options panel normally
-                    ABSync:Print(ABSync.L["Issue with addon options panel, cannot open settings."])
-                    SettingsPanel:Show()
-                end
-            end
-        end,
-        OnTooltipShow = function(tooltip)
-            if not tooltip or not tooltip.AddLine then return end
-            tooltip:AddLine(ABSync.L["Action Bar Sync"] or "Action Bar Sync")
-            tooltip:AddLine(ABSync.L["Click to open Action Bar Sync"] or "Click to open Action Bar Sync", 1, 1, 1)
-            tooltip:AddLine(ABSync.L["Right-click for Options"] or "Right-click for Options", 1, 1, 1)
-        end,
-    })
-    
-    -- Initialize database for minimap settings if needed
-    if not ActionBarSyncDB.global.minimap then
-        ActionBarSyncDB.global.minimap = {
-            hide = false,
-        }
-    end
-    
-    -- Register with LibDBIcon
-    LibDBIcon:Register("ActionBarSync", minimapLDB, ActionBarSyncDB.global.minimap)
-    
-    -- Store reference
-    self.minimapLDB = minimapLDB
-end
-
---[[---------------------------------------------------------------------------
-    Function:   UpdateMinimapButtonVisibility
-    Purpose:    Update the minimap button visibility using LibDBIcon.
------------------------------------------------------------------------------]]
-function ABSync:UpdateMinimapButtonVisibility()
-    local LibDBIcon = LibStub and LibStub:GetLibrary("LibDBIcon-1.0", true)
-    if not LibDBIcon or not self.minimapLDB then
-        return
-    end
-    
-    local shouldShow = self:GetMinimapButtonVisible()
-    if shouldShow then
-        LibDBIcon:Show("ActionBarSync")
-    else
-        LibDBIcon:Hide("ActionBarSync")
-    end
+    ns.optionsPanel = panel
 end
 
 --EOF

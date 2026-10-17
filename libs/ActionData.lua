@@ -5,11 +5,13 @@
 	Description: 	All functions for getting action bar button data.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   CharacterHasSpell
     Purpose:    Check if the current character has a specific spell.
 -----------------------------------------------------------------------------]]
-function ABSync:CharacterHasSpell(spellID)
+function ns:CharacterHasSpell(spellID)
     -- find the spell in the player's spell book
     local spellBookItemSlotIndex, spellBookItemSpellBank = C_SpellBook.FindSpellBookSlotForSpell(spellID)
 
@@ -24,9 +26,9 @@ function ABSync:CharacterHasSpell(spellID)
 
     -- finally return yes or no
     if spellBookItemSlotIndex > 0 then
-        return ABSync.L["Yes"]
+        return ns.L["Yes"]
     else
-        return ABSync.L["No"]
+        return ns.L["No"]
     end
 end
 
@@ -34,21 +36,21 @@ end
     Function:   GetFlyoutDetails
     Purpose:    Retrieve flyout information based on the flyout ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetFlyoutDetails(buttonActionID)
+function ns:GetFlyoutDetails(buttonActionID)
     --@debug@
     if self:GetDevMode() == true then
-        self:Print((ABSync.L["Getting details for Flyout ID: %s"]):format(tostring(buttonActionID)))
+        ns:Print((ns.L["Getting details for Flyout ID: %s"]):format(tostring(buttonActionID)))
     end
     --@end-debug@
     -- fetch blizzard flyout details
     local flyoutResult = self:SafeWoWAPICall(GetFlyoutInfo, buttonActionID)
-    local errorText = ABSync.L["No Error"]
-    local flyoutName = ABSync.L["Unknown"]
-    local flyoutDescription = ABSync.L["Unknown"]
+    local errorText = ns.L["No Error"]
+    local flyoutName = ns.L["Unknown"]
+    local flyoutDescription = ns.L["Unknown"]
     local numSlots = 0
-    local isKnown = ABSync.L["No"]
+    local isKnown = ns.L["No"]
     if not flyoutResult.success then
-        errorText = ("%s: %s"):format(ABSync.L["GetFlyoutInfo failed"], flyoutResult.error)
+        errorText = ("%s: %s"):format(ns.L["GetFlyoutInfo failed"], flyoutResult.error)
     else
         -- parse results
         flyoutName = select(1, flyoutResult.result)
@@ -58,7 +60,7 @@ function ABSync:GetFlyoutDetails(buttonActionID)
     end
 
     -- fetch blizzard flyout details by slot
-    -- self:Print(("Flyout ID: %s, Name: %s, Descr: %s, Error Text: %s"):format(tostring(buttonActionID), tostring(flyoutName), tostring(flyoutDescription), tostring(errorText)))
+    -- ns:Print(("Flyout ID: %s, Name: %s, Descr: %s, Error Text: %s"):format(tostring(buttonActionID), tostring(flyoutName), tostring(flyoutDescription), tostring(errorText)))
 
     -- find the spell book slot for the flyout
     local includeHidden, includeFlyouts, includeFutureSpells, includeOffSpec = true, true, true, true
@@ -83,7 +85,7 @@ function ABSync:GetFlyoutDetails(buttonActionID)
     spellBookItemSlotIndex = spellBookItemSlotIndex or -1
     spellBookItemSpellBank = spellBookItemSpellBank or -1
     -- --@debug@
-    -- self:Print(("Flyout: %s, Spell Book Slot Index: %s, Spell Book Slot Bank: %s"):format(tostring(buttonActionID), tostring(spellBookItemSlotIndex), tostring(spellBookItemSpellBank)))
+    -- ns:Print(("Flyout: %s, Spell Book Slot Index: %s, Spell Book Slot Bank: %s"):format(tostring(buttonActionID), tostring(spellBookItemSlotIndex), tostring(spellBookItemSpellBank)))
     --@end-debug@
 
     -- finally return the data collected
@@ -91,10 +93,10 @@ function ABSync:GetFlyoutDetails(buttonActionID)
         blizData = {
             -- GetFlyoutInfo
             flyoutInfo = {
-                name = flyoutName or ABSync.L["Unknown"],
-                descr = flyoutDescription or ABSync.L["Unknown"],
+                name = flyoutName or ns.L["Unknown"],
+                descr = flyoutDescription or ns.L["Unknown"],
                 numSlots = numSlots or 0,
-                isKnown = isKnown and ABSync.L["Yes"] or ABSync.L["No"],    
+                isKnown = isKnown and ns.L["Yes"] or ns.L["No"],    
             },
             -- C_SpellBook.FindSpellBookSlotForSpell
             spellBookSlot = {
@@ -104,7 +106,7 @@ function ABSync:GetFlyoutDetails(buttonActionID)
             -- C_Spell.GetSpellInfo           
             spellData = spellData or {},
             -- data standardization for UpdateActionBars
-            name = flyoutName or spellData.blizData.name or ABSync.L["Unknown"],
+            name = flyoutName or spellData.blizData.name or ns.L["Unknown"],
         },
         buttonActionID = buttonActionID,
         errorText = errorText,
@@ -115,7 +117,7 @@ end
     Function:   GetItemCount
     Purpose:    Retrieve the item count for a specific button ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetItemCount(id)
+function ns:GetItemCount(id)
     local itemCount = C_Item.GetItemCount(id)
     return itemCount
 end
@@ -124,7 +126,7 @@ end
     Function:   GetItemDetails
     Purpose:    Retrieve item information based on the item ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetItemDetails(buttonActionID)
+function ns:GetItemDetails(buttonActionID)
     -- fetch blizzard item details
     local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent, itemDescription = C_Item.GetItemInfo(buttonActionID)
 
@@ -136,17 +138,17 @@ function ABSync:GetItemDetails(buttonActionID)
     -- instantiate toy variables
     local isToy = false
     local toyID, toyName, toyIcon, toyIsFavorite, toyHasFanfare, toyItemQuality = C_ToyBox.GetToyInfo(buttonActionID)
-    local qualityGlobalString = ABSync.L["Unknown"]
+    local qualityGlobalString = ns.L["Unknown"]
 
     -- get quality text if data is returned
     if toyItemQuality and type(toyItemQuality) == "number" then
-        qualityGlobalString = _G["ITEM_QUALITY"..(toyItemQuality).."_DESC"] or ABSync.L["Unknown"]
+        qualityGlobalString = _G["ITEM_QUALITY"..(toyItemQuality).."_DESC"] or ns.L["Unknown"]
     end
 
     -- create data structure for toy data
     local toyData = {
         id = toyID or -1,
-        name = toyName or ABSync.L["Unknown"],
+        name = toyName or ns.L["Unknown"],
         icon = toyIcon or -1,
         isFavorite = toyIsFavorite or false,
         hasFanfare = toyHasFanfare or false,
@@ -165,7 +167,7 @@ function ABSync:GetItemDetails(buttonActionID)
         -- get toy ID by using the toy index
         local toyInfo = self:GetToyIDs(buttonActionID)
 
-        -- print(("toy found: %s (%s)"):format(tostring(toyName or ABSync.L["Unknown"]), toyID))
+        -- print(("toy found: %s (%s)"):format(tostring(toyName or ns.L["Unknown"]), toyID))
         isToy = true
         toyIndex = toyInfo.index or -1
         toyID = toyInfo.id or -1
@@ -173,24 +175,24 @@ function ABSync:GetItemDetails(buttonActionID)
 
     --@debug@
     -- if self:GetDevMode() == true then
-        -- self:Print(("Item Name: %s - Toy Name: %s - Is Toy: %s"):format(itemName, toyData.name, tostring(isToy)))
+        -- ns:Print(("Item Name: %s - Toy Name: %s - Is Toy: %s"):format(itemName, toyData.name, tostring(isToy)))
     -- end
     --@end-debug@
     -- finally return the data collected
-    local finalItemName = itemName or toyData.name or ABSync.L["Unknown"]
+    local finalItemName = itemName or toyData.name or ns.L["Unknown"]
     return {
         blizData = {
             -- C_Item.GetItemInfo
             itemInfo = {
                 name = finalItemName,
-                link = itemLink or ABSync.L["Unknown"],
-                quality = itemQuality or ABSync.L["Unknown"],
+                link = itemLink or ns.L["Unknown"],
+                quality = itemQuality or ns.L["Unknown"],
                 level = itemLevel or -1,
                 minLevel = itemMinLevel or -1,
-                type = itemType or ABSync.L["Unknown"],
-                subType = itemSubType or ABSync.L["Unknown"],
+                type = itemType or ns.L["Unknown"],
+                subType = itemSubType or ns.L["Unknown"],
                 stackCount = itemStackCount or -1,
-                equipLoc = itemEquipLoc or ABSync.L["Unknown"],
+                equipLoc = itemEquipLoc or ns.L["Unknown"],
                 texture = itemTexture or -1,
                 sellPrice = sellPrice or -1,
                 classID = classID or -1,
@@ -203,7 +205,7 @@ function ABSync:GetItemDetails(buttonActionID)
             -- C_ToyBox.GetToyInfo
             toyInfo = toyData,
             -- C_ToyBox.IsToyUsable
-            toyUsable = toyUsable and ABSync.L["Yes"] or ABSync.L["No"],
+            toyUsable = toyUsable and ns.L["Yes"] or ns.L["No"],
             -- GetToyIDs (custom function)
             toyIndex = toyIndex,
             toyID = toyID,
@@ -213,7 +215,7 @@ function ABSync:GetItemDetails(buttonActionID)
         buttonActionID = buttonActionID,
         isToy = isToy,
         userItemCount = itemCount,
-        has = (itemCount > 0 or toyUsable) and ABSync.L["Yes"] or ABSync.L["No"],
+        has = (itemCount > 0 or toyUsable) and ns.L["Yes"] or ns.L["No"],
         name = finalItemName
     }
 end
@@ -222,31 +224,31 @@ end
     Function:   GetMacroDetails
     Purpose:    Retrieve macro information based on the macro ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetMacroDetails(buttonActionID)
+function ns:GetMacroDetails(buttonActionID)
     -- blizzard api; get macro information: name, iconTexture, body
     -- isLocal removed in patch 3.0.2
     local macroName, iconTexture, body = GetMacroInfo(buttonActionID)
     --@debug@
-    -- print(("Macro ID: %s, Name: %s"):format(tostring(macroID), tostring(macroName or ABSync.L["Unknown"])))
+    -- print(("Macro ID: %s, Name: %s"):format(tostring(macroID), tostring(macroName or ns.L["Unknown"])))
     --@end-debug@
 
     -- macro type: general or character
-    local macroType = ABSync.macroType.general
+    local macroType = ns.data.macroType.general
     if tonumber(buttonActionID) > 120 then
-        macroType = ABSync.macroType.character
+        macroType = ns.data.macroType.character
     end
 
     -- finally return the data collected
     return {
         blizData = {
-            name = macroName or ABSync.L["Unknown"],
+            name = macroName or ns.L["Unknown"],
             icon = iconTexture or -1,
-            body = body or ABSync.L["Unknown"]
+            body = body or ns.L["Unknown"]
         },
         macroType = macroType,
         buttonActionID = buttonActionID,
-        has = macroName and ABSync.L["Yes"] or ABSync.L["No"],
-        name = macroName or ABSync.L["Unknown"],
+        has = macroName and ns.L["Yes"] or ns.L["No"],
+        name = macroName or ns.L["Unknown"],
     }
 end
 
@@ -254,12 +256,12 @@ end
     Function:   GetMountinfo
     Purpose:    Retrieve mount information based on the action ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetMountinfo(buttonActionID)
+function ns:GetMountinfo(buttonActionID)
     -- first call to get mount information based on the action bar action id
     local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, sourceMountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(buttonActionID)
 
     -- make sure certain values are not nil
-    name = name or ABSync.L["Unknown"]
+    name = name or ns.L["Unknown"]
 
     -- get more mount data looking for how to pickup a mount with the cursor correctly
     local displayIDs = C_MountJournal.GetAllCreatureDisplayIDsForMountID(buttonActionID)
@@ -271,8 +273,8 @@ function ABSync:GetMountinfo(buttonActionID)
     local creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(buttonActionID)
     local extraInfo = {
         creatureDisplayInfoID = creatureDisplayInfoID or -1,
-        description = description or ABSync.L["Unknown"],
-        source = source or ABSync.L["Unknown"],
+        description = description or ns.L["Unknown"],
+        source = source or ns.L["Unknown"],
         isSelfMount = isSelfMount or false,
         mountTypeID = mountTypeID or -1,
         uiModelSceneID = uiModelSceneID or -1,
@@ -282,7 +284,7 @@ function ABSync:GetMountinfo(buttonActionID)
     }
 
     -- and get more data!!!
-    local mountCreatureDisplayInfoLink = ABSync.L["Unknown"]
+    local mountCreatureDisplayInfoLink = ns.L["Unknown"]
     if spellID then
         mountCreatureDisplayInfoLink = C_MountJournal.GetMountLink(spellID)
     end
@@ -302,7 +304,7 @@ function ABSync:GetMountinfo(buttonActionID)
     end
 
     --@debug@
-    -- if self:GetDevMode() == true then self:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
+    -- if self:GetDevMode() == true then ns:Print(("Mount Name: %s - ID: %s - Display Index: %s"):format(name, mountID, tostring(displayIndex))) end
     --@end-debug@
 
     -- finally return the spell name
@@ -310,7 +312,7 @@ function ABSync:GetMountinfo(buttonActionID)
         blizData = {
             -- GetMountInfoByID
             mountInfo = {
-                name = name or ABSync.L["Unknown"],
+                name = name or ns.L["Unknown"],
                 spellID = spellID or -1,
                 icon = icon or -1,
                 isActive = isActive or false,
@@ -329,15 +331,15 @@ function ABSync:GetMountinfo(buttonActionID)
             -- GetMountInfoExtraByID
             extraInfo = extraInfo or {},
             -- GetMountLink
-            mountLink = mountCreatureDisplayInfoLink or ABSync.L["Unknown"],    -- was displayInfoLink and was outside of blizData by one level
+            mountLink = mountCreatureDisplayInfoLink or ns.L["Unknown"],    -- was displayInfoLink and was outside of blizData by one level
             -- data standardization for UpdateActionBars
-            name = name or ABSync.L["Unknown"],
+            name = name or ns.L["Unknown"],
         },
         displayIndex = displayIndex or -1,
         buttonActionID = buttonActionID,
         mountJournalIndex = mountJournalIndex or -1,
-        name = name or ABSync.L["Unknown"],
-        has = isCollected and ABSync.L["Yes"] or ABSync.L["No"],
+        name = name or ns.L["Unknown"],
+        has = isCollected and ns.L["Yes"] or ns.L["No"],
     }
 end
 
@@ -345,7 +347,7 @@ end
     Function:   GetPetDetails
     Purpose:    Retrieve pet information based on the pet ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetPetDetails(buttonActionID)
+function ns:GetPetDetails(buttonActionID)
     -- requires a pet GUID
     local allPetIDs = C_PetJournal.GetOwnedPetIDs()
 
@@ -371,18 +373,18 @@ function ABSync:GetPetDetails(buttonActionID)
     return {
         blizData = {
             speciesID = speciesID or -1,
-            customName = customName or ABSync.L["Unknown"],
+            customName = customName or ns.L["Unknown"],
             level = level or -1,
             xp = xp or -1,
             maxXp = maxXp or -1,
             displayID = displayID or -1,
             isFavorite = isFavorite or false,
-            name = name or ABSync.L["Unknown"],
+            name = name or ns.L["Unknown"],
             icon = icon or -1,
-            petType = petType or ABSync.L["Unknown"],
+            petType = petType or ns.L["Unknown"],
             creatureID = creatureID or -1,
-            sourceText = sourceText or ABSync.L["Unknown"],
-            description = description or ABSync.L["Unknown"],
+            sourceText = sourceText or ns.L["Unknown"],
+            description = description or ns.L["Unknown"],
             isWild = isWild or false,
             canBattle = canBattle or false,
             isTradeable = isTradeable or false,
@@ -390,8 +392,8 @@ function ABSync:GetPetDetails(buttonActionID)
             obtainable = obtainable or false
         },
         buttonActionID = buttonActionID,
-        has = name and ABSync.L["Yes"] or ABSync.L["No"],
-        name = name or ABSync.L["Unknown"],
+        has = name and ns.L["Yes"] or ns.L["No"],
+        name = name or ns.L["Unknown"],
     }
 end
 
@@ -399,21 +401,21 @@ end
     Function:   GetSpellDetails
     Purpose:    Retrieve spell information based on the spell ID.
 -----------------------------------------------------------------------------]]
-function ABSync:GetSpellDetails(buttonActionID)
+function ns:GetSpellDetails(buttonActionID)
     -- get spell info: name, iconID, originalIconID, castTime, minRange, maxRange, buttonActionID
     local spellData = C_Spell.GetSpellInfo(buttonActionID)
-    local spellName = spellData and spellData.name or ABSync.L["Unknown"]
+    local spellName = spellData and spellData.name or ns.L["Unknown"]
     local has = self:CharacterHasSpell(buttonActionID)
     local isTalentSpell = C_Spell.IsClassTalentSpell(buttonActionID) or false
     local isPvpSpell = C_Spell.IsPvPTalentSpell(buttonActionID) or false
-    local spellLink = C_Spell.GetSpellLink(buttonActionID) or ABSync.L["Unknown"]
+    local spellLink = C_Spell.GetSpellLink(buttonActionID) or ns.L["Unknown"]
     local baseID = C_Spell.GetBaseSpell(buttonActionID) or -1
 
     -- review base ID vs source ID and override with base ID
     local overrideWithBaseID = false
     if baseID > 0 and baseID ~= buttonActionID then
         --@debug@
-        -- if self:GetDevMode() == true then self:Print((ABSync.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
+        -- if self:GetDevMode() == true then ns:Print((ns.L["(%s) Overriding Button Action ID with BaseID for Spell Name: %s, SourceID: %s, BaseID: %s"]):format("GetSpellDetails", tostring(spellName), tostring(buttonActionID), tostring(baseID))) end
         --@end-debug@
         overrideWithBaseID = true
     end
@@ -421,7 +423,7 @@ function ABSync:GetSpellDetails(buttonActionID)
     -- finally return the data collected
     return {
         blizData = {
-            name = spellName or ABSync.L["Unknown"],
+            name = spellName or ns.L["Unknown"],
             iconID = spellData and spellData.iconID or -1,
             originalIconID = spellData and spellData.originalIconID or -1,
             castTime = spellData and spellData.castTime or -1,
@@ -437,7 +439,7 @@ function ABSync:GetSpellDetails(buttonActionID)
         isPvp = isPvpSpell,
         overrideWithBaseID = overrideWithBaseID,
         -- data standardization for UpdateActionBars
-        name = spellName or ABSync.L["Unknown"],
+        name = spellName or ns.L["Unknown"],
     }
 end
 
@@ -445,7 +447,7 @@ end
     Function:   GetToyIDs
     Purpose:    Retrieve the toy index by using the toy item ID...and then get the toy ID from that index. Seems like it is always the same ID either way? But now after doing this search toys are being added to the action bar correctly.
 -----------------------------------------------------------------------------]]
-function ABSync:GetToyIDs(toyID)
+function ns:GetToyIDs(toyID)
     local count = C_ToyBox.GetNumFilteredToys()
     local toyIndex = -1
     local displayedToyID = -1

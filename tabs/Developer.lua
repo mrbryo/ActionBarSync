@@ -5,13 +5,15 @@
 	Description: 	Building the Developer tab in the UI.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   CreateDevMountDBContent
     Purpose:    Create the mount database content for the developer frame.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
+function ns:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
     -- make the frame just high enough for the content, track its height
     local dbMountFrameHeight = 0
 
@@ -26,7 +28,7 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     mountDBTitle:SetPoint("TOPLEFT", mountDBFrame, "TOPLEFT", 0, 0)
     mountDBTitle:SetPoint("TOPRIGHT", mountDBFrame, "TOPRIGHT", 0, 0)
     mountDBTitle:SetJustifyH("LEFT")
-    mountDBTitle:SetText(ABSync.L["Mount Database"])
+    mountDBTitle:SetText(ns.L["Mount Database"])
     dbMountFrameHeight = dbMountFrameHeight + mountDBTitle:GetStringHeight()
 
     -- add inset frame to mount db frame
@@ -36,7 +38,7 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
 
     -- add label explaining the purpose of the button
     local mountDBRefreshInfoLabel = mountDBInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
-    mountDBRefreshInfoLabel:SetText(ABSync.L["Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file."])
+    mountDBRefreshInfoLabel:SetText(ns.L["Click the button below to refresh the mount database for this character. DB stores mount data by character for, currently, manual data comparison. Then click the 'Reload UI' button so the data is available in the saved variables file."])
     mountDBRefreshInfoLabel:SetPoint("TOPLEFT", mountDBInsetFrame, "TOPLEFT", padding, -padding)
     mountDBRefreshInfoLabel:SetPoint("TOPRIGHT", mountDBInsetFrame, "TOPRIGHT", -padding, -padding)
     mountDBRefreshInfoLabel:SetJustifyH("LEFT")
@@ -44,21 +46,21 @@ function ABSync:CreateDevMountDBContent(parent, halfWidth, posnFrame)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshInfoLabel:GetStringHeight() + (padding * 2)
 
     -- create button to refresh mount db
-    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Refresh Mount DB"], 150, function()
-        ABSync:RefreshMountDB()
+    local mountDBRefreshButton = self:CreateStandardButton(mountDBInsetFrame, nil, ns.L["Refresh Mount DB"], 150, function()
+        ns:RefreshMountDB()
     end)
     mountDBRefreshButton:SetPoint("TOPLEFT", mountDBRefreshInfoLabel, "BOTTOMLEFT", 0, -padding)
     dbMountFrameHeight = dbMountFrameHeight + mountDBRefreshButton:GetHeight() + padding
 
     -- create button to reload the ui
-    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Reload UI"], 100, function()
+    local mountDBReloadButton = self:CreateStandardButton(mountDBInsetFrame, nil, ns.L["Reload UI"], 100, function()
         C_UI.Reload()
     end)
     mountDBReloadButton:SetPoint("TOPLEFT", mountDBRefreshButton, "TOPRIGHT", padding, 0)
 
     -- create button to clear db for this char
-    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, nil, ABSync.L["Clear Character Mount DB"], 200, function()
-        ABSync:ClearMountDB()
+    local mountDBClearButton = self:CreateStandardButton(mountDBInsetFrame, nil, ns.L["Clear Character Mount DB"], 200, function()
+        ns:ClearMountDB()
     end)
     mountDBClearButton:SetPoint("TOPLEFT", mountDBRefreshButton, "BOTTOMLEFT", 0, -padding)
     dbMountFrameHeight = dbMountFrameHeight + mountDBClearButton:GetHeight() + padding
@@ -75,12 +77,12 @@ end
     Purpose:    Create the manual action button placement content for the developer frame.
     Note:       Currently not used.
 -----------------------------------------------------------------------------]]
-function ABSync:CreateDevManualActionButton(parent, halfWidth, posnFrame)
+function ns:CreateDevManualActionButton(parent, halfWidth, posnFrame)
     -- get language data
-    local L = ABSync.localeData
+    local L = ns.localeData
 
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- make the frame just high enough for the content, track its height
     local manualFrameHeight = 0
@@ -96,7 +98,7 @@ function ABSync:CreateDevManualActionButton(parent, halfWidth, posnFrame)
     manualTitle:SetPoint("TOPLEFT", manualFrame, "TOPLEFT", 0, 0)
     manualTitle:SetPoint("TOPRIGHT", manualFrame, "TOPRIGHT", 0, 0)
     manualTitle:SetJustifyH("LEFT")
-    manualTitle:SetText(ABSync.L["Manual Action Button Placement"])
+    manualTitle:SetText(ns.L["Manual Action Button Placement"])
     manualFrameHeight = manualFrameHeight + manualTitle:GetStringHeight()
 
     -- add inset frame to mount db frame
@@ -106,7 +108,7 @@ function ABSync:CreateDevManualActionButton(parent, halfWidth, posnFrame)
 
     -- add label explaining the purpose of the button
     local manualInfoLabel = manualInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
-    manualInfoLabel:SetText(ABSync.L["Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes."])
+    manualInfoLabel:SetText(ns.L["Click the button below to open a dialog that allows you to manually place an action button on your action bars. This is primarily for testing purposes."])
     manualInfoLabel:SetPoint("TOPLEFT", manualInsetFrame, "TOPLEFT", padding, -padding)
     manualInfoLabel:SetPoint("TOPRIGHT", manualInsetFrame, "TOPRIGHT", -padding, -padding)
     manualInfoLabel:SetJustifyH("LEFT")
@@ -117,9 +119,9 @@ function ABSync:CreateDevManualActionButton(parent, halfWidth, posnFrame)
     
 end
 
-function ABSync:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
+function ns:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- make the frame just high enough for the content, track its height
     local windowSizeFrameHeight = 0
@@ -135,7 +137,7 @@ function ABSync:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
     windowSizeTitle:SetPoint("TOPLEFT", windowSizeFrame, "TOPLEFT", 0, 0)
     windowSizeTitle:SetPoint("TOPRIGHT", windowSizeFrame, "TOPRIGHT", 0, 0)
     windowSizeTitle:SetJustifyH("LEFT")
-    windowSizeTitle:SetText(ABSync.L["Addon Main Frame Size"])
+    windowSizeTitle:SetText(ns.L["Addon Main Frame Size"])
     windowSizeFrameHeight = windowSizeFrameHeight + windowSizeTitle:GetStringHeight()
 
     -- add inset frame to mount db frame
@@ -145,7 +147,7 @@ function ABSync:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
 
     -- add label explaining the purpose of the button
     local windowSizeInfoLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontWhiteSmall")
-    windowSizeInfoLabel:SetText(ABSync.L["Shows the width and height of the main addon window frame."])
+    windowSizeInfoLabel:SetText(ns.L["Shows the width and height of the main addon window frame."])
     windowSizeInfoLabel:SetPoint("TOPLEFT", windowSizeInsetFrame, "TOPLEFT", padding, -padding)
     windowSizeInfoLabel:SetPoint("TOPRIGHT", windowSizeInsetFrame, "TOPRIGHT", -padding, -padding)
     windowSizeInfoLabel:SetJustifyH("LEFT")
@@ -153,17 +155,17 @@ function ABSync:CreateAddonWindowSizeContent(parent, halfWidth, posnFrame)
     windowSizeFrameHeight = windowSizeFrameHeight + windowSizeInfoLabel:GetStringHeight() + (padding * 2)
 
     -- get the main frame width and height
-    local mainFrameSize = ABSync:GetMainFrameSize()
+    local mainFrameSize = ns:GetMainFrameSize()
 
     -- create label for height
     local windowSizeHeightLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    windowSizeHeightLabel:SetText(ABSync.L["Height: "] .. tostring(mainFrameSize.height))
+    windowSizeHeightLabel:SetText(ns.L["Height: "] .. tostring(mainFrameSize.height))
     windowSizeHeightLabel:SetPoint("TOPLEFT", windowSizeInfoLabel, "BOTTOMLEFT", 0, -padding)
     windowSizeFrameHeight = windowSizeFrameHeight + windowSizeHeightLabel:GetStringHeight() + padding
 
     -- create label for width
     local windowSizeWidthLabel = windowSizeInsetFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    windowSizeWidthLabel:SetText(ABSync.L["Width: "] .. tostring(mainFrameSize.width))
+    windowSizeWidthLabel:SetText(ns.L["Width: "] .. tostring(mainFrameSize.width))
     windowSizeWidthLabel:SetPoint("TOPLEFT", windowSizeHeightLabel, "BOTTOMLEFT", 0, -padding)
     windowSizeFrameHeight = windowSizeFrameHeight + windowSizeWidthLabel:GetStringHeight() + padding
 
@@ -178,9 +180,9 @@ end
     Function:   ProcessDeveloperFrame
     Purpose:    Create the developer frame for testing and debugging.
 -----------------------------------------------------------------------------]]
-function ABSync:ProcessDeveloperFrame(parent, tabKey)
+function ns:ProcessDeveloperFrame(parent, tabKey)
     -- standard variables
-    local padding = ABSync.constants.ui.generic.padding
+    local padding = ns.data.constants.ui.generic.padding
 
     -- create the content frame for the tab if it doesn't exist, if it exists then all this content already exists
     local devFrame, existed = self:ProcessTabContentFrame(tabKey, parent)
@@ -192,7 +194,7 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
 
     -- make sure devFrame was populated
     if not devFrame then
-        self:Print(ABSync.L["Error: devFrame is nil in ProcessDeveloperFrame."])
+        ns:Print(ns.L["Error: devFrame is nil in ProcessDeveloperFrame."])
         return nil
     end
 
@@ -206,7 +208,7 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
     title:SetPoint("TOPRIGHT", devFrame, "TOPRIGHT", 0, 0)
     title:SetHeight(30)
     title:SetJustifyH("CENTER")
-    title:SetText(ABSync.L["Developer"])
+    title:SetText(ns.L["Developer"])
 
     --[[ warning! ]]
 
@@ -222,7 +224,7 @@ function ABSync:ProcessDeveloperFrame(parent, tabKey)
     warningText:SetPoint("BOTTOMRIGHT", warningFrame, "BOTTOMRIGHT", -padding, padding)
     warningText:SetJustifyH("LEFT")
     warningText:SetWordWrap(true)
-    warningText:SetText(("|cffff0000%s|r: %s"):format(ABSync.L["Warning"], ABSync.L["This tab is used for development purposes only."]))
+    warningText:SetText(("|cffff0000%s|r: %s"):format(ns.L["Warning"], ns.L["This tab is used for development purposes only."]))
     warningFrame:SetHeight(warningText:GetStringHeight() + (padding * 2))
 
     -- get 50% width of the dev frame minus padding

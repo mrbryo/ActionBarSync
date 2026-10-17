@@ -3,14 +3,10 @@
     Language: Spanish (esES)
 -----------------------------------------------------------------------------]]
 
--- make sure locales variable exists
-if not ABSync.locales then
-    ABSync.locales = {}
-end
+local addonName, ns = ...
+if GetLocale() ~= "esES" then return end
 
--- add the locale
-ABSync.locales["esES"] = {}
-local L = ABSync.locales["esES"]
+local L = ns.L
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="esES", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@

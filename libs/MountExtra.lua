@@ -5,11 +5,13 @@
 	Description: 	All functions for handling mount data in support of GetMountInfo in ActionData.lua.
 -----------------------------------------------------------------------------]]
 
+local addonName, ns = ...
+
 --[[---------------------------------------------------------------------------
     Function:   ClearMountDB
     Purpose:    Clear the mount database for the current character.
 -----------------------------------------------------------------------------]]
-function ABSync:ClearMountDB()
+function ns:ClearMountDB()
     -- get playerID
     -- no need to include spec in playerID for mount db since the mounts are not spec-specific
     local playerID = self:GetKeyPlayerServer(true)
@@ -21,7 +23,7 @@ function ABSync:ClearMountDB()
     ActionBarSyncMountDB[playerID] = {}
 
     -- notify user its done
-    self:Print(ABSync.L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."])
+    ns:Print(ns.L["Mount DB Cleared! Reload the UI by using the button (to update data now) or wait to logout on this character."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -30,9 +32,9 @@ end
 
     NOT USED YET
 -----------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterBackup()
+function ns:MountJournalFilterBackup()
     -- backup current filter settings
-    ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters = {
+    ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].mountJournalFilters = {
         collected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED),
         notCollected = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED),
         unusable = C_MountJournal.GetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE),
@@ -43,7 +45,7 @@ end
     Function:   MountJournalFilterReset
     Purpose:    Reset the mount journal filter settings to default.
 -----------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterReset()
+function ns:MountJournalFilterReset()
     -- reset default filter settings
     C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, true)
     C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, false)
@@ -53,7 +55,7 @@ function ABSync:MountJournalFilterReset()
     C_MountJournal.SetAllTypeFilters(true)
 
     -- notify user
-    self:Print(ABSync.L["Mount Journal filters have been set to show all collected mounts."])
+    ns:Print(ns.L["Mount Journal filters have been set to show all collected mounts."])
 end
 
 --[[---------------------------------------------------------------------------
@@ -62,12 +64,12 @@ end
 
     NOT USED YET
 -----------------------------------------------------------------------------]]
-function ABSync:MountJournalFilterRestore()
+function ns:MountJournalFilterRestore()
     -- restore previous filter settings
-    if ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters then
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.collected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.notCollected)
-        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, ActionBarSyncDB.char[self.currentPlayerServerSpec].mountJournalFilters.unusable)
+    if ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].mountJournalFilters then
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_COLLECTED, ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].mountJournalFilters.collected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_NOT_COLLECTED, ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].mountJournalFilters.notCollected)
+        C_MountJournal.SetCollectedFilterSetting(LE_MOUNT_JOURNAL_FILTER_UNUSABLE, ActionBarSyncDB.char[ns.data.currentPlayerServerSpec].mountJournalFilters.unusable)
     end
 end
 
@@ -78,7 +80,7 @@ end
 
     Usage:      Should call MountJournalFilterReset() before calling this but should add code to let user know if mount is not found and ask if filter should be restored to default or our own "default".
 -----------------------------------------------------------------------------]]
-function ABSync:MountIDToOriginalIndex(mountID)
+function ns:MountIDToOriginalIndex(mountID)
     -- get the current number from the journal
     local count = C_MountJournal.GetNumDisplayedMounts()
     for i = 1, count do
@@ -95,7 +97,7 @@ end
     Function:   RefreshMountDB
     Purpose:    For development purposes only! Refresh the mount database for the current player.
 -----------------------------------------------------------------------------]]
-function ABSync:RefreshMountDB()
+function ns:RefreshMountDB()
     -- get playerID
     -- no need to include spec in playerID for mount db since the mounts are not spec-specific
     local playerID = self:GetKeyPlayerServer(true)
@@ -151,5 +153,5 @@ function ABSync:RefreshMountDB()
     end
 
     -- notify user its done
-    self:Print(ABSync.L["Mount DB Refreshed! Reload the UI by using this command: /reload"])
+    ns:Print(ns.L["Mount DB Refreshed! Reload the UI by using this command: /reload"])
 end

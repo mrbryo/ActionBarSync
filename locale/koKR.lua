@@ -4,13 +4,10 @@
 -----------------------------------------------------------------------------]]
 
 -- make sure locales variable exists
-if not ABSync.locales then
-    ABSync.locales = {}
-end
+local addonName, ns = ...
+if GetLocale() ~= "koKR" then return end
 
--- add the locale
-ABSync.locales["koKR"] = {}
-local L = ABSync.locales["koKR"]
+local L = ns.L
 
 -- following line is replaced when packaged through curseforge using their localization tool
 --@localization(locale="koKR", format="lua_additive_table", handle-subnamespaces="concat", handle-unlocalized="english")@
