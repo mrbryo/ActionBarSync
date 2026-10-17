@@ -501,7 +501,9 @@ function ns:CreateShareSyncTopFrameContent(parent)
     --@end-debug@
     ns.data.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, ns.L["Automatically Reset Mount Journal Filters"], initialAutoResetMountFilter, nil,
         function(self, button, checked)
-            ns:Print(("Auto Reset Mount Filter Checked: %s"):format(tostring(checked)))
+            --@debug@
+            -- ns:Print(("Auto Reset Mount Filter Checked: %s"):format(tostring(checked)))
+            --@end-debug@
             ns:SetAutoResetMountFilters(checked)
         end
     )
