@@ -495,9 +495,16 @@ function ns:CreateShareSyncTopFrameContent(parent)
     manualMountFilterResetButton:SetPoint("TOPLEFT", manualSyncButton, "TOPRIGHT", padding, 0)
 
     -- create checkbox for auto mount journal filter reset; must create prior to loginCheckBox so it can be called in the OnValueChanged
-    ns.data.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, ns.L["Automatically Reset Mount Journal Filters"], ns:GetAutoResetMountFilters(), nil, function(self, button, checked)
-        ns:SetAutoResetMountFilters(checked)
-    end)
+    local initialAutoResetMountFilter = ns:GetAutoResetMountFilters()
+    --@debug@
+    -- ns:Print(("(%s) Auto Reset Mount Filter Checked Value: %s"):format(funcName, tostring(initialAutoResetMountFilter)))
+    --@end-debug@
+    ns.data.ui.checkbox.autoMountFilterReset = self:CreateCheckbox(regionContent, ns.L["Automatically Reset Mount Journal Filters"], initialAutoResetMountFilter, nil,
+        function(self, button, checked)
+            ns:Print(("Auto Reset Mount Filter Checked: %s"):format(tostring(checked)))
+            ns:SetAutoResetMountFilters(checked)
+        end
+    )
     -- self:UpdateCheckboxState(ns.data.ui.checkbox.autoMountFilterReset, ns:GetSyncOnLogon())
 
     -- create checkbox for sync on login

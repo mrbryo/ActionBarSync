@@ -52,11 +52,12 @@ end
     Purpose:    Get the auto reset mount filters status for the current character.
 -----------------------------------------------------------------------------]]
 function ns:GetAutoResetMountFilters()
+    local funcName = "GetAutoResetMountFilters"
     -- make sure the current player key is set
     if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         return ActionBarSyncDB.profile[ns.data.currentPlayerServer].autoResetMountFilters
@@ -222,7 +223,7 @@ function ns:GetFramePosition(frameName)
     local L = self.L
 
     -- ensure profile DB structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         -- retrieve position data
@@ -430,7 +431,7 @@ function ns:GetPlacementErrorClearButton()
     if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         -- set default
@@ -513,11 +514,11 @@ function ns:GetSyncOnLogon()
     if not ns.data.currentPlayerServer then return false end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         -- set default if not set
-        if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon then
+        if ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon == nil then
             ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon = false
         end
 
@@ -535,7 +536,7 @@ end
 -----------------------------------------------------------------------------]]
 function ns:GetTab()
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         local tabValue = ActionBarSyncDB.profile[ns.data.currentPlayerServer].mytab or "introduction"

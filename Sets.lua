@@ -11,12 +11,21 @@ local addonName, ns = ...
     Purpose:    Set the auto reset mount filters status for the current character.
 -----------------------------------------------------------------------------]]
 function ns:SetAutoResetMountFilters(value)
+    local funcName = "SetAutoResetMountFilters"
+
     -- make sure the current player key is set
     if not ns.data.currentPlayerServer then return end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
+    --@debug@
+    if self:GetDevMode() == true then
+        ns:Print(("(%s) Set Auto Reset Mount Filters: %s; Profile DB Set: %s"):format(funcName, tostring(value), tostring(isSet)))
+    end
+    --@end-debug@
+
+    -- trigger update
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].autoResetMountFilters = value
     else
@@ -58,12 +67,12 @@ function ns:SetMinimapButtonVisible(visible)
     if not ActionBarSyncDB or not ActionBarSyncDB.global then
         return
     end
-    
+
     -- Initialize minimap settings if they don't exist
     if not ActionBarSyncDB.global.minimap then
         ActionBarSyncDB.global.minimap = {}
     end
-    
+
     -- LibDBIcon uses 'hide' property, so we invert our 'visible' boolean
     ActionBarSyncDB.global.minimap.hide = not visible
 end
@@ -82,14 +91,14 @@ function ns:SetFramePosition(frameName, point, relativePoint, xOfs, yOfs)
     if not ns.data.currentPlayerServer then return false end
 
     -- ensure profile DB structure exists
-    local isSet = self:SetupProfileDB()
-    
+    local isSet = ns:SetupProfileDB()
+
     if isSet == true then
         -- create index for this frame
-        if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName] then
+        if ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName] == nil then
             ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName] = {}
         end
-        
+
         -- Store position data
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName].point = point
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions[frameName].relativePoint = relativePoint
@@ -276,7 +285,7 @@ function ns:SetPlacementErrorClearButton(value)
     if not ns.data.currentPlayerServer then return end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].placementErrorClearButton = value
@@ -333,7 +342,7 @@ function ns:SetSyncOnLogon(value)
     if not ns.data.currentPlayerServer then return end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].syncOnLogon = value
@@ -354,7 +363,7 @@ function ns:SetTab(key)
     if not ns.data.currentPlayerServer then return end
 
     -- make sure data structure exists
-    local isSet = self:SetupProfileDB()
+    local isSet = ns:SetupProfileDB()
 
     if isSet == true then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].mytab = key
@@ -402,24 +411,24 @@ end
 -----------------------------------------------------------------------------]]
 function ns:SetupProfileDB()
     -- make sure the current player key is set
-    if not ns.data.currentPlayerServer then return false end
+    if ns.data.currentPlayerServer == nil then return false end
 
     -- create whole DB if missing
-    if not ActionBarSyncDB then ActionBarSyncDB = {} end
+    if ActionBarSyncDB == nil then ActionBarSyncDB = {} end
 
     -- create profile node if missing
-    if not ActionBarSyncDB.profile then ActionBarSyncDB.profile = {} end
+    if ActionBarSyncDB.profile == nil then ActionBarSyncDB.profile = {} end
 
     -- add current character if missing
-    if not ActionBarSyncDB.profile[ns.data.currentPlayerServer] then
+    if ActionBarSyncDB.profile[ns.data.currentPlayerServer] == nil then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer] = {}
     end
 
     -- initialize UI settings if they don't exist
-    if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui then
+    if ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui == nil then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui = {}
     end
-    if not ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions then
+    if ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions == nil then
         ActionBarSyncDB.profile[ns.data.currentPlayerServer].ui.positions = {}
     end
 

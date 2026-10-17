@@ -555,8 +555,7 @@ end
     Purpose:    Ensure the profile DB structure exists and has all necessary values.
 -----------------------------------------------------------------------------]]
 function ns:InstantiateDBProfile()
-    -- auto reset mount journal filters flag; initially set to false
-    self:SetAutoResetMountFilters(false)
+
 end
 
 --[[---------------------------------------------------------------------------
